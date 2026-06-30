@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "889483409620",
+    "project_id": "doctor-bike-1323e",
+    "storage_bucket": "doctor-bike-1323e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889483409620:android:83352dd337c97501a62341",
+        "android_client_info": {
+          "package_name": "com.mahm.doctor_bike"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2jdvQVCA__71Pv-Vxyek-cKY25f1ovGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
