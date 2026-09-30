@@ -99,6 +99,36 @@ class CategoresControllerImp extends CategoresController {
     }
   }
 
+  Future<void> getProductsByStoreSection(int storeSectionId) async {
+    isNormail = await AppUsageService.getTypeUser() == "Normail";
+    if (!await CheckInternet.checkInternet()) {
+      showCustomSnackBar('Check the internet connection'.tr, isError: true);
+      return;
+    }
+
+    OverlayLoadingProgress.start();
+    try {
+      statusRequest = StatusRequest.loading;
+      isLoading.value = true;
+      final response = await categoriesRepository
+          .getAllCategoriesByMainCategoresId(mainCategoresId: storeSectionId);
+
+      if (response.statusCode == 200) {
+        itemList = ItemsResponse.fromJson(response.body);
+        allProducts = itemList!.rows;
+        Get.toNamed(RouteHelper.categoryScreen);
+      }
+    } catch (e) {
+      showCustomSnackBar(
+        'An error occurred. Please try again.'.tr,
+        isError: true,
+      );
+    } finally {
+      isLoading.value = false;
+      OverlayLoadingProgress.stop();
+    }
+  }
+
   RxList<Item> filtter() {
     _filteredProducts = <Item>[].obs;
     _filteredProducts.value =

@@ -527,11 +527,8 @@ class HomeScreen extends StatelessWidget {
                                     : homeControllerImp
                                         .mainCategoresModel[index]
                                         .nameAbree;
-                            // await categoresControllerImp.getAllCategores(
-                            //   homeControllerImp.mainCategoresModel[index].id,
-                            // );
                             await categoresControllerImp
-                                .getSupCategoresByMainCategoresId(
+                                .getProductsByStoreSection(
                                   homeControllerImp
                                       .mainCategoresModel[index]
                                       .id,
