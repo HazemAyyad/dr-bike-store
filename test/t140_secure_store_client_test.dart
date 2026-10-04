@@ -1,9 +1,12 @@
 import 'package:doctor_bike/core/api_client.dart';
 import 'package:doctor_bike/core/functions/checkout_attempt.dart';
+import 'package:doctor_bike/core/functions/native_checkout.dart';
 import 'package:doctor_bike/core/functions/store_client_metadata.dart';
 import 'package:doctor_bike/core/functions/upgrade_required.dart';
 import 'package:doctor_bike/core/model/otp_model.dart';
+import 'package:doctor_bike/core/model/get_all_item_model.dart';
 import 'package:doctor_bike/repository/auth/auth_repository.dart';
+import 'package:doctor_bike/repository/shop/shop_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -130,9 +133,17 @@ void main() {
   test('HTTP 426 maps to explicit upgrade-required Arabic UX', () {
     const response = Response(
       statusCode: 426,
-      body: {'status': 'upgrade_required', 'minimum_build': 10},
+      body: {
+        'status': 'upgrade_required',
+        'message':
+            'A Store app update is required to reset the password securely.',
+        'minimum_build': 10,
+      },
     );
-    expect(upgradeRequiredMessage(response), contains('تحديث التطبيق'));
+    expect(
+      upgradeRequiredMessage(response),
+      'يجب تحديث التطبيق إلى أحدث إصدار لمتابعة استعادة كلمة المرور.',
+    );
     expect(upgradeRequiredMessage(const Response(statusCode: 400)), isNull);
   });
 
@@ -184,4 +195,163 @@ void main() {
     expect(attempt.begin(), isTrue);
     expect(attempt.id, isNot(first));
   });
+
+  test('Item persists listingId through cart serialization', () {
+    final item = Item.fromJson(_itemJson(productId: 91, listingId: 407));
+    final restored = Item.fromJson2(item.toJson());
+
+    expect(item.id, 91);
+    expect(item.listingId, 407);
+    expect(restored.id, 91);
+    expect(restored.listingId, 407);
+  });
+
+  test('native checkout blocks cart rows without a listingId', () {
+    final item = Item.fromJson(_itemJson(productId: 91));
+
+    expect(
+      () => buildNativeCheckoutPayload(
+        items: [item],
+        userType: 'Normail',
+        customerAddress: 'Ramallah',
+        shiplyCityId: 10,
+        shiplyVillageId: 20,
+      ),
+      throwsA(isA<MissingListingIdException>()),
+    );
+  });
+
+  test('native checkout payload uses listing identity and COD contract', () {
+    final item = Item.fromJson(_itemJson(productId: 91, listingId: 407))
+      ..count = 3;
+    item.itemSizeId = 7;
+    item.itemSizeColorId = 8;
+
+    final attempt = CheckoutAttempt()..begin();
+    final payload = attempt.attachTo(
+      buildNativeCheckoutPayload(
+        items: [item],
+        userType: 'wholesale',
+        customerAddress: 'Ramallah',
+        shiplyCityId: 10,
+        shiplyVillageId: 20,
+        couponCode: ' SAVE10 ',
+      ),
+    );
+
+    expect(payload['client_request_id'], matches(RegExp(r'^[0-9a-f-]{36}$')));
+    expect(payload['account_role'], 'seller');
+    expect(payload['payment'], {'type': 'cash', 'paid_amount': 0});
+    expect(payload['coupon_code'], 'SAVE10');
+    expect(payload['delivery'], {
+      'customer_address': 'Ramallah',
+      'shiply_city_id': 10,
+      'shiply_village_id': 20,
+    });
+    expect(payload['items'], [
+      {'listing_id': 407, 'size_id': 7, 'size_color_id': 8, 'quantity': 3},
+    ]);
+    expect((payload['items'] as List).first['listing_id'], isNot(item.id));
+    expect(payload, isNot(contains('details')));
+  });
+
+  test('known legacy Store user types map explicitly to account roles', () {
+    for (final value in ['Normail', 'User', 'retail', 'customer']) {
+      expect(storeAccountRole(value), 'customer');
+    }
+    for (final value in ['wholesale', 'seller']) {
+      expect(storeAccountRole(value), 'seller');
+    }
+    expect(
+      () => storeAccountRole('admin'),
+      throwsA(isA<UnsupportedStoreAccountRoleException>()),
+    );
+  });
+
+  test('ShopRepository submits native checkout endpoint unchanged', () async {
+    final payload = {'client_request_id': 'request-id', 'items': <Object>[]};
+    await ShopRepository(apiClient: apiClient).createOrder(body: payload);
+
+    expect(apiClient.uri, '/OnlineStore/Checkout');
+    expect(apiClient.sentBody, payload);
+  });
+
+  test('201 create and 200 replay read data.id and clear attempt', () {
+    for (final status in [201, 200]) {
+      final attempt = CheckoutAttempt();
+      attempt.begin();
+      final previousId = attempt.id;
+      final success = completeCheckoutAttempt(attempt, status, {
+        'data': {'id': status == 201 ? 501 : 502},
+        'replayed': status == 200,
+      });
+
+      expect(success?.orderId, status == 201 ? '501' : '502');
+      expect(success?.replayed, status == 200);
+      attempt.begin();
+      expect(attempt.id, isNot(previousId));
+    }
+  });
+
+  test('malformed success retains UUID for safe idempotent retry', () {
+    final attempt = CheckoutAttempt();
+    attempt.begin();
+    final id = attempt.id;
+
+    expect(completeCheckoutAttempt(attempt, 201, {'replayed': false}), isNull);
+    attempt.finish(successful: false);
+    attempt.begin();
+    expect(attempt.id, id);
+  });
+
+  test('transport retry keeps UUID through a 200 replay', () {
+    final attempt = CheckoutAttempt();
+    attempt.begin();
+    final first = attempt.id;
+    attempt.finish(successful: false);
+
+    attempt.begin();
+    expect(attempt.id, first);
+    final replay = completeCheckoutAttempt(attempt, 200, {
+      'data': {'id': 777},
+      'replayed': true,
+    });
+    expect(replay?.orderId, '777');
+
+    attempt.begin();
+    expect(attempt.id, isNot(first));
+  });
+
+  test('missing reset proof is rejected before loading can begin', () {
+    expect(missingResetProofMessage(null), isNotNull);
+    expect(missingResetProofMessage(''), isNotNull);
+    expect(missingResetProofMessage('opaque-proof'), isNull);
+  });
 }
+
+Map<String, dynamic> _itemJson({required int productId, int? listingId}) => {
+  'id': productId,
+  'listingId': listingId,
+  'nameAr': 'منتج',
+  'nameEng': 'Product',
+  'nameAbree': 'Product',
+  'isShow': true,
+  'descriptionAr': '',
+  'descriptionEng': '',
+  'descriptionAbree': '',
+  'normailPrice': 10,
+  'wholesalePrice': 8,
+  'stock': 5,
+  'model': '',
+  'isNewItem': false,
+  'isMoreSales': false,
+  'rate': 0,
+  'discount': 0,
+  'dateAdd': '2026-10-04T00:00:00Z',
+  'dateUpdate': '2026-10-04T00:00:00Z',
+  'supCategory': <Object>[],
+  'normalImagesItems': <Object>[],
+  '_3DImagesItems': <Object>[],
+  'viewImagesItems': <Object>[],
+  'itemSizes': <Object>[],
+};

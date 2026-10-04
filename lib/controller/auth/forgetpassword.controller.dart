@@ -87,13 +87,17 @@ class ForgetPasswordControllerImp extends ForgetPasswordController {
 
   @override
   resetpassword() async {
+    final proof = resetProof;
+    final proofError = missingResetProofMessage(proof);
+    if (proofError != null) {
+      showCustomSnackBar(proofError, isError: true);
+      return;
+    }
     OverlayLoadingProgress.start();
     if (await CheckInternet.checkInternet()) {
       try {
-        final proof = resetProof;
-        if (proof == null) return;
         var response = await authRepository.changePasswordToForgot(
-          resetProof: proof,
+          resetProof: proof!,
           confirmPassword: repassword.text,
           newPassword: password.text,
         );
