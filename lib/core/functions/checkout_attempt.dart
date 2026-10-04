@@ -8,6 +8,7 @@ class CheckoutAttempt {
   bool _inFlight = false;
 
   String get id => _id ??= _uuid.v4();
+  String? get currentId => _id;
   bool get isInFlight => _inFlight;
 
   Map<String, dynamic> attachTo(Map<String, dynamic> payload) => {

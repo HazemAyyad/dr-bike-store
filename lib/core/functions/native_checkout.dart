@@ -5,25 +5,55 @@ class MissingListingIdException implements Exception {}
 
 class UnsupportedStoreAccountRoleException implements Exception {}
 
-String storeAccountRole(String? userType) {
-  switch (userType?.trim().toLowerCase()) {
-    case 'normail':
-    case 'normal':
-    case 'user':
-    case 'retail':
-    case 'customer':
-      return 'customer';
-    case 'wholesale':
-    case 'seller':
-      return 'seller';
-    default:
-      throw UnsupportedStoreAccountRoleException();
+enum CheckoutRoleRequirement { unavailable, resolved, choiceRequired }
+
+class CheckoutRoleResolution {
+  const CheckoutRoleResolution({
+    required this.requirement,
+    required this.availableRoles,
+    this.role,
+  });
+
+  final CheckoutRoleRequirement requirement;
+  final List<String> availableRoles;
+  final String? role;
+}
+
+CheckoutRoleResolution resolveCheckoutRoles(Iterable<String> accountRoles) {
+  const supported = ['customer', 'seller'];
+  final roles = supported.where(accountRoles.toSet().contains).toList();
+  if (roles.isEmpty) {
+    return const CheckoutRoleResolution(
+      requirement: CheckoutRoleRequirement.unavailable,
+      availableRoles: [],
+    );
   }
+  if (roles.length == 1) {
+    return CheckoutRoleResolution(
+      requirement: CheckoutRoleRequirement.resolved,
+      availableRoles: roles,
+      role: roles.single,
+    );
+  }
+  return CheckoutRoleResolution(
+    requirement: CheckoutRoleRequirement.choiceRequired,
+    availableRoles: roles,
+  );
+}
+
+String? confirmCheckoutRole(
+  CheckoutRoleResolution resolution,
+  String? selectedRole,
+) {
+  if (resolution.requirement == CheckoutRoleRequirement.resolved) {
+    return resolution.role;
+  }
+  return resolution.availableRoles.contains(selectedRole) ? selectedRole : null;
 }
 
 Map<String, dynamic> buildNativeCheckoutPayload({
   required List<Item> items,
-  required String? userType,
+  required String accountRole,
   required String customerAddress,
   required int shiplyCityId,
   required int shiplyVillageId,
@@ -32,9 +62,12 @@ Map<String, dynamic> buildNativeCheckoutPayload({
   if (items.any((item) => item.listingId == null)) {
     throw MissingListingIdException();
   }
+  if (accountRole != 'customer' && accountRole != 'seller') {
+    throw UnsupportedStoreAccountRoleException();
+  }
 
   return {
-    'account_role': storeAccountRole(userType),
+    'account_role': accountRole,
     'payment': {'type': 'cash', 'paid_amount': 0},
     if (couponCode?.trim().isNotEmpty == true)
       'coupon_code': couponCode!.trim(),

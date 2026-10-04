@@ -533,6 +533,53 @@ class ShopController extends GetxController {
     update();
   }
 
+  Future<String?> _resolveCheckoutAccountRole() async {
+    if (userModel == null) {
+      final response = await shopRepository.getUser();
+      if (response.statusCode != 200 ||
+          response.body is! Map<String, dynamic>) {
+        showCustomSnackBar(
+          'تعذر تحديث بيانات حساب المتجر. يرجى المحاولة مرة أخرى.',
+          isError: true,
+        );
+        return null;
+      }
+      userModel = UserModel.fromJson(response.body);
+    }
+
+    final resolution = resolveCheckoutRoles(userModel!.accountRoles);
+    if (resolution.requirement == CheckoutRoleRequirement.unavailable) {
+      showCustomSnackBar(
+        'لا يوجد حساب بيع معتمد مرتبط بحساب المتجر. يرجى التواصل مع الإدارة.',
+        isError: true,
+      );
+      return null;
+    }
+    if (resolution.requirement == CheckoutRoleRequirement.resolved) {
+      return resolution.role;
+    }
+
+    final selectedRole = await Get.dialog<String>(
+      AlertDialog(
+        title: const Text('اختر نوع الطلب'),
+        content: const Text('هل تريد تنفيذ الطلب كتجزئة أم جملة؟'),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Get.back(result: 'customer'),
+            child: const Text('تجزئة'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: 'seller'),
+            child: const Text('جملة'),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+    return confirmCheckoutRole(resolution, selectedRole);
+  }
+
   createOrder() async {
     if (selectedCityId == null || selectedVillageId == null) {
       showCustomSnackBar('Choose city and village'.tr, isError: true);
@@ -545,16 +592,8 @@ class ShopController extends GetxController {
       );
       return;
     }
-    final userType = await AppUsageService.getTypeUser();
-    try {
-      storeAccountRole(userType);
-    } on UnsupportedStoreAccountRoleException {
-      showCustomSnackBar(
-        'تعذر تحديد نوع حساب المتجر. يرجى تسجيل الدخول مرة أخرى.',
-        isError: true,
-      );
-      return;
-    }
+    final accountRole = await _resolveCheckoutAccountRole();
+    if (accountRole == null) return;
     if (!_checkoutAttempt.begin()) return;
 
     if (await CheckInternet.checkInternet()) {
@@ -693,7 +732,7 @@ class ShopController extends GetxController {
           body: _checkoutAttempt.attachTo(
             buildNativeCheckoutPayload(
               items: items,
-              userType: userType,
+              accountRole: accountRole,
               customerAddress: addressController.text,
               shiplyCityId: int.parse(selectedCityId!),
               shiplyVillageId: int.parse(selectedVillageId!),
@@ -759,16 +798,8 @@ class ShopController extends GetxController {
       );
       return;
     }
-    final userType = await AppUsageService.getTypeUser();
-    try {
-      storeAccountRole(userType);
-    } on UnsupportedStoreAccountRoleException {
-      showCustomSnackBar(
-        'تعذر تحديد نوع حساب المتجر. يرجى تسجيل الدخول مرة أخرى.',
-        isError: true,
-      );
-      return;
-    }
+    final accountRole = await _resolveCheckoutAccountRole();
+    if (accountRole == null) return;
     if (!_checkoutAttempt.begin()) return;
 
     if (await CheckInternet.checkInternet()) {
@@ -907,7 +938,7 @@ class ShopController extends GetxController {
           body: _checkoutAttempt.attachTo(
             buildNativeCheckoutPayload(
               items: items,
-              userType: userType,
+              accountRole: accountRole,
               customerAddress: addressController.text,
               shiplyCityId: int.parse(selectedCityId!),
               shiplyVillageId: int.parse(selectedVillageId!),
