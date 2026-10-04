@@ -5,6 +5,7 @@ import 'package:doctor_bike/core/functions/store_client_metadata.dart';
 import 'package:doctor_bike/core/functions/upgrade_required.dart';
 import 'package:doctor_bike/core/model/otp_model.dart';
 import 'package:doctor_bike/core/model/get_all_item_model.dart';
+import 'package:doctor_bike/core/model/auth_eesponse.dart';
 import 'package:doctor_bike/repository/auth/auth_repository.dart';
 import 'package:doctor_bike/repository/shop/shop_repository.dart';
 import 'package:flutter/foundation.dart';
@@ -212,7 +213,7 @@ void main() {
     expect(
       () => buildNativeCheckoutPayload(
         items: [item],
-        userType: 'Normail',
+        accountRole: 'customer',
         customerAddress: 'Ramallah',
         shiplyCityId: 10,
         shiplyVillageId: 20,
@@ -231,7 +232,7 @@ void main() {
     final payload = attempt.attachTo(
       buildNativeCheckoutPayload(
         items: [item],
-        userType: 'wholesale',
+        accountRole: 'seller',
         customerAddress: 'Ramallah',
         shiplyCityId: 10,
         shiplyVillageId: 20,
@@ -255,17 +256,72 @@ void main() {
     expect(payload, isNot(contains('details')));
   });
 
-  test('known legacy Store user types map explicitly to account roles', () {
-    for (final value in ['Normail', 'User', 'retail', 'customer']) {
-      expect(storeAccountRole(value), 'customer');
-    }
-    for (final value in ['wholesale', 'seller']) {
-      expect(storeAccountRole(value), 'seller');
-    }
-    expect(
-      () => storeAccountRole('admin'),
-      throwsA(isA<UnsupportedStoreAccountRoleException>()),
+  test('login and profile user models retain accountRoles', () {
+    final login = AuthResponse.fromJson({
+      'user': _userJson(accountRoles: ['customer', 'seller']),
+      'token': 'token',
+    });
+    final profile = UserModel.fromJson(
+      _userJson(accountRoles: ['seller'], typeUser: 'User'),
     );
+
+    expect(login.user.accountRoles, ['customer', 'seller']);
+    expect(login.toJson()['user']['accountRoles'], ['customer', 'seller']);
+    expect(profile.accountRoles, ['seller']);
+    expect(profile.toJson()['accountRoles'], ['seller']);
+    expect(UserModel.fromJson(_userJson()).accountRoles, isEmpty);
+  });
+
+  test('authoritative account roles resolve single, dual, and unavailable', () {
+    final customer = resolveCheckoutRoles(['customer']);
+    final seller = resolveCheckoutRoles(['seller']);
+    final none = resolveCheckoutRoles([]);
+    final dual = resolveCheckoutRoles(['seller', 'customer']);
+
+    expect(customer.role, 'customer');
+    expect(seller.role, 'seller');
+    expect(none.requirement, CheckoutRoleRequirement.unavailable);
+    expect(dual.requirement, CheckoutRoleRequirement.choiceRequired);
+    expect(dual.role, isNull, reason: 'dual role must never default');
+    expect(confirmCheckoutRole(dual, 'customer'), 'customer');
+    expect(confirmCheckoutRole(dual, 'seller'), 'seller');
+  });
+
+  test('unknown roles never grant checkout access', () {
+    expect(
+      resolveCheckoutRoles(['admin']).requirement,
+      CheckoutRoleRequirement.unavailable,
+    );
+    expect(resolveCheckoutRoles(['admin', 'seller']).role, 'seller');
+  });
+
+  test('canceled dual-role choice creates no UUID and keeps cart intact', () {
+    final cart = [Item.fromJson(_itemJson(productId: 91, listingId: 407))];
+    final attempt = CheckoutAttempt();
+    final resolution = resolveCheckoutRoles(['customer', 'seller']);
+
+    expect(confirmCheckoutRole(resolution, null), isNull);
+    expect(attempt.currentId, isNull);
+    expect(cart, hasLength(1));
+    expect(cart.single.listingId, 407);
+  });
+
+  test('typeUser cannot influence native checkout account_role', () {
+    final item = Item.fromJson(_itemJson(productId: 91, listingId: 407));
+    final user = UserModel.fromJson(
+      _userJson(accountRoles: ['seller'], typeUser: 'User'),
+    );
+    final role = resolveCheckoutRoles(user.accountRoles).role!;
+    final payload = buildNativeCheckoutPayload(
+      items: [item],
+      accountRole: role,
+      customerAddress: 'Ramallah',
+      shiplyCityId: 10,
+      shiplyVillageId: 20,
+    );
+
+    expect(user.typeUser, 'User');
+    expect(payload['account_role'], 'seller');
   });
 
   test('ShopRepository submits native checkout endpoint unchanged', () async {
@@ -354,4 +410,39 @@ Map<String, dynamic> _itemJson({required int productId, int? listingId}) => {
   '_3DImagesItems': <Object>[],
   'viewImagesItems': <Object>[],
   'itemSizes': <Object>[],
+};
+
+Map<String, dynamic> _userJson({
+  List<String>? accountRoles,
+  String typeUser = 'User',
+}) => {
+  'id': '1',
+  'userName': 'user@example.test',
+  'normalizedUserName': 'USER@EXAMPLE.TEST',
+  'email': 'user@example.test',
+  'normalizedEmail': 'USER@EXAMPLE.TEST',
+  'emailConfirmed': true,
+  'passwordHash': '',
+  'securityStamp': '',
+  'concurrencyStamp': '',
+  'phoneNumber': null,
+  'phoneNumberConfirmed': false,
+  'twoFactorEnabled': false,
+  'lockoutEnd': null,
+  'lockoutEnabled': false,
+  'accessFailedCount': 0,
+  'address': null,
+  'block': false,
+  'fullName': 'User',
+  'phoneNumber2': null,
+  'typeUser': typeUser,
+  if (accountRoles != null) 'accountRoles': accountRoles,
+  'userToken': '',
+  'dateAdd': '',
+  'userUpdate': '',
+  'dateUpdate': '',
+  'cityId': null,
+  'city': <String, dynamic>{},
+  'mainOrders': <Object>[],
+  'roles': <Object>[],
 };
