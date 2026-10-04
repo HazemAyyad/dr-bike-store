@@ -10,6 +10,7 @@ import '../../core/classes/status_request.dart';
 import '../../core/functions/checkout_attempt.dart';
 import '../../core/functions/app_usage_service.dart';
 import '../../core/functions/checkInternet.dart';
+import '../../core/functions/native_checkout.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/model/auth_eesponse.dart';
 import '../../core/model/city_model.dart';
@@ -537,12 +538,24 @@ class ShopController extends GetxController {
       showCustomSnackBar('Choose city and village'.tr, isError: true);
       return;
     }
+    if (items.any((item) => item.listingId == null)) {
+      showCustomSnackBar(
+        'أحد المنتجات غير متاح حاليًا للطلب عبر المتجر. يرجى تحديث السلة.',
+        isError: true,
+      );
+      return;
+    }
+    final userType = await AppUsageService.getTypeUser();
+    try {
+      storeAccountRole(userType);
+    } on UnsupportedStoreAccountRoleException {
+      showCustomSnackBar(
+        'تعذر تحديد نوع حساب المتجر. يرجى تسجيل الدخول مرة أخرى.',
+        isError: true,
+      );
+      return;
+    }
     if (!_checkoutAttempt.begin()) return;
-
-    DateTime now = DateTime.now().toUtc();
-    String formattedDate = DateFormat(
-      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-    ).format(now);
 
     if (await CheckInternet.checkInternet()) {
       OverlayLoadingProgress.start();
@@ -672,37 +685,29 @@ class ShopController extends GetxController {
               };
             }).toList();
 
+        if (details.length != items.length) {
+          throw StateError('Unable to prepare all checkout items.');
+        }
+
         var response = await shopRepository.createOrder(
-          body: _checkoutAttempt.attachTo({
-            "id": 0,
-            "customerId": await AppUsageService.getUserId(),
-            "customerName": nameController.text,
-            "phoneNum1": phoneNumberController.text,
-            "phoneNum2": phoneNumber2Controller.text,
-            "cityId": selectedCityId.toString(),
-            "shiplyVillageId": selectedVillageId,
-            "address": addressController.text,
-            "status": "New",
-            "isWholesale": true,
-            "priceDelivery": selectedCityPrice,
-            "totalPriceWithDiscound": totalPriceWithDiscountOrders,
-            "totalPriceWithOutDiscound": totalPriceWithOutDiscountOrders,
-            "discoundCodeId": null,
-            "discoundCodePercent": null,
-            "discoundCode": null,
-            "totalPriceWithDiscoundCode": null,
-            "userAddId": await AppUsageService.getUserId(),
-            "dateAdd": formattedDate,
-            "userUpdate": await AppUsageService.getUserId(),
-            "dateUpdate": formattedDate,
-            "details": details.toList(),
-          }),
+          body: _checkoutAttempt.attachTo(
+            buildNativeCheckoutPayload(
+              items: items,
+              userType: userType,
+              customerAddress: addressController.text,
+              shiplyCityId: int.parse(selectedCityId!),
+              shiplyVillageId: int.parse(selectedVillageId!),
+            ),
+          ),
         );
 
-        // showCustomSnackBar(response.body, isError: true);
-        if (response.statusCode == 200) {
-          _checkoutAttempt.finish(successful: true);
-          OrderId = response.body['id'].toString();
+        final success = completeCheckoutAttempt(
+          _checkoutAttempt,
+          response.statusCode,
+          response.body,
+        );
+        if (success != null) {
+          OrderId = success.orderId;
           Get.offNamed(RouteHelper.checkOutDone);
           items = [];
           saveCart();
@@ -722,6 +727,11 @@ class ShopController extends GetxController {
           villagesList.clear();
           selectedCityPrice = 0;
           update();
+        } else if (response.statusCode == 200 || response.statusCode == 201) {
+          showCustomSnackBar(
+            'تعذر تأكيد الطلب. يرجى إعادة المحاولة دون تغيير السلة.',
+            isError: true,
+          );
         } else if (response.statusCode == 400) {
           showCustomSnackBar(response.body["message"], isError: true);
         }
@@ -742,12 +752,24 @@ class ShopController extends GetxController {
       showCustomSnackBar('Choose city and village'.tr, isError: true);
       return;
     }
+    if (items.any((item) => item.listingId == null)) {
+      showCustomSnackBar(
+        'أحد المنتجات غير متاح حاليًا للطلب عبر المتجر. يرجى تحديث السلة.',
+        isError: true,
+      );
+      return;
+    }
+    final userType = await AppUsageService.getTypeUser();
+    try {
+      storeAccountRole(userType);
+    } on UnsupportedStoreAccountRoleException {
+      showCustomSnackBar(
+        'تعذر تحديد نوع حساب المتجر. يرجى تسجيل الدخول مرة أخرى.',
+        isError: true,
+      );
+      return;
+    }
     if (!_checkoutAttempt.begin()) return;
-
-    DateTime now = DateTime.now().toUtc();
-    String formattedDate = DateFormat(
-      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-    ).format(now);
 
     if (await CheckInternet.checkInternet()) {
       OverlayLoadingProgress.start();
@@ -877,39 +899,30 @@ class ShopController extends GetxController {
               };
             }).toList();
 
+        if (details.length != items.length) {
+          throw StateError('Unable to prepare all checkout items.');
+        }
+
         var response = await shopRepository.createOrder(
-          body: _checkoutAttempt.attachTo({
-            "id": 0,
-            "customerId": await AppUsageService.getUserId(),
-            "customerName": nameController.text,
-            "phoneNum1": phoneNumberController.text,
-            "phoneNum2": phoneNumber2Controller.text,
-            "cityId": selectedCityId.toString(),
-            "shiplyVillageId": selectedVillageId,
-            "address": addressController.text,
-            "status": "New",
-            "isWholesale": true,
-            "priceDelivery": selectedCityPrice,
-            "totalPriceWithDiscound": totalPriceWithDiscountOrders,
-            "totalPriceWithOutDiscound": totalPriceWithOutDiscountOrders,
-            "discoundCodeId": couponModel!.id,
-            "discoundCodePercent": couponModel!.discountPercent,
-            "discoundCode": couponModel!.code,
-            "totalPriceWithDiscoundCode":
-                totalPriceWithDiscountOrders *
-                (1 - (couponModel!.discountPercent / 100)),
-            "userAddId": await AppUsageService.getUserId(),
-            "dateAdd": formattedDate,
-            "userUpdate": await AppUsageService.getUserId(),
-            "dateUpdate": formattedDate,
-            "details": details.toList(),
-          }),
+          body: _checkoutAttempt.attachTo(
+            buildNativeCheckoutPayload(
+              items: items,
+              userType: userType,
+              customerAddress: addressController.text,
+              shiplyCityId: int.parse(selectedCityId!),
+              shiplyVillageId: int.parse(selectedVillageId!),
+              couponCode: couponModel!.code,
+            ),
+          ),
         );
 
-        // showCustomSnackBar(response.body, isError: true);
-        if (response.statusCode == 200) {
-          _checkoutAttempt.finish(successful: true);
-          OrderId = response.body['id'].toString();
+        final success = completeCheckoutAttempt(
+          _checkoutAttempt,
+          response.statusCode,
+          response.body,
+        );
+        if (success != null) {
+          OrderId = success.orderId;
           Get.offNamed(RouteHelper.checkOutDone);
           items = [];
           saveCart();
@@ -931,6 +944,11 @@ class ShopController extends GetxController {
           couponModel = null;
           activeCode = null;
           update();
+        } else if (response.statusCode == 200 || response.statusCode == 201) {
+          showCustomSnackBar(
+            'تعذر تأكيد الطلب. يرجى إعادة المحاولة دون تغيير السلة.',
+            isError: true,
+          );
         } else if (response.statusCode == 400) {
           showCustomSnackBar(response.body["message"], isError: true);
         }

@@ -16,6 +16,7 @@ class ItemsResponse {
 
 class Item {
   final int id;
+  final int? listingId;
   final String nameAr;
   final String nameEng;
   final String nameAbree;
@@ -54,6 +55,7 @@ class Item {
 
   Item({
     required this.id,
+    this.listingId,
     required this.nameAr,
     required this.nameEng,
     required this.nameAbree,
@@ -94,6 +96,7 @@ class Item {
   factory Item.fromJson(Map<String, dynamic> json) {
     return Item(
       id: json['id'],
+      listingId: int.tryParse(json['listingId']?.toString() ?? ''),
       nameAr: json['nameAr'] ?? "",
       nameEng: json['nameEng'] ?? "",
       nameAbree: json['nameAbree'] ?? "",
@@ -140,6 +143,7 @@ class Item {
   factory Item.fromJson2(Map<String, dynamic> json) {
     return Item(
       id: json['id'],
+      listingId: int.tryParse(json['listingId']?.toString() ?? ''),
       nameAr: json['nameAr'] ?? "",
       nameEng: json['nameEng'] ?? "",
       nameAbree: json['nameAbree'] ?? "",
@@ -194,6 +198,7 @@ class Item {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'listingId': listingId,
     'nameAr': nameAr,
     'nameEng': nameEng,
     'nameAbree': nameAbree,
