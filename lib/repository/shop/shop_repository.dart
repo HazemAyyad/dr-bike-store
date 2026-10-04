@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/api_client.dart';
@@ -10,11 +9,9 @@ class ShopRepository extends GetxService {
   String tok = AppUsageService.getToken().toString();
 
   Future<Response> createOrder({required body}) async {
-    debugPrint("body == $body", wrapWidth: 1024);
-    debugPrint("body == ${await AppUsageService.getToken()}", wrapWidth: 1024);
     String? token = await AppUsageService.getToken();
     return await apiClient.postData(
-      "/Orders/ManageOrder",
+      "/OnlineStore/Checkout",
       body: body,
       headers: {
         'Content-Type': 'application/json',

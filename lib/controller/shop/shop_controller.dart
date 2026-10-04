@@ -7,6 +7,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:overlay_kit/overlay_kit.dart';
 import 'package:intl/intl.dart';
 import '../../core/classes/status_request.dart';
+import '../../core/functions/checkout_attempt.dart';
 import '../../core/functions/app_usage_service.dart';
 import '../../core/functions/checkInternet.dart';
 import '../../core/helper/route_helper.dart';
@@ -18,6 +19,7 @@ import '../../repository/shop/shop_repository.dart';
 import '../LocalizationController.dart';
 
 class ShopController extends GetxController {
+  final CheckoutAttempt _checkoutAttempt = CheckoutAttempt();
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
@@ -535,6 +537,7 @@ class ShopController extends GetxController {
       showCustomSnackBar('Choose city and village'.tr, isError: true);
       return;
     }
+    if (!_checkoutAttempt.begin()) return;
 
     DateTime now = DateTime.now().toUtc();
     String formattedDate = DateFormat(
@@ -670,7 +673,7 @@ class ShopController extends GetxController {
             }).toList();
 
         var response = await shopRepository.createOrder(
-          body: {
+          body: _checkoutAttempt.attachTo({
             "id": 0,
             "customerId": await AppUsageService.getUserId(),
             "customerName": nameController.text,
@@ -693,11 +696,12 @@ class ShopController extends GetxController {
             "userUpdate": await AppUsageService.getUserId(),
             "dateUpdate": formattedDate,
             "details": details.toList(),
-          },
+          }),
         );
 
         // showCustomSnackBar(response.body, isError: true);
         if (response.statusCode == 200) {
+          _checkoutAttempt.finish(successful: true);
           OrderId = response.body['id'].toString();
           Get.offNamed(RouteHelper.checkOutDone);
           items = [];
@@ -729,6 +733,7 @@ class ShopController extends GetxController {
       OverlayLoadingProgress.stop();
       showCustomSnackBar('Check the internet connection'.tr, isError: true);
     }
+    _checkoutAttempt.finish(successful: false);
     OverlayLoadingProgress.stop();
   }
 
@@ -737,6 +742,7 @@ class ShopController extends GetxController {
       showCustomSnackBar('Choose city and village'.tr, isError: true);
       return;
     }
+    if (!_checkoutAttempt.begin()) return;
 
     DateTime now = DateTime.now().toUtc();
     String formattedDate = DateFormat(
@@ -872,7 +878,7 @@ class ShopController extends GetxController {
             }).toList();
 
         var response = await shopRepository.createOrder(
-          body: {
+          body: _checkoutAttempt.attachTo({
             "id": 0,
             "customerId": await AppUsageService.getUserId(),
             "customerName": nameController.text,
@@ -897,11 +903,12 @@ class ShopController extends GetxController {
             "userUpdate": await AppUsageService.getUserId(),
             "dateUpdate": formattedDate,
             "details": details.toList(),
-          },
+          }),
         );
 
         // showCustomSnackBar(response.body, isError: true);
         if (response.statusCode == 200) {
+          _checkoutAttempt.finish(successful: true);
           OrderId = response.body['id'].toString();
           Get.offNamed(RouteHelper.checkOutDone);
           items = [];
@@ -935,6 +942,7 @@ class ShopController extends GetxController {
       OverlayLoadingProgress.stop();
       showCustomSnackBar('Check the internet connection'.tr, isError: true);
     }
+    _checkoutAttempt.finish(successful: false);
     OverlayLoadingProgress.stop();
   }
 

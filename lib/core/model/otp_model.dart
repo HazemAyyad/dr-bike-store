@@ -1,23 +1,31 @@
-class OtpModel {
-  final String email;
-  final String userId;
-  final int otp;
+class ForgotPasswordResponse {
+  const ForgotPasswordResponse({required this.status, required this.message});
 
-  OtpModel({required this.email, required this.userId, required this.otp});
+  final String status;
+  final String message;
 
-  factory OtpModel.fromJson(Map<String, dynamic> json) {
-    return OtpModel(
-      email: json['email'],
-      userId: json['userId'],
-      otp: json['otp'],
-    );
-  }
+  factory ForgotPasswordResponse.fromJson(Map<String, dynamic> json) =>
+      ForgotPasswordResponse(
+        status: json['status'] as String,
+        message: json['message'] as String,
+      );
+}
 
-  Map<String, dynamic> toJson() {
-    return {
-      'email': email,
-      'userId': userId,
-      'otp': otp,
-    };
-  }
+class OtpVerificationResponse {
+  const OtpVerificationResponse({
+    required this.status,
+    required this.resetProof,
+    required this.message,
+  });
+
+  final String status;
+  final String resetProof;
+  final String message;
+
+  factory OtpVerificationResponse.fromJson(Map<String, dynamic> json) =>
+      OtpVerificationResponse(
+        status: json['status'] as String,
+        resetProof: json['resetProof'] as String,
+        message: json['message'] as String,
+      );
 }

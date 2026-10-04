@@ -232,11 +232,11 @@ class ApiClient {
     final copy = Map<dynamic, dynamic>.from(body);
     for (final key in copy.keys.toList()) {
       final lower = key.toString().toLowerCase();
-      if (lower.contains('password') || lower.contains('token')) {
-        final value = copy[key]?.toString() ?? '';
-        final visibleLength = value.length < 6 ? value.length : 6;
-        copy[key] =
-            value.isEmpty ? '' : '${value.substring(0, visibleLength)}...***';
+      if (lower.contains('password') ||
+          lower.contains('token') ||
+          lower == 'otp' ||
+          lower == 'resetproof') {
+        copy[key] = '***';
       }
     }
     return copy;
@@ -263,7 +263,7 @@ class ApiClient {
       }
       if (parts.isNotEmpty) return '{${parts.join(', ')}}';
     }
-    return _shortObject(value);
+    return _shortObject(_redactBody(value));
   }
 
   String _shortText(String value) {
