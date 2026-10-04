@@ -1,10 +1,14 @@
 import 'package:get/get.dart';
 import '../../core/api_client.dart';
 import '../../core/functions/app_usage_service.dart';
+import '../../core/functions/store_client_metadata.dart';
 
 class AuthRepository extends GetxService {
   final ApiClient apiClient;
-  AuthRepository({required this.apiClient});
+  AuthRepository({required this.apiClient, StoreClientMetadata? clientMetadata})
+    : clientMetadata = clientMetadata ?? StoreClientMetadata();
+
+  final StoreClientMetadata clientMetadata;
 
   Future<Response> login(email, password, userToken) async {
     return await apiClient.postData(
@@ -101,7 +105,20 @@ class AuthRepository extends GetxService {
   }
 
   Future<Response> forgotPassword({required String email}) async {
-    return await apiClient.postData('/Auth/ForgotPassword?Email=$email');
+    return await apiClient.postData(
+      '/Auth/ForgotPassword',
+      body: {'Email': email, ...await clientMetadata.asJson()},
+    );
+  }
+
+  Future<Response> verifyForgotPasswordOtp({
+    required String email,
+    required String otp,
+  }) async {
+    return await apiClient.postData(
+      '/Auth/VerifyForgotPasswordOtp',
+      body: {'Email': email, 'otp': otp, ...await clientMetadata.asJson()},
+    );
   }
 
   Future<Response> changePassword({
@@ -192,20 +209,18 @@ class AuthRepository extends GetxService {
     );
   }
 
-  Future<Response> resetPassword({
-    required userId,
-    required newPassword,
-    required confirmPassword,
-    required dateUpdate,
+  Future<Response> changePasswordToForgot({
+    required String resetProof,
+    required String newPassword,
+    required String confirmPassword,
   }) async {
     return await apiClient.patch(
       '/Auth/ChangePasswordToForgot',
       body: {
-        "userId": userId,
+        "resetProof": resetProof,
         "newPassword": newPassword,
         "confirmPassword": confirmPassword,
-        "userUpdate": userId,
-        "dateUpdate": dateUpdate,
+        ...await clientMetadata.asJson(),
       },
     );
   }
