@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
@@ -6,12 +7,14 @@ import '../theme/store_typography.dart';
 enum StoreMediaType { image, video, model3d, spin360 }
 
 extension StoreMediaTypeLabel on StoreMediaType {
-  String get label => switch (this) {
-    StoreMediaType.image => 'صورة',
-    StoreMediaType.video => 'فيديو',
-    StoreMediaType.model3d => 'ثلاثي الأبعاد',
-    StoreMediaType.spin360 => 'عرض 360',
+  String get translationKey => switch (this) {
+    StoreMediaType.image => 'storeMediaImage',
+    StoreMediaType.video => 'storeMediaVideo',
+    StoreMediaType.model3d => 'storeMedia3d',
+    StoreMediaType.spin360 => 'storeMedia360',
   };
+
+  String get label => translationKey.tr;
 
   IconData get icon => switch (this) {
     StoreMediaType.image => Icons.image_outlined,
@@ -33,7 +36,7 @@ class StoreMediaBadge extends StatelessWidget {
       vertical: StoreSpacing.xxs,
     ),
     decoration: BoxDecoration(
-      color: StorePalette.scrim,
+      color: StorePalette.derivedScrim,
       borderRadius: BorderRadius.circular(StoreRadii.pill),
     ),
     child: Row(
@@ -52,13 +55,13 @@ class StoreMediaBadge extends StatelessWidget {
 
 class StoreMediaPlaceholder extends StatelessWidget {
   const StoreMediaPlaceholder({
-    this.message = 'الصورة غير متاحة',
+    this.message,
     this.onRetry,
     this.icon = Icons.broken_image_outlined,
     super.key,
   });
 
-  final String message;
+  final String? message;
   final VoidCallback? onRetry;
   final IconData icon;
 
@@ -78,15 +81,12 @@ class StoreMediaPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: StoreSpacing.xs),
             Text(
-              message,
+              message ?? 'storeMediaUnavailable'.tr,
               textAlign: TextAlign.center,
               style: StoreTypography.caption,
             ),
             if (onRetry != null)
-              TextButton(
-                onPressed: onRetry,
-                child: const Text('إعادة المحاولة'),
-              ),
+              TextButton(onPressed: onRetry, child: Text('storeRetry'.tr)),
           ],
         ),
       ),

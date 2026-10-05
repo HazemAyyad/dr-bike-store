@@ -3,23 +3,27 @@ import 'package:flutter/material.dart';
 /// Approved Store design primitives. Screen-specific values should be promoted
 /// here only after they are calibrated against the reference boards.
 abstract final class StorePalette {
+  static const navy = Color(0xFF0F0F31);
   static const purple = Color(0xFF6B65BD);
-  static const purpleDark = Color(0xFF514AA8);
-  static const purpleSoft = Color(0xFFF0EFFA);
-  static const background = Color(0xFFF7F7F9);
+  static const lightPurple = Color(0xFFE9E8F7);
+  static const background = Color(0xFFF8F9FB);
   static const surface = Color(0xFFFFFFFF);
-  static const textPrimary = Color(0xFF20212B);
-  static const textSecondary = Color(0xFF6F7180);
-  static const border = Color(0xFFE3E4E8);
-  static const success = Color(0xFF278A5B);
-  static const successSoft = Color(0xFFE8F5EE);
-  static const warning = Color(0xFFF2994A);
-  static const warningSoft = Color(0xFFFFF3E7);
-  static const error = Color(0xFFE84D4F);
-  static const errorSoft = Color(0xFFFDEBEC);
-  static const info = Color(0xFF3478C8);
-  static const infoSoft = Color(0xFFEAF2FC);
-  static const scrim = Color(0x66000000);
+  static const success = Color(0xFF22A06B);
+  static const warning = Color(0xFFF5A623);
+  static const error = Color(0xFFEB4D4F);
+  static const info = Color(0xFF3B82F6);
+  static const textPrimary = Color(0xFF17172B);
+  static const textSecondary = Color(0xFF73737D);
+  static const textDisabled = Color(0xFFA0A3B1);
+  static const border = Color(0xFFE5E6EA);
+
+  /// Derived state surfaces; these are not approved base palette tokens.
+  static const derivedSuccessSurface = Color(0xFFE8F5EE);
+  static const derivedWarningSurface = Color(0xFFFFF3E7);
+  static const derivedErrorSurface = Color(0xFFFDEBEC);
+  static const derivedInfoSurface = Color(0xFFEAF2FC);
+  static const derivedScrim = Color(0x66000000);
+  static const derivedLoadingOverlay = Color(0x33FFFFFF);
 }
 
 abstract final class StoreSpacing {
@@ -48,12 +52,12 @@ abstract final class StoreElevation {
   static const high = 8.0;
 
   static const lowShadow = BoxShadow(
-    color: Color(0x0F20212B),
+    color: Color(0x0F17172B),
     blurRadius: 8,
     offset: Offset(0, 2),
   );
   static const mediumShadow = BoxShadow(
-    color: Color(0x1920212B),
+    color: Color(0x1917172B),
     blurRadius: 16,
     offset: Offset(0, 6),
   );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
@@ -85,8 +86,8 @@ class StoreButton extends StatelessWidget {
         style: TextButton.styleFrom(
           foregroundColor: foreground,
           backgroundColor: background,
-          disabledForegroundColor: foreground.withValues(alpha: 0.7),
-          disabledBackgroundColor: background.withValues(alpha: 0.65),
+          disabledForegroundColor: StorePalette.textDisabled,
+          disabledBackgroundColor: StorePalette.border,
           padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.md),
           textStyle: StoreTypography.label,
           shape: RoundedRectangleBorder(
@@ -105,7 +106,7 @@ class StoreButton extends StatelessWidget {
       button: true,
       label: semanticLabel ?? label,
       enabled: callback != null,
-      value: isLoading ? 'جار التحميل' : null,
+      value: isLoading ? 'storeLoading'.tr : null,
       excludeSemantics: true,
       child: button,
     );

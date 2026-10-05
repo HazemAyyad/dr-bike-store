@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../classes/store_view_state.dart';
 import '../theme/store_tokens.dart';
@@ -29,22 +30,22 @@ class StoreMessageState extends StatelessWidget {
       StoreMessageKind.empty => (
         Icons.inbox_outlined,
         StorePalette.textSecondary,
-        'لا توجد بيانات',
+        'storeStateEmptyTitle'.tr,
       ),
       StoreMessageKind.offline => (
         Icons.wifi_off_outlined,
         StorePalette.warning,
-        'لا يوجد اتصال',
+        'storeStateOfflineTitle'.tr,
       ),
       StoreMessageKind.error => (
         Icons.error_outline,
         StorePalette.error,
-        'تعذر إكمال الطلب',
+        'storeStateErrorTitle'.tr,
       ),
       StoreMessageKind.success => (
         Icons.check_circle_outline,
         StorePalette.success,
-        'تم بنجاح',
+        'storeStateSuccessTitle'.tr,
       ),
     };
 
@@ -116,7 +117,7 @@ class StoreStateView<T> extends StatelessWidget {
             contentBuilder(context, data),
             const Positioned.fill(
               child: ColoredBox(
-                color: Color(0x33FFFFFF),
+                color: StorePalette.derivedLoadingOverlay,
                 child: Center(child: CircularProgressIndicator()),
               ),
             ),
@@ -138,7 +139,7 @@ class StoreStateView<T> extends StatelessWidget {
       return StoreMessageState(
         kind: StoreMessageKind.offline,
         message: current.message,
-        actionLabel: onRetry == null ? null : 'إعادة المحاولة',
+        actionLabel: onRetry == null ? null : 'storeRetry'.tr,
         onAction: onRetry,
       );
     }
@@ -146,7 +147,7 @@ class StoreStateView<T> extends StatelessWidget {
       return StoreMessageState(
         kind: StoreMessageKind.error,
         message: current.message,
-        actionLabel: onRetry == null ? null : 'إعادة المحاولة',
+        actionLabel: onRetry == null ? null : 'storeRetry'.tr,
         onAction: onRetry,
       );
     }

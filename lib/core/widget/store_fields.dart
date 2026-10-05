@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
@@ -93,7 +94,9 @@ class _StoreTextFieldState extends State<StoreTextField> {
             widget.obscureText
                 ? IconButton(
                   tooltip:
-                      _obscured ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور',
+                      _obscured
+                          ? 'storeShowPassword'.tr
+                          : 'storeHidePassword'.tr,
                   onPressed: () => setState(() => _obscured = !_obscured),
                   icon: Icon(
                     _obscured

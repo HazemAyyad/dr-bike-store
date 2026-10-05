@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
@@ -6,13 +7,15 @@ import '../theme/store_typography.dart';
 enum StoreDestination { home, categories, orders, favorites, profile }
 
 extension StoreDestinationPresentation on StoreDestination {
-  String get label => switch (this) {
-    StoreDestination.home => 'الرئيسية',
-    StoreDestination.categories => 'الأقسام',
-    StoreDestination.orders => 'طلباتي',
-    StoreDestination.favorites => 'المفضلة',
-    StoreDestination.profile => 'حسابي',
+  String get translationKey => switch (this) {
+    StoreDestination.home => 'storeNavHome',
+    StoreDestination.categories => 'storeNavCategories',
+    StoreDestination.orders => 'storeNavOrders',
+    StoreDestination.favorites => 'storeNavFavorites',
+    StoreDestination.profile => 'storeNavProfile',
   };
+
+  String get label => translationKey.tr;
 
   IconData get icon => switch (this) {
     StoreDestination.home => Icons.home_outlined,

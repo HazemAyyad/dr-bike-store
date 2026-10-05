@@ -4,33 +4,36 @@
 - **Reference**: `docs/design-reference/08-design-system.png`
 - **Direction/theme**: Arabic RTL / light
 - **Logical viewport**: 390 x 844
-**Raster output**: 1170 x 2532 (DPR 3.0)
+- **Raster output**: 1170 x 2532 (DPR 3.0)
 
 ## Rendered Evidence
 
 | Capture | Scope | Result |
 |---------|-------|--------|
-| `test/widgets/goldens/p02-shared-components-ar-390x844.png` | Customer top bar, field, chips, status, media fallback, button hierarchy, and five-destination navigation | PASS |
-| `test/widgets/goldens/p02-shared-cards-ar-390x844.png` | Product cards, category cards, prices, discount/rating/availability, typed media badge, and navigation | PASS |
+| `test/widgets/goldens/p02-shared-components-ar-390x844.png` | Customer top bar, field, chips, status, media fallback, button hierarchy, and five-destination navigation | REGRESSION BASELINE |
+| `test/widgets/goldens/p02-shared-cards-ar-390x844.png` | Product cards, category cards, prices, discount/rating/availability, typed media badge, and navigation | REGRESSION BASELINE |
 
 Both captures are rendered by `test/widgets/store_foundation_test.dart` with the bundled Cairo font
-and Material icon font loaded explicitly. They are regression artifacts, not hand-authored mockups.
+and Material icon font loaded explicitly. They detect changes relative to the committed render only;
+they do not independently prove fidelity to board 08 and are not visual acceptance evidence by
+themselves.
 
 ## Board 08 Comparison
 
 | Reference annotation | Expected | Observed | Result | Follow-up |
 |----------------------|----------|----------|--------|-----------|
-| Brand and neutral palette | Purple is an accent over neutral light-gray surfaces with dark readable text | `#6B65BD` accent, `#F7F7F9` background, white cards, dark primary text | PASS | None |
-| Arabic typography | Cairo hierarchy and stable RTL shaping | Cairo variable font renders display, title, body, label, and caption roles in RTL | PASS | Device rasterization can vary by platform |
-| Controls | Primary filled, secondary outlined, destructive and text variants; minimum 48 logical-pixel height | Primary/secondary captures retain hierarchy; all four variants share the 48-pixel token and semantic state | PASS | Destructive/text variants are code and widget-test covered, not shown in the compact capture |
-| Fields and validation | Rounded neutral field, clear focus/validation states, password reveal | Rounded field and search treatment match; error/success colors are tokenized and reveal action has an Arabic tooltip | PASS | Focus-ring thickness remains a calibration value |
-| Chips and badges | Compact status, discount, rating, availability, and media labels | All types retain distinct color/meaning; video is explicitly labeled and is not presented as an image | PASS | None |
-| Product/category cards | Compact rounded cards with media hierarchy, price, discount, availability, and rating | Two product states and two category cards render without overflow at the reference viewport | PASS | Real catalog images will be reviewed in Phase 6/7 |
-| Async states | Loading, empty, offline, error, and success remain visually and semantically distinct | Typed models and wrappers exist; success is present in the component capture and other states have separate icons/copy/actions | PASS | Screen-specific copy remains owned by later phases |
-| Customer top bar | Avatar/name, search, notifications, and cart badges remain compact in RTL | Long names ellipsize; absent counts are safe; expanded inline search is covered by widget interaction | PASS | Expanded-search raster is deferred to the Home/Search phase |
-| Bottom navigation | Exactly five RTL destinations with clear selected state | Five destinations appear in the approved order with purple selected state and safe badges | PASS | Final shell wiring belongs to T042-T043 and was not started |
-| Text scaling | No semantic loss or overflow at 1.30 text scale | Button and password-field semantics/layout pass the 1.30 widget test | PASS | Full-screen large-text captures remain screen-phase evidence |
-| Shadows and exact board spacing | Hierarchy should match while minor values stay within the documented calibration tolerance | Hierarchy matches; elevation, card media ratio, and several spacing values are centralized under named calibration tokens | CALIBRATION | Confirm on Android/iOS device screenshots before pixel-level acceptance |
+| Explicit palette | All 13 board values are exact, including navy, light purple, disabled text, and border | Source and tests assert every value from `design-reference-mapping.md`; no similar substitute remains | TOKEN AUDIT PASS | Reviewer should confirm use in later real screens |
+| Arabic typography | Cairo hierarchy and stable RTL shaping | Cairo variable font renders display, title, body, label, and caption roles in RTL | RENDER CHECK PASS | Device rasterization can vary by platform |
+| Controls | Primary filled, secondary outlined, destructive and text variants; minimum 48 logical-pixel height | Primary/secondary renders preserve hierarchy; all four variants share the 48-pixel token and semantic state | RENDER CHECK PASS | Destructive/text variants are code and widget-test covered, not shown in the compact capture |
+| Fields and validation | Rounded neutral field, clear focus/validation states, password reveal | Rounded field and search treatment render without overflow; error/success colors use approved tokens and accessibility copy is localized | RENDER CHECK PASS | Focus-ring thickness remains a calibration value |
+| Chips and badges | Compact status, discount, rating, availability, and media labels | Types retain distinct color/meaning; video is explicitly labeled and is not presented as an image | RENDER CHECK PASS | Exact reference spacing remains reviewer comparison work |
+| Product/category cards | Compact rounded cards with media hierarchy, price, discount, availability, and rating | Two product states and two category cards render without overflow at the reference viewport | RENDER CHECK PASS | Real catalog images will be reviewed in Phase 6/7 |
+| Async states | Loading, empty, offline, error, and success remain visually and semantically distinct | Typed wrappers exist; Arabic state titles and retry copy are resolved through the existing GetX locale in RTL tests | FUNCTIONAL CHECK PASS | Screen-specific copy remains owned by later phases |
+| Customer top bar | Avatar/name, search, notifications, and cart badges remain compact in RTL | Long names ellipsize; absent counts are safe; search and accessibility labels are localized | FUNCTIONAL CHECK PASS | Expanded-search reference comparison is deferred to the Home/Search phase |
+| Bottom navigation | Exactly five RTL destinations with clear selected state | Five localized destinations render in the approved RTL order with selected state and safe badges | FUNCTIONAL CHECK PASS | Final shell wiring belongs to T042-T043 and was not started |
+| Text scaling | No semantic loss or overflow at 1.30 text scale | Button and password-field semantics/layout pass the 1.30 widget test | FUNCTIONAL CHECK PASS | Full-screen large-text captures remain screen-phase evidence |
+| Direct visual fidelity to board 08 | Independent rendered-reference comparison, not self-comparison | Golden self-comparison exists, but no independent overlay/diff or reviewer approval is recorded | PENDING | Reviewer/device comparison required before Phase 2 visual acceptance |
+| Shadows and exact board spacing | Hierarchy should match while minor values stay within the documented calibration tolerance | Elevation, card media ratio, and spacing values are centralized under named calibration tokens | CALIBRATION | Confirm on Android/iOS device screenshots before pixel-level acceptance |
 
 ## Automated Evidence
 
@@ -42,16 +45,18 @@ flutter test test/widgets/store_foundation_test.dart
 
 Covered assertions:
 
-- exact approved palette/spacing/radius/control-height constants;
+- all 13 exact approved palette values plus spacing/radius/control-height constants;
 - Cairo family and weights 300, 400, 500, 600, and 700;
 - distinct empty/offline/error/success presentation types;
-- five semantic RTL destinations and selection behavior;
+- five localized semantic RTL destinations and selection behavior;
+- localized Arabic error/retry state behavior in RTL;
 - 1.30 text scaling for shared controls;
 - inline expandable search with missing badge data;
 - deterministic golden comparison for both rendered captures.
 
 ## Acceptance Boundary
 
-The Phase 02 shared-component visual gate passes at the deterministic Flutter-test viewport. Exact
-platform font rasterization, shadows, and device-safe-area calibration remain pending real Android
-and iOS screenshots. No Phase 3 screen or app-shell wiring is included in this evidence.
+The deterministic Flutter renders and functional checks pass as regression evidence, but Phase 02
+visual acceptance remains pending independent comparison and reviewer approval. Exact platform font
+rasterization, shadows, and device-safe-area calibration also remain pending real Android and iOS
+screenshots. No Phase 3 screen or app-shell wiring is included in this evidence.
