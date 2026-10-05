@@ -10,7 +10,7 @@ import '../../features/auth/signin/sign_in_screen.dart';
 import '../../features/auth/forget_password/forget_password_page.dart';
 import '../../features/auth/signup/sign_up_screen.dart';
 import '../../features/category/filter_screen.dart';
-import '../../features/home_screen/home_page.dart';
+import '../../features/home_screen/home_screen.dart';
 import '../../features/intro/intro_log.dart';
 import '../../features/lang/lang_screen.dart';
 
@@ -92,7 +92,7 @@ class RouteHelper {
     ),
     GetPage(
       name: homePage,
-      page: () => const HomePage(),
+      page: () => const HomeScreen(),
       transition: Transition.fadeIn,
     ),
     GetPage(name: checkOutScreen, page: () => const CheckOutScreen()),

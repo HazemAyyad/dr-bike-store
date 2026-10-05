@@ -68,28 +68,45 @@ class StoreMediaPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ColoredBox(
     color: StorePalette.background,
-    child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(StoreSpacing.md),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxHeight <= 120 || constraints.maxWidth <= 80;
+        if (compact) {
+          return Center(
+            child: Icon(
               icon,
-              size: StoreIconSizes.large,
+              size: StoreIconSizes.medium,
               color: StorePalette.textSecondary,
             ),
-            const SizedBox(height: StoreSpacing.xs),
-            Text(
-              message ?? 'storeMediaUnavailable'.tr,
-              textAlign: TextAlign.center,
-              style: StoreTypography.caption,
+          );
+        }
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(StoreSpacing.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: StoreIconSizes.large,
+                  color: StorePalette.textSecondary,
+                ),
+                const SizedBox(height: StoreSpacing.xs),
+                Text(
+                  message ?? 'storeMediaUnavailable'.tr,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: StoreTypography.caption,
+                ),
+                if (onRetry != null)
+                  TextButton(onPressed: onRetry, child: Text('storeRetry'.tr)),
+              ],
             ),
-            if (onRetry != null)
-              TextButton(onPressed: onRetry, child: Text('storeRetry'.tr)),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     ),
   );
 }

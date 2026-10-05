@@ -107,15 +107,15 @@ recent queries, and honest results states.
 **Independent Test**: Reach every shell destination with one tap, browse Home, expand/cancel search,
 submit a query, clear recent searches, refresh, and distinguish zero results from failures.
 
-- [ ] T041 [P] [US3] Add shell navigation, guest-gate, back behavior, and search-state tests in `test/controllers/shell_search_test.dart`
-- [ ] T042 [US3] Replace the three-destination shell with Home, Categories, My Orders, Favorites, and Profile in `lib/features/home_screen/home_screen.dart`
-- [ ] T043 [US3] Coordinate destination state, badge counts, guest gates, and state restoration in `lib/controller/home/home_controller.dart`
-- [ ] T044 [US3] Recompose Home into hero, quick categories, best sellers, service, store categories, offers, and new arrivals in `lib/features/home_screen/home_page.dart`
-- [ ] T045 [P] [US3] Refactor hero and promotional content to consume only repository-backed data in `lib/features/home_screen/widget/promo.dart`
-- [ ] T046 [P] [US3] Refactor inventory-section shortcuts and product groups into compact reusable sections in `lib/features/home_screen/widget/main_categorys.dart`
-- [ ] T047 [US3] Implement recent-query persistence and explicit clear behavior in `lib/core/helper/search_history_store.dart`
-- [ ] T048 [US3] Rebuild query discovery, results, no-results, offline, error, refresh, sort, and filter entry in `lib/features/search/search_screen.dart`
-- [ ] T049 [US3] Compare SCR-11 through SCR-15 with boards 02, 06, 07, and 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-05-us3-visual.md`
+- [x] T041 [P] [US3] Add shell navigation, guest-gate, back behavior, and search-state tests in `test/controllers/shell_search_test.dart`
+- [x] T042 [US3] Replace the three-destination shell with Home, Categories, My Orders, Favorites, and Profile in `lib/features/home_screen/home_screen.dart`
+- [x] T043 [US3] Coordinate destination state, badge counts, guest gates, and state restoration in `lib/controller/home/home_controller.dart`
+- [x] T044 [US3] Recompose Home into hero, quick categories, best sellers, service, store categories, offers, and new arrivals in `lib/features/home_screen/home_page.dart`
+- [x] T045 [P] [US3] Refactor hero and promotional content to consume only repository-backed data in `lib/features/home_screen/widget/promo.dart`
+- [x] T046 [P] [US3] Refactor inventory-section shortcuts and product groups into compact reusable sections in `lib/features/home_screen/widget/main_categorys.dart`
+- [x] T047 [US3] Implement recent-query persistence and explicit clear behavior in `lib/core/helper/search_history_store.dart`
+- [x] T048 [US3] Rebuild query discovery, results, no-results, offline, error, refresh, sort, and filter entry in `lib/features/search/search_screen.dart`
+- [x] T049 [US3] Compare SCR-11 through SCR-15 with boards 02, 06, 07, and 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-05-us3-visual.md`
 
 **Checkpoint**: US3 is independently navigable and each async state has distinct copy and action.
 
