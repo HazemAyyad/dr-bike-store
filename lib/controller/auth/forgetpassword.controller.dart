@@ -1,258 +1,266 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:overlay_kit/overlay_kit.dart';
-import '../../core/classes/status_request.dart';
-import '../../core/functions/app_usage_service.dart';
-import '../../core/functions/checkInternet.dart';
-import '../../core/functions/upgrade_required.dart';
 import '../../core/helper/route_helper.dart';
-import '../../core/model/otp_model.dart';
-import '../../core/widget/custom_snackbar.dart';
 import '../../repository/auth/auth_repository.dart';
 
 abstract class ForgetPasswordController extends GetxController {
-  checkEmail();
-  next();
-  back();
-  goToLogin();
-  resetpassword();
+  Future<void> checkEmail();
+  Future<void> checkOTP();
+  Future<void> resendOTP();
+  Future<void> resetpassword();
+  void next();
+  void back();
+  void goToLogin();
 }
 
 class ForgetPasswordControllerImp extends ForgetPasswordController {
-  ForgetPasswordControllerImp({required this.authRepository});
+  ForgetPasswordControllerImp({
+    required this.authRepository,
+    this.resendDuration = const Duration(seconds: 45),
+    DateTime Function()? now,
+    VoidCallback? onUpgradeRequired,
+    this.initialIdentifier,
+  }) : _now = now ?? DateTime.now,
+       _onUpgradeRequired =
+           onUpgradeRequired ??
+           (() => Get.toNamed(
+             RouteHelper.updateRequired,
+             arguments: {'required': true, 'source': 'recovery'},
+           ));
 
-  GlobalKey<FormState> formstate = GlobalKey<FormState>();
-  GlobalKey<FormState> formstate2 = GlobalKey<FormState>();
-  GlobalKey<FormState> formstate3 = GlobalKey<FormState>();
+  final StoreAuthGateway authRepository;
+  final Duration resendDuration;
+  final DateTime Function() _now;
+  final VoidCallback _onUpgradeRequired;
+  final String? initialIdentifier;
 
-  late TextEditingController password;
-  late TextEditingController repassword;
-  late PageController pageController;
-  late TextEditingController email;
-  final AuthRepository authRepository;
-  bool change = false;
-  int currentPage = 0;
-  late StatusRequest statusRequest;
+  final formstate = GlobalKey<FormState>();
+  final formstate2 = GlobalKey<FormState>();
+  final formstate3 = GlobalKey<FormState>();
+  final password = TextEditingController();
+  final repassword = TextEditingController();
+  final pageController = PageController();
+  final email = TextEditingController();
+  final otpController = TextEditingController();
+
+  AuthUiStatus status = AuthUiStatus.idle;
+  String? messageKey;
   String? resetProof;
-  TextEditingController otpController = TextEditingController();
-  int countdown = 50;
-  Timer? timer;
+  int currentPage = 0;
+  int countdown = 0;
   bool canResend = false;
+  Timer? _timer;
+  DateTime? _resendAvailableAt;
+
+  bool get isSubmitting => status == AuthUiStatus.submitting;
+
+  String get maskedDestination {
+    final value = email.text.trim();
+    final at = value.indexOf('@');
+    if (at > 1) return '${value.substring(0, 2)}***${value.substring(at)}';
+    if (value.length > 4) {
+      return '${value.substring(0, 2)}***${value.substring(value.length - 2)}';
+    }
+    return value;
+  }
 
   void startTimer() {
-    timer?.cancel();
-    timer = Timer.periodic(const Duration(seconds: 2), (Timer t) {
-      if (countdown > 0) {
-        countdown--;
-        update();
-      } else {
-        canResend = true;
-        t.cancel();
-        update();
-      }
-    });
-  }
-
-  resendOTP() async {
-    OverlayLoadingProgress.start();
-    if (await CheckInternet.checkInternet()) {
-      try {
-        var response = await authRepository.forgotPassword(email: email.text);
-        if (response.statusCode == 200) {
-          ForgotPasswordResponse.fromJson(response.body);
-
-          countdown = 50;
-          canResend = false;
-          startTimer();
-        } else if (response.statusCode == 426) {
-          _showUpgradeRequired(response);
-        }
-      } catch (e) {
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-    update();
-  }
-
-  @override
-  resetpassword() async {
-    final proof = resetProof;
-    final proofError = missingResetProofMessage(proof);
-    if (proofError != null) {
-      showCustomSnackBar(proofError, isError: true);
+    _timer?.cancel();
+    _resendAvailableAt = _now().add(resendDuration);
+    countdown = resendDuration.inSeconds;
+    canResend = countdown <= 0;
+    if (canResend) {
+      update();
       return;
     }
-    OverlayLoadingProgress.start();
-    if (await CheckInternet.checkInternet()) {
-      try {
-        var response = await authRepository.changePasswordToForgot(
-          resetProof: proof!,
-          confirmPassword: repassword.text,
-          newPassword: password.text,
-        );
-
-        if (response.statusCode == 200) {
-          resetProof = null;
-          next();
-        } else if (response.statusCode == 426) {
-          _showUpgradeRequired(response);
-        }
-      } catch (e) {
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        OverlayLoadingProgress.stop();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final remaining = _resendAvailableAt!.difference(_now()).inSeconds;
+      countdown = remaining.clamp(0, resendDuration.inSeconds);
+      if (countdown == 0) {
+        canResend = true;
+        _timer?.cancel();
       }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-  }
-
-  @override
-  goToLogin() {
-    Get.offAllNamed(RouteHelper.signIn);
-  }
-
-  @override
-  checkEmail() async {
-    OverlayLoadingProgress.start();
-    if (await CheckInternet.checkInternet()) {
-      try {
-        var formdata = formstate2.currentState;
-        if (formdata == null || !formdata.validate()) {
-          showCustomSnackBar(
-            'Please fill in all required fields'.tr,
-            isError: true,
-          );
-          return;
-        }
-
-        statusRequest = StatusRequest.loading;
-
-        var response = await authRepository.forgotPassword(email: email.text);
-        if (response.statusCode == 200) {
-          ForgotPasswordResponse.fromJson(response.body);
-
-          if (currentPage == 0) {
-            next();
-            startTimer();
-          }
-        } else if (response.statusCode == 426) {
-          _showUpgradeRequired(response);
-        } else {
-          showCustomSnackBar('ThisEmailNotFound.'.tr, isError: true);
-        }
-      } catch (e) {
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-  }
-
-  checkOTP() async {
-    OverlayLoadingProgress.start();
-    try {
-      final response = await authRepository.verifyForgotPasswordOtp(
-        email: email.text,
-        otp: otpController.text,
-      );
-      if (response.statusCode == 200) {
-        final verification = OtpVerificationResponse.fromJson(response.body);
-        resetProof = verification.resetProof;
-        next();
-      } else if (response.statusCode == 426) {
-        _showUpgradeRequired(response);
-      } else {
-        showCustomSnackBar(
-          "The verification code is incorrect, please try again.".tr,
-          isError: true,
-        );
-      }
-    } catch (_) {
-      showCustomSnackBar(
-        'An error occurred. Please try again.'.tr,
-        isError: true,
-      );
-    } finally {
-      OverlayLoadingProgress.stop();
-    }
-  }
-
-  void _showUpgradeRequired(Response response) {
-    showCustomSnackBar(upgradeRequiredMessage(response)!, isError: true);
-  }
-
-  @override
-  back() {
-    if (currentPage > 0) {
-      currentPage--;
-    }
-
-    pageController.animateToPage(
-      currentPage,
-      duration: const Duration(milliseconds: 10),
-      curve: Curves.easeInOut,
-    );
+      update();
+    });
     update();
   }
 
   @override
-  next() async {
-    if (currentPage < 3) {
-      currentPage++;
+  Future<void> checkEmail() async {
+    if (isSubmitting) return;
+    final identifier = email.text.trim();
+    final form = formstate2.currentState;
+    if ((form != null && !form.validate()) || identifier.isEmpty) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationRequired');
+      return;
     }
 
-    pageController.animateToPage(
-      currentPage,
-      duration: const Duration(milliseconds: 10),
-      curve: Curves.easeInOut,
+    _setStatus(AuthUiStatus.submitting, null);
+    final result = await authRepository.requestPasswordReset(
+      identifier: identifier,
     );
+    switch (result) {
+      case AuthSuccess():
+        _setStatus(AuthUiStatus.success, null);
+        currentPage = 1;
+        _animateToCurrentPage();
+        startTimer();
+      case AuthFailure(:final kind, :final messageKey):
+        _handleFailure(kind, messageKey);
+    }
+  }
+
+  @override
+  Future<void> resendOTP() async {
+    if (!canResend || isSubmitting) return;
+    _setStatus(AuthUiStatus.submitting, null);
+    final result = await authRepository.requestPasswordReset(
+      identifier: email.text.trim(),
+    );
+    switch (result) {
+      case AuthSuccess():
+        _setStatus(AuthUiStatus.success, 'storeOtpResent');
+        startTimer();
+      case AuthFailure(:final kind, :final messageKey):
+        _handleFailure(kind, messageKey);
+    }
+  }
+
+  @override
+  Future<void> checkOTP() async {
+    if (isSubmitting) return;
+    final otp = otpController.text.trim();
+    if (!RegExp(r'^\d{4,8}$').hasMatch(otp)) {
+      _setStatus(AuthUiStatus.validationError, 'storeOtpInvalid');
+      return;
+    }
+
+    _setStatus(AuthUiStatus.submitting, null);
+    final result = await authRepository.verifyPasswordResetOtp(
+      identifier: email.text.trim(),
+      otp: otp,
+    );
+    switch (result) {
+      case AuthSuccess(:final data):
+        resetProof = data.resetProof;
+        _timer?.cancel();
+        _setStatus(AuthUiStatus.success, null);
+        currentPage = 2;
+        _animateToCurrentPage();
+      case AuthFailure(:final kind, :final messageKey):
+        _handleFailure(kind, messageKey);
+    }
+  }
+
+  @override
+  Future<void> resetpassword() async {
+    if (isSubmitting) return;
+    final proof = resetProof;
+    if (proof == null || proof.isEmpty) {
+      _setStatus(AuthUiStatus.failure, 'storeResetProofMissing');
+      return;
+    }
+    final form = formstate3.currentState;
+    if (form != null && !form.validate()) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationRequired');
+      return;
+    }
+    if (password.text.length < 8) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationPasswordLength');
+      return;
+    }
+    if (password.text != repassword.text) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationPasswordMatch');
+      return;
+    }
+
+    _setStatus(AuthUiStatus.submitting, null);
+    final result = await authRepository.resetPassword(
+      resetProof: proof,
+      newPassword: password.text,
+      confirmPassword: repassword.text,
+    );
+    switch (result) {
+      case AuthSuccess():
+        resetProof = null;
+        _setStatus(AuthUiStatus.success, 'storeRecoveryCompleteMessage');
+        currentPage = 3;
+        _animateToCurrentPage();
+      case AuthFailure(:final kind, :final messageKey):
+        _handleFailure(kind, messageKey);
+    }
+  }
+
+  void _handleFailure(AuthFailureKind kind, String key) {
+    final nextStatus = switch (kind) {
+      AuthFailureKind.offline => AuthUiStatus.offline,
+      AuthFailureKind.blocked => AuthUiStatus.blocked,
+      AuthFailureKind.upgradeRequired => AuthUiStatus.upgradeRequired,
+      AuthFailureKind.otpInvalid => AuthUiStatus.otpInvalid,
+      AuthFailureKind.otpExpired => AuthUiStatus.otpExpired,
+      _ => AuthUiStatus.failure,
+    };
+    _setStatus(nextStatus, key);
+    if (nextStatus == AuthUiStatus.upgradeRequired) {
+      _onUpgradeRequired();
+    }
+  }
+
+  void _setStatus(AuthUiStatus value, String? key) {
+    status = value;
+    messageKey = key;
     update();
   }
 
-  isLog() {
-    AppUsageService.saveIsLogin(true);
+  void _animateToCurrentPage() {
+    if (!pageController.hasClients) return;
+    pageController.animateToPage(
+      currentPage,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeInOut,
+    );
   }
+
+  @override
+  void back() {
+    if (currentPage == 0) {
+      Get.back();
+      return;
+    }
+    currentPage--;
+    _animateToCurrentPage();
+    update();
+  }
+
+  @override
+  void next() {
+    if (currentPage < 3) currentPage++;
+    _animateToCurrentPage();
+    update();
+  }
+
+  @override
+  void goToLogin() => Get.offAllNamed(RouteHelper.signIn);
 
   @override
   void onInit() {
-    pageController = PageController();
-    email = TextEditingController();
-
-    otpController = TextEditingController();
-    password = TextEditingController();
-    repassword = TextEditingController();
+    final identifier = initialIdentifier?.trim();
+    if (identifier != null && identifier.isNotEmpty) email.text = identifier;
     super.onInit();
   }
 
   @override
-  void dispose() {
+  void onClose() {
+    _timer?.cancel();
     email.dispose();
-    timer?.cancel();
     password.dispose();
     repassword.dispose();
     otpController.dispose();
-    super.dispose();
+    pageController.dispose();
+    resetProof = null;
+    super.onClose();
   }
 }

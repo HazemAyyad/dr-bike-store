@@ -1,160 +1,119 @@
-// ignore_for_file: file_names, depend_on_referenced_packages, non_constant_identifier_names
+// ignore_for_file: file_names, non_constant_identifier_names
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
-import 'package:overlay_kit/overlay_kit.dart';
-import '../../core/classes/status_request.dart';
-import '../../core/functions/checkInternet.dart';
+
 import '../../core/helper/route_helper.dart';
-import '../../core/model/auth_eesponse.dart';
-import '../../core/widget/custom_snackbar.dart';
 import '../../repository/auth/auth_repository.dart';
 
 abstract class SignUpController extends GetxController {
-  signUp();
-
-  goToSignIn();
+  Future<void> signUp();
+  void goToSignIn();
 }
 
 class SignUpControllerImp extends SignUpController {
-  final AuthRepository authRepository;
+  SignUpControllerImp({
+    required this.authRepository,
+    VoidCallback? onRegistered,
+    DateTime Function()? now,
+  }) : _onRegistered =
+           onRegistered ?? (() => Get.offAllNamed(RouteHelper.signIn)),
+       _now = now ?? DateTime.now;
 
-  GlobalKey<FormState> formstate = GlobalKey<FormState>();
-  late TextEditingController NameController;
-  late TextEditingController EmailController;
-  late TextEditingController PhoneController;
-  late TextEditingController PasswordController;
-  late TextEditingController ConfirmPassword;
-  late TextEditingController rePasswordController;
+  final StoreAuthGateway authRepository;
+  final VoidCallback _onRegistered;
+  final DateTime Function() _now;
 
-  late PageController pageController;
-  late TextEditingController searchController;
+  final formstate = GlobalKey<FormState>();
+  late final TextEditingController EmailController;
+  late final TextEditingController PhoneController;
+  late final TextEditingController PasswordController;
+  late final TextEditingController ConfirmPassword;
 
-  UserSignUp? userAuth;
-  List data = [];
+  AuthUiStatus status = AuthUiStatus.idle;
+  String? messageKey;
 
-  SignUpControllerImp({required this.authRepository});
-  late StatusRequest statusRequest;
+  bool get isSubmitting => status == AuthUiStatus.submitting;
 
   @override
-  signUp() async {
-    DateTime now = DateTime.now().toUtc();
-    String formattedDate = DateFormat(
-      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-    ).format(now);
+  Future<void> signUp() async {
+    if (isSubmitting) return;
+    final email = EmailController.text.trim();
+    final phone = PhoneController.text.trim();
+    final password = PasswordController.text;
+    final confirmation = ConfirmPassword.text;
 
-    if (await CheckInternet.checkInternet() != true) {
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
+    final form = formstate.currentState;
+    if ((form != null && !form.validate()) ||
+        email.isEmpty ||
+        phone.isEmpty ||
+        password.isEmpty) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationRequired');
+      return;
+    }
+    if (!_looksLikeEmail(email)) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationEmail');
+      return;
+    }
+    if (password.length < 8) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationPasswordLength');
+      return;
+    }
+    if (password != confirmation) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationPasswordMatch');
       return;
     }
 
-    final formdata = formstate.currentState;
-    if (formdata == null || !formdata.validate()) {
-      showCustomSnackBar('errorRepassword'.tr, isError: true);
-      return;
-    }
-
-    if (PasswordController.text != ConfirmPassword.text) {
-      showCustomSnackBar("Password Not Match".tr, isError: true);
-      return;
-    }
-
-    OverlayLoadingProgress.start();
-    try {
-      statusRequest = StatusRequest.loading;
-
-      final response = await authRepository.register(
-        email: EmailController.text.trim(),
-        phoneNumber: PhoneController.text.trim(),
-        password: PasswordController.text,
-        passwordConfirmation: ConfirmPassword.text,
-        date: formattedDate,
-      );
-
-      debugPrint(
-        '[STORE_SIGNUP] status=${response.statusCode} body=${response.body}',
-      );
-
-      if (response.statusCode == 200) {
-        showCustomSnackBar("createAccount successfully".tr, isError: false);
-        Get.offAllNamed(RouteHelper.signIn);
-        return;
-      }
-
-      showCustomSnackBar(_signupErrorMessage(response.body), isError: true);
-    } catch (e) {
-      debugPrint('[STORE_SIGNUP] error=$e');
-      showCustomSnackBar(
-        'An error occurred. Please try again.'.tr,
-        isError: true,
-      );
-    } finally {
-      OverlayLoadingProgress.stop();
-      update();
+    _setStatus(AuthUiStatus.submitting, null);
+    final result = await authRepository.createAccount(
+      email: email,
+      phoneNumber: phone,
+      password: password,
+      passwordConfirmation: confirmation,
+      timestamp: _now(),
+    );
+    switch (result) {
+      case AuthSuccess<bool>():
+        _setStatus(AuthUiStatus.success, 'storeRegistrationSuccess');
+        _onRegistered();
+      case AuthFailure<bool>(:final kind, :final messageKey):
+        _setStatus(switch (kind) {
+          AuthFailureKind.offline => AuthUiStatus.offline,
+          AuthFailureKind.upgradeRequired => AuthUiStatus.upgradeRequired,
+          _ => AuthUiStatus.failure,
+        }, messageKey);
     }
   }
 
-  String _signupErrorMessage(dynamic body) {
-    if (body is Map) {
-      final exception = body['exception'];
-      if (exception is Map && exception['Message'] != null) {
-        final message = exception['Message'].toString();
-        if (message == 'Incorrect password.') return "Password Not Match".tr;
-        return message;
-      }
+  bool _looksLikeEmail(String value) {
+    final separator = value.indexOf('@');
+    return separator > 0 && value.indexOf('.', separator) > separator + 1;
+  }
 
-      final message = body['message']?.toString();
-      if (message == "PasswordsMustBeAtLeast8Characters") {
-        return "PasswordsMustBeAtLeast8Characters".tr;
-      }
-      if (message == "PasswordsMustHaveAtLeastOneLowercaseAndOneUppercase") {
-        return "PasswordsMustHaveAtLeastOneLowercaseAndOneUppercase".tr;
-      }
-      if (message == "ErrorInEmailOrPassword") {
-        return "Wrong email or password".tr;
-      }
-      if (message == "EmailIsExist" ||
-          (message != null && message.toLowerCase().contains('email'))) {
-        return "This email has been used.".tr;
-      }
-      if (message != null && message.isNotEmpty) return message;
-
-      final errors = body['errors'];
-      if (errors is Map && errors.isNotEmpty) {
-        final first = errors.values.first;
-        if (first is List && first.isNotEmpty) return first.first.toString();
-        return first.toString();
-      }
-    }
-
-    return 'An error occurred. Please try again.'.tr;
+  void _setStatus(AuthUiStatus value, String? key) {
+    status = value;
+    messageKey = key;
+    update();
   }
 
   @override
-  goToSignIn() {
-    Get.offNamed(RouteHelper.signIn);
-  }
+  void goToSignIn() => Get.offNamed(RouteHelper.signIn);
 
   @override
   void onInit() {
-    pageController = PageController();
     EmailController = TextEditingController();
     PhoneController = TextEditingController();
     PasswordController = TextEditingController();
-    rePasswordController = TextEditingController();
     ConfirmPassword = TextEditingController();
-
     super.onInit();
   }
 
   @override
-  void dispose() {
+  void onClose() {
     EmailController.dispose();
     PhoneController.dispose();
     PasswordController.dispose();
     ConfirmPassword.dispose();
-    rePasswordController.dispose();
-    super.dispose();
+    super.onClose();
   }
 }

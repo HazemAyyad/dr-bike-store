@@ -24,6 +24,7 @@ abstract final class StorePalette {
   static const derivedInfoSurface = Color(0xFFEAF2FC);
   static const derivedScrim = Color(0x66000000);
   static const derivedLoadingOverlay = Color(0x33FFFFFF);
+  static const derivedNavyGlow = Color(0xFF25254D);
 }
 
 abstract final class StoreSpacing {
@@ -84,4 +85,24 @@ abstract final class StoreCalibration {
   static const bottomNavigationHeight = 72.0;
   static const productMediaAspectRatio = 1.05;
   static const outlineWidth = 1.0;
+  static const authContentMaxWidth = 420.0;
+  static const authViewportInsetAdjustment = 36.0;
+  static const authLogoWidth = 104.0;
+  static const authLogoHeight = 72.0;
+  static const authStateIconExtent = 112.0;
+  static const authSuccessIconSize = 58.0;
+  static const updateIconSize = 54.0;
+  static const otpCellExtent = 56.0;
+  static const onboardingMediaFraction = 0.57;
+  static const onboardingMediaMinHeight = 190.0;
+  static const onboardingMediaMaxHeight = 430.0;
+  static const splashLogoWidth = 230.0;
+  static const splashLogoHeight = 150.0;
+  static const splashWordmarkFontSize = 34.0;
+  static const splashProgressWidth = 190.0;
+  static const splashTrailGlowWidth = 18.0;
+  static const splashTrailLineWidth = 2.0;
+  static const splashSequence = Duration(milliseconds: 2400);
+  static const splashMinimumDisplay = Duration(milliseconds: 1800);
+  static const splashInitializationTimeout = Duration(seconds: 12);
 }

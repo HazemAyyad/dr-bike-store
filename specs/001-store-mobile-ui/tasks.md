@@ -65,14 +65,14 @@ upgrade decisions without hiding failures.
 **Independent Test**: Launch as first-run, returning guest, valid user, offline user, store-closed,
 recommended-upgrade, and mandatory-upgrade; verify each reaches its permitted destination.
 
-- [ ] T024 [P] [US1] Add startup-decision tests for first run, session, offline, maintenance, and upgrade paths in `test/controllers/startup_controller_test.dart`
-- [ ] T025 [US1] Extract a deterministic startup decision model from launch side effects in `lib/controller/check_account/account_service.dart`
-- [ ] T026 [US1] Implement the bounded logo sequence, progress cue, timeout-safe error state, and reduced-motion fallback in `lib/features/splash/splash.dart`
-- [ ] T027 [US1] Rebuild the three approved onboarding pages with retained completion and skip/start routing in `lib/features/onbarding/onbarding.dart`
-- [ ] T028 [P] [US1] Add truthful maintenance/store-closed presentation in `lib/features/splash/store_unavailable_screen.dart`
-- [ ] T029 [P] [US1] Add required and recommended upgrade presentation with capability-safe actions in `lib/features/splash/update_required_screen.dart`
-- [ ] T030 [US1] Register startup, onboarding, maintenance, and upgrade routes without changing protected route semantics in `lib/core/helper/route_helper.dart`
-- [ ] T031 [US1] Compare SCR-01 through SCR-05 with boards 01, 02, and 07 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-03-us1-visual.md`
+- [x] T024 [P] [US1] Add startup-decision tests for first run, session, offline, maintenance, and upgrade paths in `test/controllers/startup_controller_test.dart`
+- [x] T025 [US1] Extract a deterministic startup decision model from launch side effects in `lib/controller/check_account/account_service.dart`
+- [x] T026 [US1] Implement the bounded logo sequence, progress cue, timeout-safe error state, and reduced-motion fallback in `lib/features/splash/splash.dart`
+- [x] T027 [US1] Rebuild the three approved onboarding pages with retained completion and skip/start routing in `lib/features/onbarding/onbarding.dart`
+- [x] T028 [P] [US1] Add truthful maintenance/store-closed presentation in `lib/features/splash/store_unavailable_screen.dart`
+- [x] T029 [P] [US1] Add required and recommended upgrade presentation with capability-safe actions in `lib/features/splash/update_required_screen.dart`
+- [x] T030 [US1] Register startup, onboarding, maintenance, and upgrade routes without changing protected route semantics in `lib/core/helper/route_helper.dart`
+- [x] T031 [US1] Compare SCR-01 through SCR-05 with boards 01, 02, and 07 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-03-us1-visual.md`
 
 **Checkpoint**: US1 is independently testable and failed initialization never appears as catalog success.
 
@@ -85,15 +85,15 @@ recommended-upgrade, and mandatory-upgrade; verify each reaches its permitted de
 **Independent Test**: Complete valid and invalid login/registration/recovery flows, including blocked
 accounts, expired OTP, resend countdown, upgrade requirement, and offline behavior.
 
-- [ ] T032 [P] [US2] Add controller tests for validation, blocked users, OTP expiry/resend, and proof-bound reset in `test/controllers/auth_flow_test.dart`
-- [ ] T033 [US2] Normalize auth result types and prevent secrets from reaching logs or display errors in `lib/repository/auth/auth_repository.dart`
-- [ ] T034 [US2] Refactor login orchestration to preserve session and role authority in `lib/controller/auth/login.controller.dart`
-- [ ] T035 [P] [US2] Rebuild the login screen with approved fields, reveal behavior, gates, and states in `lib/features/auth/signin/sign_in_screen.dart`
-- [ ] T036 [P] [US2] Rebuild registration with only backend-supported identity fields and terms consent in `lib/features/auth/signup/sign_up_screen.dart`
-- [ ] T037 [US2] Refactor recovery request, OTP countdown/resend, and opaque reset-proof transitions in `lib/controller/auth/forgetpassword.controller.dart`
-- [ ] T038 [US2] Rebuild recovery request and OTP screens in `lib/features/auth/forget_password/forget_password_page.dart` and `lib/features/auth/forget_password/otp_page.dart`
-- [ ] T039 [US2] Rebuild new-password and recovery-complete screens in `lib/features/auth/reset password/change_password_screen.dart` and `lib/features/auth/forget_password/done_screen.dart`
-- [ ] T040 [US2] Compare SCR-06 through SCR-10 with boards 01 and 02 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-04-us2-visual.md`
+- [x] T032 [P] [US2] Add controller tests for validation, blocked users, OTP expiry/resend, and proof-bound reset in `test/controllers/auth_flow_test.dart`
+- [x] T033 [US2] Normalize auth result types and prevent secrets from reaching logs or display errors in `lib/repository/auth/auth_repository.dart`
+- [x] T034 [US2] Refactor login orchestration to preserve session and role authority in `lib/controller/auth/login.controller.dart`
+- [x] T035 [P] [US2] Rebuild the login screen with approved fields, reveal behavior, gates, and states in `lib/features/auth/signin/sign_in_screen.dart`
+- [x] T036 [P] [US2] Rebuild registration with only backend-supported identity fields and terms consent in `lib/features/auth/signup/sign_up_screen.dart`
+- [x] T037 [US2] Refactor recovery request, OTP countdown/resend, and opaque reset-proof transitions in `lib/controller/auth/forgetpassword.controller.dart`
+- [x] T038 [US2] Rebuild recovery request and OTP screens in `lib/features/auth/forget_password/forget_password_page.dart` and `lib/features/auth/forget_password/otp_page.dart`
+- [x] T039 [US2] Rebuild new-password and recovery-complete screens in `lib/features/auth/reset password/change_password_screen.dart` and `lib/features/auth/forget_password/done_screen.dart`
+- [x] T040 [US2] Compare SCR-06 through SCR-10 with boards 01 and 02 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-04-us2-visual.md`
 
 **Checkpoint**: US2 works independently; reset proof, blocked state, and failures remain authoritative.
 

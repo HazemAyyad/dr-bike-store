@@ -2,49 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../controller/auth/forgetpassword.controller.dart';
+import '../../../core/theme/store_tokens.dart';
 import '../reset password/change_password_screen.dart';
 import 'done_screen.dart';
 import 'otp_page.dart';
 import 'send_otp_screen.dart';
 
-class ForgetPasswordPage extends StatelessWidget {
-  final TextEditingController email;
-  const ForgetPasswordPage({super.key, required this.email});
+class ForgetPasswordPage extends StatefulWidget {
+  const ForgetPasswordPage({this.initialIdentifier, super.key});
+
+  final String? initialIdentifier;
+
+  @override
+  State<ForgetPasswordPage> createState() => _ForgetPasswordPageState();
+}
+
+class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
+  @override
+  void initState() {
+    super.initState();
+    final controller = Get.find<ForgetPasswordControllerImp>();
+    final identifier = widget.initialIdentifier?.trim();
+    if (controller.email.text.isEmpty &&
+        identifier != null &&
+        identifier.isNotEmpty) {
+      controller.email.text = identifier;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    List tabs = [
-      OtpPage(email: email),
-      const SendOtpScreen(),
-      ResetPasswordScreen(),
-      const DoneScreen(),
-    ];
     return GetBuilder<ForgetPasswordControllerImp>(
-      builder: (controller) {
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: AppBar(
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios,
-                color: Colors.grey[600],
-                size: 20,
-              ),
-              onPressed: () {
-                Get.back();
-              },
-            ),
-          ),
-          body: Center(
-            child: PageView.builder(
+      builder:
+          (controller) => Scaffold(
+            backgroundColor: StorePalette.background,
+            body: PageView(
               physics: const NeverScrollableScrollPhysics(),
               controller: controller.pageController,
-              itemCount: tabs.length,
-              itemBuilder: (context, i) => tabs[i],
+              children: const [
+                OtpPage(),
+                SendOtpScreen(),
+                ResetPasswordScreen(),
+                DoneScreen(),
+              ],
             ),
           ),
-        );
-      },
     );
   }
 }

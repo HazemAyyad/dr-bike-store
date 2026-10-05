@@ -1,196 +1,114 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../../controller/auth/login.controller.dart';
-import '../../../core/constants/dimensions.dart';
-import '../../../core/constants/images.dart';
-import '../../../core/constants/styles.dart';
-import '../../../core/functions/theme_services.dart';
-import '../../../core/widget/custom_button.dart';
-import '../../../core/widget/custom_text_field.dart';
 
-class SignInScreen extends StatefulWidget {
+import '../../../controller/auth/login.controller.dart';
+import '../../../core/theme/store_tokens.dart';
+import '../../../core/theme/store_typography.dart';
+import '../../../core/widget/store_buttons.dart';
+import '../../../core/widget/store_fields.dart';
+import '../widget/store_auth_scaffold.dart';
+
+class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
-}
-
-class _SignInScreenState extends State<SignInScreen> {
-  @override
   Widget build(BuildContext context) {
     return GetBuilder<LoginControllerImp>(
-      builder: (loginController) {
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Form(
-              key: loginController.formstate,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SizedBox(width: double.infinity, height: 70.h),
-                    Image.asset(
-                      ThemeServices().loadThemeFromBox()
-                          ? Images.logoDark
-                          : Images.logo,
-                      width: 150.w,
-                      height: 100.h,
-                      fit: BoxFit.fitWidth,
-                    ),
-                    SizedBox(height: 20.h),
-                    Text(
-                      "welcomeBack".tr,
-                      textAlign: TextAlign.center,
-                      style: robotoBold.copyWith(
-                        fontSize: 26.sp,
-                        color: Theme.of(context).hoverColor,
+      builder:
+          (controller) => Scaffold(
+            backgroundColor: StorePalette.background,
+            body: StoreAuthScaffold(
+              title: 'storeLoginTitle'.tr,
+              subtitle: 'storeLoginSubtitle'.tr,
+              footer: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'storeNoAccount'.tr,
+                      style: StoreTypography.body.copyWith(
+                        color: StorePalette.textSecondary,
                       ),
                     ),
-                    SizedBox(height: 50.h),
-                    Row(
-                      children: [
-                        Text(
-                          "email".tr,
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Theme.of(context).hintColor,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                        Text(
-                          "*",
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Colors.red,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                      ],
+                  ),
+                  TextButton(
+                    onPressed: controller.goToSignUp,
+                    child: Text('storeCreateAccountAction'.tr),
+                  ),
+                ],
+              ),
+              child: Form(
+                key: controller.formstate,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AuthStatusBanner(
+                      status: controller.status,
+                      messageKey: controller.messageKey,
                     ),
-                    SizedBox(height: 8.h),
-                    CustomTextField(
-                      hintText: "email".tr,
-                      borderRadius: 11.r,
-                      inputType: TextInputType.emailAddress,
-                      controller: loginController.email,
+                    StoreTextField(
+                      controller: controller.email,
+                      label: 'storeIdentifierLabel'.tr,
+                      hint: 'storeIdentifierHint'.tr,
+                      semanticLabel: 'storeIdentifierLabel'.tr,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      prefixIcon: Icons.mail_outline,
+                      validator:
+                          (value) =>
+                              value == null || value.trim().isEmpty
+                                  ? 'storeValidationRequired'.tr
+                                  : null,
                     ),
-                    SizedBox(height: 10.h),
-                    Row(
-                      children: [
-                        Text(
-                          "password".tr,
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Theme.of(context).hintColor,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                        Text(
-                          "*",
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Colors.red,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
-                    CustomTextField(
-                      hintText: "password".tr,
-                      borderRadius: 11.r,
-                      isPassword: true,
-                      controller: loginController.password,
+                    const SizedBox(height: StoreSpacing.md),
+                    StoreTextField(
+                      controller: controller.password,
+                      label: 'storePassword'.tr,
+                      semanticLabel: 'storePassword'.tr,
+                      obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      prefixIcon: Icons.lock_outline,
+                      onSubmitted: (_) => controller.login(),
+                      validator:
+                          (value) =>
+                              value == null || value.isEmpty
+                                  ? 'storeValidationRequired'.tr
+                                  : null,
                     ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: loginController.checkBox,
-                              side: BorderSide(
-                                color: Theme.of(context).hintColor,
-                              ),
-                              onChanged: (value) {
-                                loginController.checkBox = value!;
-                                loginController.update();
-                              },
-                            ),
-                            Text(
-                              "Remember me".tr,
-                              style: TextStyle(
-                                color: Theme.of(context).hintColor,
-                              ),
-                            ),
-                          ],
+                        Checkbox(
+                          value: controller.checkBox,
+                          activeColor: StorePalette.purple,
+                          onChanged:
+                              controller.isSubmitting
+                                  ? null
+                                  : (value) =>
+                                      controller.setRemember(value ?? false),
                         ),
-                        Flexible(
-                          child: TextButton(
-                            onPressed: () {
-                              loginController.goToForgetPassword();
-                            },
-                            child: Text(
-                              "forgetPassword".tr,
-                              textAlign: TextAlign.center,
-                              style: robotoRegular.copyWith(
-                                color: Theme.of(context).hintColor,
-                                fontSize: 13.sp,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20.h),
-                    CustomButton(
-                      buttonText: "logIn".tr,
-                      fontSize: 20.sp,
-                      color:
-                          !ThemeServices().loadThemeFromBox()
-                              ? Theme.of(context).hoverColor
-                              : Theme.of(context).primaryColor,
-                      radius: 11.r,
-                      textColor: Theme.of(context).scaffoldBackgroundColor,
-                      onPressed: () {
-                        loginController.login();
-                      },
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Don't have an account".tr,
-                          style: robotoRegular.copyWith(
-                            color: Theme.of(context).hintColor,
-                            fontSize: Dimensions.fontSizeExtraLarge,
+                        Expanded(
+                          child: Text(
+                            'storeRememberMe'.tr,
+                            style: StoreTypography.caption,
                           ),
                         ),
                         TextButton(
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.all(0),
-                          ),
-                          onPressed: () {
-                            loginController.goToSignUp();
-                          },
-                          child: Text(
-                            "subscription".tr,
-                            style: robotoRegular.copyWith(
-                              fontSize: Dimensions.fontSizeExtraLarge,
-                            ),
-                          ),
+                          onPressed: controller.goToForgetPassword,
+                          child: Text('storeForgotPassword'.tr),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: StoreSpacing.sm),
+                    StoreButton(
+                      label: 'storeLoginAction'.tr,
+                      onPressed: controller.login,
+                      isLoading: controller.isSubmitting,
                     ),
                   ],
                 ),
               ),
             ),
           ),
-        );
-      },
     );
   }
 }

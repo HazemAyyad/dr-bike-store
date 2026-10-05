@@ -1,181 +1,389 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first, empty_catches
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
-
-import 'package:doctor_bike/core/helper/route_helper.dart';
-import 'package:overlay_kit/overlay_kit.dart';
 
 import '../../core/api_client.dart';
 import '../../core/functions/app_usage_service.dart';
 import '../../core/functions/checkInternet.dart';
-import '../../core/model/conact_us_model.dart';
 import '../../repository/auth/auth_repository.dart';
-import '../account/account_controller.dart';
 
-class ApiService extends GetxService {
-  Timer? _timer;
-  bool isConnectToInternet = false;
-  StreamSubscription? _internetConnectionStreamSubscription;
-  void startAccountCheck() {
-    _timer?.cancel(); // Prevent multiple timers
-    _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      checkAccountStatus();
-    });
+enum StartupDestination {
+  onboarding,
+  guestHome,
+  authenticatedHome,
+  offline,
+  storeUnavailable,
+  updateRequired,
+  updateRecommended,
+  error,
+}
+
+enum StartupSessionStatus { guest, valid, invalid, unchecked }
+
+enum StartupUpdatePolicy { none, recommended, required }
+
+class StartupSnapshot {
+  const StartupSnapshot({
+    required this.firstRunComplete,
+    required this.isOnline,
+    required this.sessionStatus,
+    this.storeClosed = false,
+    this.authoritativeMessage,
+    this.supportContact,
+    this.updatePolicy = StartupUpdatePolicy.none,
+    this.recommendedUpdateSupported = false,
+    this.updateUri,
+    this.initializationFailed = false,
+  });
+
+  final bool firstRunComplete;
+  final bool isOnline;
+  final StartupSessionStatus sessionStatus;
+  final bool storeClosed;
+  final String? authoritativeMessage;
+  final String? supportContact;
+  final StartupUpdatePolicy updatePolicy;
+  final bool recommendedUpdateSupported;
+  final Uri? updateUri;
+  final bool initializationFailed;
+}
+
+class StartupDecision {
+  const StartupDecision({
+    required this.destination,
+    this.message,
+    this.supportContact,
+    this.updateUri,
+    this.canRetry = false,
+    this.canContinue = false,
+    this.shouldClearInvalidSession = false,
+  });
+
+  final StartupDestination destination;
+  final String? message;
+  final String? supportContact;
+  final Uri? updateUri;
+  final bool canRetry;
+  final bool canContinue;
+  final bool shouldClearInvalidSession;
+}
+
+class StartupDecisionPolicy {
+  const StartupDecisionPolicy();
+
+  StartupDecision decide(StartupSnapshot snapshot) {
+    final clearInvalid = snapshot.sessionStatus == StartupSessionStatus.invalid;
+
+    if (snapshot.updatePolicy == StartupUpdatePolicy.required) {
+      return StartupDecision(
+        destination: StartupDestination.updateRequired,
+        message: snapshot.authoritativeMessage,
+        updateUri: snapshot.updateUri,
+        canRetry: true,
+        shouldClearInvalidSession: clearInvalid,
+      );
+    }
+
+    if (snapshot.storeClosed) {
+      return StartupDecision(
+        destination: StartupDestination.storeUnavailable,
+        message: snapshot.authoritativeMessage,
+        supportContact: snapshot.supportContact,
+        canRetry: true,
+        shouldClearInvalidSession: clearInvalid,
+      );
+    }
+
+    if (!snapshot.isOnline) {
+      return StartupDecision(
+        destination: StartupDestination.offline,
+        canRetry: true,
+        shouldClearInvalidSession: clearInvalid,
+      );
+    }
+
+    if (snapshot.initializationFailed) {
+      return StartupDecision(
+        destination: StartupDestination.error,
+        message: snapshot.authoritativeMessage,
+        canRetry: true,
+        shouldClearInvalidSession: clearInvalid,
+      );
+    }
+
+    if (snapshot.updatePolicy == StartupUpdatePolicy.recommended &&
+        snapshot.recommendedUpdateSupported) {
+      return StartupDecision(
+        destination: StartupDestination.updateRecommended,
+        message: snapshot.authoritativeMessage,
+        updateUri: snapshot.updateUri,
+        canRetry: true,
+        canContinue: true,
+        shouldClearInvalidSession: clearInvalid,
+      );
+    }
+
+    if (!snapshot.firstRunComplete) {
+      return StartupDecision(
+        destination: StartupDestination.onboarding,
+        shouldClearInvalidSession: clearInvalid,
+      );
+    }
+
+    return StartupDecision(
+      destination:
+          snapshot.sessionStatus == StartupSessionStatus.valid
+              ? StartupDestination.authenticatedHome
+              : StartupDestination.guestHome,
+      shouldClearInvalidSession: clearInvalid,
+    );
+  }
+}
+
+abstract interface class StartupResolver {
+  Future<StartupDecision> resolveStartup();
+}
+
+/// Resolves startup once per launch. It keeps remote policy and session checks
+/// outside the splash presentation so every input can be tested deterministically.
+class ApiService extends GetxService implements StartupResolver {
+  ApiService({
+    AuthRepository? authRepository,
+    Future<bool> Function()? connectivityCheck,
+    StartupDecisionPolicy decisionPolicy = const StartupDecisionPolicy(),
+  }) : _providedRepository = authRepository,
+       _connectivityCheck =
+           connectivityCheck ??
+           (() async => await CheckInternet.checkInternet() == true),
+       _decisionPolicy = decisionPolicy;
+
+  final AuthRepository? _providedRepository;
+  final Future<bool> Function() _connectivityCheck;
+  final StartupDecisionPolicy _decisionPolicy;
+  Timer? _accountTimer;
+
+  AuthRepository get _repository {
+    final provided = _providedRepository;
+    if (provided != null) return provided;
+    if (Get.isRegistered<AuthRepository>()) return Get.find<AuthRepository>();
+    return AuthRepository(apiClient: ApiClient(sharedPreferences: Get.find()));
   }
 
   @override
-  void onInit() {
-    _internetConnectionStreamSubscription = InternetConnection().onStatusChange
-        .listen((event) {
-          if (event == InternetStatus.connected) {
-            isConnectToInternet = true;
-            _handleConnectInternet();
-          }
-        });
-    checkStatus();
-    super.onInit();
-  }
+  Future<StartupDecision> resolveStartup() async {
+    final firstRunComplete = await AppUsageService.getIsFirst() == true;
+    final remembered = await AppUsageService.getIsLogin();
+    final token = await AppUsageService.getToken();
+    final userId = await AppUsageService.getUserId();
+    final hasCompleteSession =
+        remembered &&
+        token != null &&
+        token.isNotEmpty &&
+        userId != null &&
+        userId.isNotEmpty;
 
-  checkAccountStatus() async {
-    final AuthRepository authRepository = Get.put(
-      AuthRepository(apiClient: ApiClient(sharedPreferences: Get.find())),
-    );
-
-    try {
-      final response = await authRepository.checkUser();
-      if (response.statusCode == 200) {
-        if (response.body["isClose"] == true) {
-          _handleBlockedAccount();
-        }
-      } else {}
-    } catch (e) {}
-  }
-
-  checkSiteStatus() async {
-    final AccountControllerImp accountControllerImp = Get.put(
-      AccountControllerImp(
-        authRepository: AuthRepository(
-          apiClient: ApiClient(sharedPreferences: Get.find()),
+    final online = await _connectivityCheck();
+    if (!online) {
+      return _decisionPolicy.decide(
+        StartupSnapshot(
+          firstRunComplete: firstRunComplete,
+          isOnline: false,
+          sessionStatus:
+              hasCompleteSession
+                  ? StartupSessionStatus.unchecked
+                  : StartupSessionStatus.guest,
         ),
+      );
+    }
+
+    final settings = await _repository.checkSettingAndConactUs();
+    if (settings.statusCode == 1) {
+      return _decisionPolicy.decide(
+        StartupSnapshot(
+          firstRunComplete: firstRunComplete,
+          isOnline: false,
+          sessionStatus:
+              hasCompleteSession
+                  ? StartupSessionStatus.unchecked
+                  : StartupSessionStatus.guest,
+        ),
+      );
+    }
+    if (settings.statusCode == 426) {
+      return _decisionPolicy.decide(
+        StartupSnapshot(
+          firstRunComplete: firstRunComplete,
+          isOnline: true,
+          sessionStatus: StartupSessionStatus.unchecked,
+          updatePolicy: StartupUpdatePolicy.required,
+          authoritativeMessage: _safeMessage(settings.body),
+        ),
+      );
+    }
+    if (settings.statusCode != 200) {
+      return _failureDecision(firstRunComplete);
+    }
+
+    final settingsData = _settingsData(settings.body);
+    if (settingsData == null) return _failureDecision(firstRunComplete);
+
+    final isClosed = settingsData['isClose'] == true;
+    final message = _safeText(settingsData['message']);
+    final support = _safeText(settingsData['whatsApp']);
+    if (isClosed) {
+      return _decisionPolicy.decide(
+        StartupSnapshot(
+          firstRunComplete: firstRunComplete,
+          isOnline: true,
+          sessionStatus:
+              hasCompleteSession
+                  ? StartupSessionStatus.unchecked
+                  : StartupSessionStatus.guest,
+          storeClosed: true,
+          authoritativeMessage: message,
+          supportContact: support,
+        ),
+      );
+    }
+
+    var sessionStatus = StartupSessionStatus.guest;
+    if (remembered && !hasCompleteSession) {
+      sessionStatus = StartupSessionStatus.invalid;
+    } else if (hasCompleteSession) {
+      final account = await _repository.checkUser();
+      if (account.statusCode == 1) {
+        return _decisionPolicy.decide(
+          StartupSnapshot(
+            firstRunComplete: firstRunComplete,
+            isOnline: false,
+            sessionStatus: StartupSessionStatus.unchecked,
+          ),
+        );
+      }
+      if (account.statusCode == 426) {
+        return _decisionPolicy.decide(
+          StartupSnapshot(
+            firstRunComplete: firstRunComplete,
+            isOnline: true,
+            sessionStatus: StartupSessionStatus.unchecked,
+            updatePolicy: StartupUpdatePolicy.required,
+            authoritativeMessage: _safeMessage(account.body),
+          ),
+        );
+      }
+      if (account.statusCode == 401 || account.statusCode == 403) {
+        sessionStatus = StartupSessionStatus.invalid;
+      } else if (account.statusCode != 200 || account.body is! Map) {
+        return _failureDecision(firstRunComplete);
+      } else {
+        final body = Map<Object?, Object?>.from(account.body as Map);
+        sessionStatus =
+            body['isClose'] == true || body['block'] == true
+                ? StartupSessionStatus.invalid
+                : StartupSessionStatus.valid;
+      }
+    }
+
+    final decision = _decisionPolicy.decide(
+      StartupSnapshot(
+        firstRunComplete: firstRunComplete,
+        isOnline: true,
+        sessionStatus: sessionStatus,
       ),
     );
-    final AuthRepository authRepository = Get.put(
-      AuthRepository(apiClient: ApiClient(sharedPreferences: Get.find())),
-    );
-
-    try {
-      var response = await authRepository.checkSettingAndConactUs();
-      if (response.statusCode == 200) {
-        accountControllerImp.conactUsModel = ApiResponse.fromJson(
-          response.body,
-        );
-        if (accountControllerImp.conactUsModel?.data.isClose == true) {
-          _handleCloseSite();
-        }
-      }
-      OverlayLoadingProgress.stop();
-    } catch (e) {
-    } finally {
-      OverlayLoadingProgress.stop();
+    if (decision.shouldClearInvalidSession) {
+      await _clearInvalidIdentity();
     }
+    return decision;
   }
 
-  void checkStatus() {
-    // Your logic here (e.g., API call, check notifications, etc.)
+  StartupDecision _failureDecision(bool firstRunComplete) =>
+      _decisionPolicy.decide(
+        StartupSnapshot(
+          firstRunComplete: firstRunComplete,
+          isOnline: true,
+          sessionStatus: StartupSessionStatus.unchecked,
+          initializationFailed: true,
+        ),
+      );
+
+  Map<Object?, Object?>? _settingsData(dynamic body) {
+    if (body is! Map) return null;
+    final data = body['data'];
+    if (data is! Map || data['isClose'] is! bool) return null;
+    return Map<Object?, Object?>.from(data);
   }
 
-  void _handleBlockedAccount() async {
-    _timer?.cancel();
-    Get.snackbar(
-      "Account Blocked",
-      "Your account has been blocked. Please contact support.",
-    );
+  String? _safeMessage(dynamic body) {
+    if (body is! Map) return null;
+    return _safeText(body['message']);
+  }
+
+  String? _safeText(dynamic value) {
+    final text = value?.toString().trim();
+    return text == null || text.isEmpty ? null : text;
+  }
+
+  Future<void> _clearInvalidIdentity() async {
     await AppUsageService.deleteIsLogin();
     await AppUsageService.deleteToken();
     await AppUsageService.deleteUserEmail();
     await AppUsageService.deleteUserId();
     await AppUsageService.deleteUserName();
     await AppUsageService.deleteTypeUser();
-    await Get.find<AccountControllerImp>().loadingToken();
-    Get.offAllNamed(RouteHelper.homePage); // Navigate to login screen
   }
 
-  void _handleCloseSite() {
-    _timer?.cancel();
-    Get.snackbar("Closed Site", "The site is closed");
-    Get.offAllNamed(RouteHelper.initial); // Navigate to login screen
+  /// Retained for authenticated foreground checks, but deliberately bounded to
+  /// a low-frequency interval instead of the previous 500 ms polling loop.
+  void startAccountCheck() {
+    _accountTimer?.cancel();
+    _accountTimer = Timer.periodic(const Duration(minutes: 5), (_) async {
+      if (!await AppUsageService.getIsLogin()) return;
+      final response = await _repository.checkUser();
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        await _clearInvalidIdentity();
+      }
+    });
   }
 
-  void _handleConnectInternet() {
-    _timer?.cancel();
-    checkAccountStatus();
-    checkSiteStatus();
+  Future<void> checkAccountStatus() async {
+    if (!await AppUsageService.getIsLogin()) return;
+    final response = await _repository.checkUser();
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await _clearInvalidIdentity();
+      return;
+    }
+    if (response.statusCode == 200 && response.body is Map) {
+      final body = Map<Object?, Object?>.from(response.body as Map);
+      if (body['isClose'] == true || body['block'] == true) {
+        await _clearInvalidIdentity();
+      }
+    }
   }
 
   @override
   void onClose() {
-    _internetConnectionStreamSubscription?.cancel();
-
-    _timer?.cancel();
+    _accountTimer?.cancel();
     super.onClose();
   }
 }
 
-// check internet
 class ConnectivityController extends GetxController {
-  var isConnected = true.obs; // Default to connected
+  final isConnected = true.obs;
 
   @override
   void onInit() {
     super.onInit();
-    loadingToken();
-    _startMonitoring();
-  }
-
-  String? token;
-  loadingToken() async {
-    token = await AppUsageService.getToken();
-    update();
-  }
-
-  void _startMonitoring() {
-    Connectivity().onConnectivityChanged.listen((result) {
-      bool connectionStatus =
-          (result != ConnectivityResult.wifi) ||
-          (result != ConnectivityResult.mobile) ||
-          (result != ConnectivityResult.ethernet);
-      if (!connectionStatus && isConnected.value) {
-        // Show the pop-up only when the connection is lost
-        _showConnectionPopup();
-      } else {}
-      isConnected.value = connectionStatus;
+    Connectivity().onConnectivityChanged.listen((results) {
+      isConnected.value = !results.contains(ConnectivityResult.none);
     });
   }
 
-  void retryConnection() async {
-    var result = await Connectivity().checkConnectivity();
-    isConnected.value = result != ConnectivityResult.none;
-
-    if (isConnected.value) {
-      if (await CheckInternet.checkInternet()) {
-        Get.back(); // Close the popup
-      } else {
-        _showConnectionPopup();
-      }
-      // Close the popup if reconnected
-    }
-  }
-
-  void _showConnectionPopup() {
-    Get.defaultDialog(
-      title: "No Internet Connection",
-      middleText: "Please check your network and try again.",
-      barrierDismissible: false,
-      confirm: ElevatedButton(onPressed: retryConnection, child: Text("Retry")),
-    );
+  Future<void> retryConnection() async {
+    final results = await Connectivity().checkConnectivity();
+    isConnected.value =
+        !results.contains(ConnectivityResult.none) &&
+        await CheckInternet.checkInternet();
   }
 }

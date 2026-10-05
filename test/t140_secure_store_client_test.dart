@@ -141,10 +141,7 @@ void main() {
         'minimum_build': 10,
       },
     );
-    expect(
-      upgradeRequiredMessage(response),
-      'يجب تحديث التطبيق إلى أحدث إصدار لمتابعة استعادة كلمة المرور.',
-    );
+    expect(upgradeRequiredMessage(response), 'storeUpgradeRequiredRecovery');
     expect(upgradeRequiredMessage(const Response(statusCode: 400)), isNull);
   });
 
