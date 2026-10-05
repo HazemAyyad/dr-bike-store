@@ -1,300 +1,461 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first, deprecated_member_use
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:overlay_kit/overlay_kit.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../core/classes/status_request.dart';
+
+import '../../core/classes/store_view_state.dart';
 import '../../core/functions/app_usage_service.dart';
 import '../../core/functions/checkInternet.dart';
+import '../../core/helper/search_history_store.dart';
 import '../../core/model/ads_response.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
 import '../../core/model/notification_model.dart';
-import '../../core/widget/custom_snackbar.dart';
-import 'package:intl/intl.dart';
+import '../../core/widget/store_bottom_navigation.dart';
 import '../../repository/home/home_repository.dart';
 import '../LocalizationController.dart';
 
+enum ShellNavigationOutcome { selected, loginRequired, capabilityUnavailable }
+
 abstract class HomeController extends GetxController {
-  getMainCategores();
-  getOnlineAds();
-  getAllItemIsMoreSales();
-  getNotifications();
-  postNotificationsIsRead();
-  getSearch(String name);
+  Future<void> getMainCategores();
+  Future<void> getOnlineAds();
+  Future<void> getAllItemIsMoreSales();
+  Future<void> getNotifications();
+  Future<void> postNotificationsIsRead();
+  Future<void> getSearch(String name);
 }
 
 class HomeControllerImp extends HomeController {
-  final LocalizationController localizationController = Get.put(
-    LocalizationController(sharedPreferences: Get.find()),
-  );
+  HomeControllerImp({
+    required this.homeRepository,
+    SearchHistoryStore? searchHistoryStore,
+    Future<bool> Function()? connectivityCheck,
+    Future<String?> Function()? tokenLoader,
+    Future<String?> Function()? userNameLoader,
+    LocalizationController? localizationController,
+  }) : searchHistoryStore =
+           searchHistoryStore ??
+           SearchHistoryStore(preferences: Get.find<SharedPreferences>()),
+       connectivityCheck =
+           connectivityCheck ??
+           (() async => await CheckInternet.checkInternet()),
+       tokenLoader = tokenLoader ?? AppUsageService.getToken,
+       userNameLoader = userNameLoader ?? AppUsageService.getUserName,
+       localizationController =
+           localizationController ??
+           (Get.isRegistered<LocalizationController>()
+               ? Get.find<LocalizationController>()
+               : Get.put(
+                 LocalizationController(sharedPreferences: Get.find()),
+               ));
+
+  static const shellDestinationPreferenceKey = 'store_shell_destination';
+
+  final HomeDataSource homeRepository;
+  final SearchHistoryStore searchHistoryStore;
+  final Future<bool> Function() connectivityCheck;
+  final Future<String?> Function() tokenLoader;
+  final Future<String?> Function() userNameLoader;
+  final LocalizationController localizationController;
 
   final CarouselSliderController carouselController =
       CarouselSliderController();
-  Rx<int> currentPage = 0.obs;
-  String? token;
-  var isLoadingSearch = false.obs;
-  var isLoadingGetOnlineAds = false.obs;
-  var isLoadingGetItems = false.obs;
-  var isLoadingGetCategories = false.obs;
-  var isTwo = false.obs;
-  final HomeRepository homeRepository;
-  late StatusRequest statusRequest;
-  late bool isNormail;
+  final currentPage = 0.obs;
+  final selectedDestination = StoreDestination.home.obs;
+  final isSearchExpanded = false.obs;
+  final recentSearches = <String>[].obs;
+  final displayName = ''.obs;
+  final searchState = Rx<StoreViewState<List<Item>>>(const StoreInitial());
+  final categoriesState = Rx<StoreViewState<List<Category>>>(
+    const StoreInitial(),
+  );
+  final heroState = Rx<StoreViewState<List<Ad>>>(const StoreInitial());
+  final productsState = Rx<StoreViewState<List<Item>>>(const StoreInitial());
+
+  final isLoadingSearch = false.obs;
+  final isLoadingGetOnlineAds = false.obs;
+  final isLoadingGetItems = false.obs;
+  final isLoadingGetCategories = false.obs;
+  final isTwo = false.obs;
   final mainCategoresModel = <Category>[].obs;
   final adsResponse = <Ad>[].obs;
   final itemList = <Item>[].obs;
   final itemListSearch = <Item>[].obs;
-  RxList<int> notificationIsNotRead = <int>[].obs;
+  final notificationIsNotRead = <int>[].obs;
+  final isNotificationNotRead = false.obs;
+
   Rx<NotificationResponse>? notifications;
+  late final TextEditingController search = TextEditingController();
+  String? token;
+  bool isNormail = true;
   bool isGrid = false;
   bool showFilter = false;
-  Rx<bool> isNotificationNotRead = false.obs;
-  late TextEditingController search;
-  HomeControllerImp({required this.homeRepository});
+  bool _initialized = false;
 
-  String formatDate(DateTime dateString) {
-    return DateFormat('MMMM d, yyyy').format(dateString);
+  bool get isAuthenticated => token != null && token!.trim().isNotEmpty;
+  int? get notificationBadgeCount =>
+      notificationIsNotRead.isEmpty ? null : notificationIsNotRead.length;
+
+  List<Item> get specialOffers =>
+      itemList.where((item) => item.discount > 0).toList(growable: false);
+
+  List<Item> get newArrivals =>
+      itemList.where((item) => item.isNewItem).toList(growable: false);
+
+  Future<void> initializeShell() async {
+    token = await tokenLoader();
+    displayName.value = (await userNameLoader())?.trim() ?? '';
+    isNormail = await AppUsageService.getTypeUser() == 'Normail';
+    recentSearches.assignAll(await searchHistoryStore.load());
+    await _restoreDestination();
+    _initialized = true;
+    update();
+  }
+
+  Future<void> _restoreDestination() async {
+    final saved = searchHistoryStore.preferences.getString(
+      shellDestinationPreferenceKey,
+    );
+    final destination = StoreDestination.values.firstWhereOrNull(
+      (candidate) => candidate.name == saved,
+    );
+    if (destination == null ||
+        (!isAuthenticated &&
+            (destination == StoreDestination.orders ||
+                destination == StoreDestination.favorites))) {
+      selectedDestination.value = StoreDestination.home;
+      return;
+    }
+    selectedDestination.value = destination;
+  }
+
+  Future<ShellNavigationOutcome> selectDestination(
+    StoreDestination destination,
+  ) async {
+    if ((destination == StoreDestination.orders ||
+            destination == StoreDestination.favorites) &&
+        !isAuthenticated) {
+      return ShellNavigationOutcome.loginRequired;
+    }
+
+    closeSearch(clearQuery: false);
+    selectedDestination.value = destination;
+    await searchHistoryStore.preferences.setString(
+      shellDestinationPreferenceKey,
+      destination.name,
+    );
+    update();
+
+    if (destination == StoreDestination.favorites) {
+      return ShellNavigationOutcome.capabilityUnavailable;
+    }
+    return ShellNavigationOutcome.selected;
+  }
+
+  void openSearch() {
+    isSearchExpanded.value = true;
+    update();
+  }
+
+  void closeSearch({bool clearQuery = true}) {
+    isSearchExpanded.value = false;
+    if (clearQuery) {
+      search.clear();
+      searchState.value = const StoreInitial();
+    }
+    update();
+  }
+
+  void setSearchExpanded(bool expanded) {
+    if (expanded) {
+      openSearch();
+    } else {
+      closeSearch();
+    }
+  }
+
+  Future<bool> handleShellBack() async {
+    if (isSearchExpanded.value) {
+      closeSearch();
+      return true;
+    }
+    if (selectedDestination.value != StoreDestination.home) {
+      await selectDestination(StoreDestination.home);
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> loadHome({bool refresh = false}) async {
+    if (!await connectivityCheck()) {
+      _setHomeOffline();
+      return;
+    }
+    await Future.wait<void>([
+      getOnlineAds(),
+      getAllItemIsMoreSales(),
+      getMainCategores(),
+      if (isAuthenticated) getNotifications(),
+    ]);
+  }
+
+  void _setHomeOffline() {
+    categoriesState.value = StoreOffline(
+      message: 'storeOfflineMessage'.tr,
+      previousData:
+          mainCategoresModel.isEmpty ? null : mainCategoresModel.toList(),
+    );
+    heroState.value = StoreOffline(
+      message: 'storeOfflineMessage'.tr,
+      previousData: adsResponse.isEmpty ? null : adsResponse.toList(),
+    );
+    productsState.value = StoreOffline(
+      message: 'storeOfflineMessage'.tr,
+      previousData: itemList.isEmpty ? null : itemList.toList(),
+    );
+    update();
   }
 
   @override
-  getMainCategores() async {
-    if (await CheckInternet.checkInternet()) {
-      isLoadingGetCategories.value = true;
-      try {
-        var response = await homeRepository.getMainCategories();
-
-        // print('getMainCategores statusCode ${response.statusCode}');
-        // print('getMainCategores body ${response.body}');
-
-        if (response.statusCode == 200) {
-          mainCategoresModel.value = List<Category>.from(
-            response.body["rows"].map((x) => Category.fromJson(x)),
-          );
-
-          if (mainCategoresModel.isNotEmpty) {
-            // print(
-            //   "mainCategoresModel.value.rows : ${mainCategoresModel!.value.rows[0]}",
-            // );
-          }
-          // print("mainCategoresModel.value.rows : isEmpty");
-        }
-        update();
-      } catch (e) {
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-        // print('Error during get Main Categores: $e');
-      } finally {
-        isLoadingGetCategories.value = false;
+  Future<void> getMainCategores() async {
+    isLoadingGetCategories.value = true;
+    categoriesState.value = StoreLoading(
+      previousData:
+          mainCategoresModel.isEmpty ? null : mainCategoresModel.toList(),
+    );
+    try {
+      final response = await homeRepository.getMainCategories();
+      if (response.statusCode != 200) {
+        throw const FormatException('category-response-status');
       }
-    } else {
-      isLoadingGetCategories.value = false;
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-  }
-
-  @override
-  getAllItemIsMoreSales() async {
-    isNormail = await AppUsageService.getTypeUser() == "Normail";
-    if (await CheckInternet.checkInternet()) {
-      isLoadingGetItems.value = true;
-
-      try {
-        var response = await homeRepository.getAllItemIsMoreSales();
-        // itemList.value = [];
-        if (response.statusCode == 200) {
-          itemList.value = List<Item>.from(
-            response.body["rows"].map((x) {
-              return Item.fromJson(x);
-            }),
-          );
-          // itemList = ItemsResponse.fromJson(response.body).obs;
-
-          if (itemList.isNotEmpty) {
-            for (var element in List.from(itemList)) {
-              if (element.isShow == false) {
-                itemList.remove(element);
-              }
-            }
-          }
-        }
-        update();
-      } catch (e) {
-        // showCustomSnackBar(e.toString(), isError: true);
-      } finally {
-        isLoadingGetItems.value = false;
-      }
-    } else {
-      isLoadingGetItems.value = false;
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-  }
-
-  @override
-  getOnlineAds() async {
-    if (await CheckInternet.checkInternet()) {
-      isLoadingGetOnlineAds.value = true;
-      try {
-        var response = await homeRepository.getOnlineAds();
-        if (response.statusCode == 200) {
-          adsResponse.value = List<Ad>.from(
-            response.body['rows'].map((x) => Ad.fromJson(x)),
-          );
-          if (adsResponse.isNotEmpty) {}
-        }
-        update();
-      } catch (e) {
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        isLoadingGetOnlineAds.value = false;
-      }
-    } else {
-      isLoadingGetOnlineAds.value = false;
-
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-  }
-
-  @override
-  Future<void> getSearch(String name) async {
-    isNormail = await AppUsageService.getTypeUser() == "Normail";
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      isLoadingSearch = true.obs;
-      try {
-        itemListSearch.value = [];
-        var response = await homeRepository.search(
-          name,
-          localizationController.locale.languageCode,
-        );
-
-        if (response.statusCode == 200) {
-          itemListSearch.value = List<Item>.from(
-            response.body['rows'].map((x) => Item.fromJson(x)),
-          );
-          if (itemListSearch.isNotEmpty) {}
-        } else {}
-        isLoadingSearch = false.obs;
-        update();
-      } catch (e) {
-        isLoadingSearch = false.obs;
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      }
-      isLoadingSearch = false.obs;
-    } else {
-      isLoadingSearch = false.obs;
-      // isLoadingGetOnlineAds = false.obs;
-
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-    OverlayLoadingProgress.stop();
-    // isLoadingGetOnlineAds = false.obs;
-  }
-
-  @override
-  getNotifications() async {
-    if (await CheckInternet.checkInternet()) {
-      try {
-        var response = await homeRepository.getNotification();
-
-        if (response.statusCode == 200) {
-          notifications = NotificationResponse.fromJson(response.body).obs;
-
-          if (notifications!.value.rows.isNotEmpty) {
-            for (int i = 0; i < notifications!.value.rows.length; i++) {
-              if (notifications!.value.rows[i].isRead == false) {
-                isNotificationNotRead = true.obs;
-                notificationIsNotRead.add(notifications!.value.rows[i].id);
-              }
-            }
-          } else {}
-        }
-      } catch (e) {
-        debugPrint('[STORE_HOME] notifications error=$e');
-      } finally {}
-      update();
-    } else {
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-  }
-
-  @override
-  postNotificationsIsRead() async {
-    if (notificationIsNotRead.isNotEmpty) {
-      if (await CheckInternet.checkInternet()) {
-        try {
-          if (notificationIsNotRead.length != []) {
-            for (int i = 0; i < notificationIsNotRead.length; i++) {
-              isNotificationNotRead = false.obs;
-              var response = await homeRepository.postNotificationIsRead(
-                notificationIsNotRead[i],
-              );
-              if (response.statusCode == 200) {
-                response.body == true;
-              }
-            }
-
-            notificationIsNotRead.clear();
-          }
-        } catch (e) {
-          showCustomSnackBar(
-            'An error occurred. Please try again.'.tr,
-            isError: true,
-          );
-        } finally {
-          OverlayLoadingProgress.stop();
-        }
-        update();
-      } else {
-        OverlayLoadingProgress.stop();
-
-        showCustomSnackBar('Check the internet connection'.tr, isError: true);
-      }
-    }
-  }
-
-  void openWeb(String web) async {
-    if (await canLaunch(web)) {
-      await launch(web);
-    } else {
-      showCustomSnackBar(
-        'An error occurred. Please try again.'.tr,
-        isError: true,
+      final categories = _rows(response.body)
+          .map(Category.fromJson)
+          .where((category) => category.isShow)
+          .toList(growable: false);
+      mainCategoresModel.assignAll(categories);
+      categoriesState.value =
+          categories.isEmpty
+              ? StoreEmpty(message: 'storeNoCategoriesMessage'.tr)
+              : StoreContent(categories);
+    } catch (_) {
+      categoriesState.value = StoreError(
+        message: 'storeHomeSectionError'.tr,
+        previousData:
+            mainCategoresModel.isEmpty ? null : mainCategoresModel.toList(),
       );
-      // throw "error occured";
+    } finally {
+      isLoadingGetCategories.value = false;
+      update();
     }
   }
 
-  loadingIsNormail() async {
-    isNormail = await AppUsageService.getTypeUser() == "Normail";
+  @override
+  Future<void> getAllItemIsMoreSales() async {
+    isLoadingGetItems.value = true;
+    productsState.value = StoreLoading(
+      previousData: itemList.isEmpty ? null : itemList.toList(),
+    );
+    try {
+      final response = await homeRepository.getAllItemIsMoreSales();
+      if (response.statusCode != 200) {
+        throw const FormatException('product-response-status');
+      }
+      final products = _rows(
+        response.body,
+      ).map(Item.fromJson).where((item) => item.isShow).toList(growable: false);
+      itemList.assignAll(products);
+      productsState.value =
+          products.isEmpty
+              ? StoreEmpty(message: 'storeNoProductsMessage'.tr)
+              : StoreContent(products);
+    } catch (_) {
+      productsState.value = StoreError(
+        message: 'storeHomeSectionError'.tr,
+        previousData: itemList.isEmpty ? null : itemList.toList(),
+      );
+    } finally {
+      isLoadingGetItems.value = false;
+      update();
+    }
+  }
+
+  @override
+  Future<void> getOnlineAds() async {
+    isLoadingGetOnlineAds.value = true;
+    heroState.value = StoreLoading(
+      previousData: adsResponse.isEmpty ? null : adsResponse.toList(),
+    );
+    try {
+      final response = await homeRepository.getOnlineAds();
+      if (response.statusCode != 200) {
+        throw const FormatException('ad-response-status');
+      }
+      final ads = _rows(
+        response.body,
+      ).map(Ad.fromJson).where((ad) => ad.isShow).toList(growable: false);
+      adsResponse.assignAll(ads);
+      heroState.value =
+          ads.isEmpty
+              ? StoreEmpty(message: 'storeNoPromotionsMessage'.tr)
+              : StoreContent(ads);
+    } catch (_) {
+      heroState.value = StoreError(
+        message: 'storeHomeSectionError'.tr,
+        previousData: adsResponse.isEmpty ? null : adsResponse.toList(),
+      );
+    } finally {
+      isLoadingGetOnlineAds.value = false;
+      update();
+    }
+  }
+
+  @override
+  Future<void> getSearch(String name) => submitSearch(name);
+
+  Future<void> submitSearch(String query) async {
+    final normalized = query.trim();
+    search.text = normalized;
+    if (normalized.isEmpty) {
+      itemListSearch.clear();
+      searchState.value = const StoreInitial();
+      update();
+      return;
+    }
+
+    recentSearches.assignAll(await searchHistoryStore.add(normalized));
+    if (!await connectivityCheck()) {
+      isLoadingSearch.value = false;
+      searchState.value = StoreOffline(message: 'storeOfflineMessage'.tr);
+      update();
+      return;
+    }
+
+    isLoadingSearch.value = true;
+    searchState.value = StoreLoading(
+      previousData: itemListSearch.isEmpty ? null : itemListSearch.toList(),
+    );
+    update();
+    try {
+      final response = await homeRepository.search(
+        normalized,
+        localizationController.locale.languageCode,
+      );
+      if (response.statusCode != 200) {
+        throw const FormatException('search-response-status');
+      }
+      final products = _rows(
+        response.body,
+      ).map(Item.fromJson).where((item) => item.isShow).toList(growable: false);
+      itemListSearch.assignAll(products);
+      searchState.value =
+          products.isEmpty
+              ? StoreEmpty(
+                title: 'storeSearchNoResultsTitle'.tr,
+                message: 'storeSearchNoResultsMessage'.trParams({
+                  'query': normalized,
+                }),
+              )
+              : StoreContent(products);
+    } catch (_) {
+      searchState.value = StoreError(message: 'storeSearchFailureMessage'.tr);
+    } finally {
+      isLoadingSearch.value = false;
+      update();
+    }
+  }
+
+  Future<void> retrySearch() => submitSearch(search.text);
+
+  Future<void> clearRecentSearches() async {
+    await searchHistoryStore.clear();
+    recentSearches.clear();
     update();
   }
 
-  loadingToken() async {
-    token = await AppUsageService.getToken();
+  void selectRecentSearch(String query) {
+    search.text = query;
+    submitSearch(query);
+  }
+
+  @override
+  Future<void> getNotifications() async {
+    if (!isAuthenticated || !await connectivityCheck()) return;
+    try {
+      final response = await homeRepository.getNotification();
+      if (response.statusCode != 200) return;
+      notifications = NotificationResponse.fromJson(response.body).obs;
+      notificationIsNotRead.assignAll(
+        notifications!.value.rows
+            .where((notification) => !notification.isRead)
+            .map((notification) => notification.id),
+      );
+      isNotificationNotRead.value = notificationIsNotRead.isNotEmpty;
+    } catch (_) {
+      // Notification failure is optional Home content and remains omitted.
+    }
     update();
+  }
+
+  @override
+  Future<void> postNotificationsIsRead() async {
+    if (!isAuthenticated || notificationIsNotRead.isEmpty) return;
+    final confirmed = <int>[];
+    for (final id in notificationIsNotRead) {
+      try {
+        final response = await homeRepository.postNotificationIsRead(id);
+        if (response.statusCode == 200) confirmed.add(id);
+      } catch (_) {
+        // Keep unconfirmed notifications unread.
+      }
+    }
+    notificationIsNotRead.removeWhere(confirmed.contains);
+    isNotificationNotRead.value = notificationIsNotRead.isNotEmpty;
+    update();
+  }
+
+  String formatDate(DateTime date) => DateFormat('MMMM d, yyyy').format(date);
+
+  Future<void> openWeb(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> loadingToken() async {
+    token = await tokenLoader();
+    update();
+  }
+
+  Future<void> loadingIsNormail() async {
+    isNormail = await AppUsageService.getTypeUser() == 'Normail';
+    update();
+  }
+
+  List<Map<String, dynamic>> _rows(dynamic body) {
+    if (body is! Map || body['rows'] is! List) {
+      throw const FormatException('rows');
+    }
+    return (body['rows'] as List)
+        .map((row) {
+          if (row is! Map) throw const FormatException('row');
+          return Map<String, dynamic>.from(row);
+        })
+        .toList(growable: false);
   }
 
   @override
   void onInit() {
-    loadingToken();
-    loadingIsNormail();
-    search = TextEditingController();
     super.onInit();
+    if (!_initialized) initializeShell();
   }
 
   @override
-  void dispose() {
-    search.clear();
-    super.dispose();
+  void onClose() {
+    search.dispose();
+    super.onClose();
   }
 }

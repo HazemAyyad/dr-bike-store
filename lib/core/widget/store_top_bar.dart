@@ -19,6 +19,9 @@ class StoreTopBar extends StatefulWidget {
     this.onSearchChanged,
     this.searchHint,
     this.initialSearchExpanded = false,
+    this.searchExpanded,
+    this.onSearchExpandedChanged,
+    this.searchController,
     super.key,
   });
 
@@ -33,6 +36,9 @@ class StoreTopBar extends StatefulWidget {
   final ValueChanged<String>? onSearchChanged;
   final String? searchHint;
   final bool initialSearchExpanded;
+  final bool? searchExpanded;
+  final ValueChanged<bool>? onSearchExpandedChanged;
+  final TextEditingController? searchController;
 
   @override
   State<StoreTopBar> createState() => _StoreTopBarState();
@@ -40,19 +46,26 @@ class StoreTopBar extends StatefulWidget {
 
 class _StoreTopBarState extends State<StoreTopBar> {
   late bool _searchExpanded = widget.initialSearchExpanded;
-  final _searchController = TextEditingController();
+  late final TextEditingController _searchController =
+      widget.searchController ?? TextEditingController();
   final _searchFocusNode = FocusNode();
+
+  bool get _effectiveSearchExpanded => widget.searchExpanded ?? _searchExpanded;
 
   @override
   void dispose() {
-    _searchController.dispose();
+    if (widget.searchController == null) _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
   void _toggleSearch() {
-    setState(() => _searchExpanded = !_searchExpanded);
-    if (_searchExpanded) {
+    final expanded = !_effectiveSearchExpanded;
+    if (widget.searchExpanded == null) {
+      setState(() => _searchExpanded = expanded);
+    }
+    widget.onSearchExpandedChanged?.call(expanded);
+    if (expanded) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _searchFocusNode.requestFocus(),
       );
@@ -78,7 +91,10 @@ class _StoreTopBarState extends State<StoreTopBar> {
         child: Column(
           children: [
             SizedBox(
-              height: StoreCalibration.topBarHeight - StoreSpacing.md,
+              height:
+                  StoreCalibration.topBarHeight -
+                  StoreSpacing.md +
+                  (MediaQuery.textScalerOf(context).scale(1) > 1 ? 4 : 0),
               child: Row(
                 children: [
                   CircleAvatar(
@@ -111,9 +127,9 @@ class _StoreTopBarState extends State<StoreTopBar> {
                     ),
                   ),
                   StoreIconButton(
-                    icon: _searchExpanded ? Icons.close : Icons.search,
+                    icon: _effectiveSearchExpanded ? Icons.close : Icons.search,
                     semanticLabel:
-                        _searchExpanded
+                        _effectiveSearchExpanded
                             ? 'storeCloseSearch'.tr
                             : 'storeOpenSearch'.tr,
                     onPressed: _toggleSearch,
@@ -137,7 +153,7 @@ class _StoreTopBarState extends State<StoreTopBar> {
               duration: StoreMotion.standard,
               alignment: Alignment.topCenter,
               child:
-                  _searchExpanded
+                  _effectiveSearchExpanded
                       ? Padding(
                         padding: const EdgeInsets.only(top: StoreSpacing.xs),
                         child: StoreTextField(

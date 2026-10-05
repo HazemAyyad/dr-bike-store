@@ -1,75 +1,90 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
 
-import '../../../core/constants/dimensions.dart';
-import '../../../core/constants/styles.dart';
-import '../../../core/helper/route_helper.dart';
-import '../../../core/widget/custom_button.dart';
+import '../../../core/theme/store_tokens.dart';
+import '../../../core/theme/store_typography.dart';
+import '../../../core/widget/store_buttons.dart';
+import '../../../core/widget/store_media.dart';
 
 class PromoCard extends StatelessWidget {
-  final String imageUrl;
-  final String title;
-  final String buttonText;
-
-  const PromoCard({super.key, 
+  const PromoCard({
     required this.imageUrl,
     required this.title,
     required this.buttonText,
+    required this.onPressed,
+    this.description,
+    super.key,
   });
 
+  final String imageUrl;
+  final String title;
+  final String? description;
+  final String buttonText;
+  final VoidCallback onPressed;
+
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFE9E7FD),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: robotoRegular.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: Dimensions.fontSizeLarge,
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: title,
+    child: Material(
+      color: StorePalette.lightPurple,
+      borderRadius: BorderRadius.circular(StoreRadii.pill),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            PositionedDirectional(
+              start: 0,
+              top: 0,
+              bottom: 0,
+              width: 170,
+              child: StoreNetworkMedia(
+                url: imageUrl,
+                semanticLabel: title,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FractionallySizedBox(
+                widthFactor: 0.58,
+                child: Padding(
+                  padding: const EdgeInsets.all(StoreSpacing.md),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: StoreTypography.headline,
+                      ),
+                      if (description?.trim().isNotEmpty ?? false) ...[
+                        const SizedBox(height: StoreSpacing.xxs),
+                        Text(
+                          description!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: StoreTypography.caption,
+                        ),
+                      ],
+                      const SizedBox(height: StoreSpacing.sm),
+                      StoreButton(
+                        label: buttonText,
+                        onPressed: onPressed,
+                        expand: false,
+                        variant: StoreButtonVariant.secondary,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
-                CustomButton(
-                  buttonText: buttonText,
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 12.sp,
-                  width: 70.w,
-                  isBold: false,
-                  height: 35.h,
-                  radius: 15.r,
-                  onPressed: () {
-                    Get.offAndToNamed(RouteHelper.homePage);
-                  },
-                ),
-              ],
+              ),
             ),
-          ),
-          Positioned(
-            left: 10,
-            bottom: 10,
-            child: Image.asset(
-              imageUrl,
-              fit: BoxFit.fill,
-              width: 80.w,
-              height: 50.h,
-              filterQuality: FilterQuality.high,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
 }
