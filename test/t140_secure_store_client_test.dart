@@ -197,6 +197,35 @@ void main() {
     expect(attempt.id, isNot(first));
   });
 
+  test(
+    'rapid duplicate submission executes once and retry keeps identity',
+    () async {
+      final attempt = CheckoutAttempt();
+      final submittedIds = <String>[];
+
+      Future<void> submit({required bool successful}) async {
+        if (!attempt.begin()) return;
+        submittedIds.add(attempt.id);
+        await Future<void>.delayed(Duration.zero);
+        attempt.finish(successful: successful);
+      }
+
+      final first = submit(successful: false);
+      final duplicate = submit(successful: false);
+      await Future.wait([first, duplicate]);
+
+      expect(submittedIds, hasLength(1));
+      final retainedId = submittedIds.single;
+
+      await submit(successful: false);
+      expect(submittedIds, [retainedId, retainedId]);
+
+      await submit(successful: true);
+      await submit(successful: false);
+      expect(submittedIds.last, isNot(retainedId));
+    },
+  );
+
   test('Item persists listingId through cart serialization', () {
     final item = Item.fromJson(_itemJson(productId: 91, listingId: 407));
     final restored = Item.fromJson2(item.toJson());

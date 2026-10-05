@@ -18,15 +18,15 @@ persistence, cart, and checkout behavior. Device, live API, and visual checks ar
 
 **Purpose**: Freeze current behavior and resolve implementation blockers before UI migration.
 
-- [ ] T001 Record the implementation-start branch, Flutter/Dart versions, Android/iOS targets, and clean-worktree evidence in `specs/001-store-mobile-ui/evidence/baseline.md`
-- [ ] T002 [P] Replace the stale counter test with an app bootstrap smoke test in `test/widget_test.dart`
-- [ ] T003 [P] Add regression coverage for retained session keys, locale, and account-role parsing in `test/contracts/session_contract_test.dart`
-- [ ] T004 [P] Add regression coverage for cart-line serialization, `listingId`, options, and quantity in `test/contracts/cart_persistence_contract_test.dart`
-- [ ] T005 [P] Add regression coverage for password-reset proof handling and redacted diagnostics in `test/contracts/recovery_contract_test.dart`
-- [ ] T006 Extend checkout-attempt replay and duplicate-submit coverage in `test/t140_secure_store_client_test.dart`
-- [ ] T007 Resolve each critical capability decision for favorites, address books, saved payment methods, advanced filters, and 3D/360 in `specs/001-store-mobile-ui/evidence/backend-capabilities.md`
-- [ ] T008 Define reference viewport sizes, supported device matrix, screenshot naming, and visual-diff tolerance in `specs/001-store-mobile-ui/evidence/visual-baseline.md`
-- [ ] T009 Capture ownership and planned implementation phase for all eight boards and all 44 screen contracts in `specs/001-store-mobile-ui/evidence/reference-ownership.md`
+- [x] T001 Record the implementation-start branch, Flutter/Dart versions, Android/iOS targets, and clean-worktree evidence in `specs/001-store-mobile-ui/evidence/baseline.md`
+- [x] T002 [P] Replace the stale counter test with an app bootstrap smoke test in `test/widget_test.dart`
+- [x] T003 [P] Add regression coverage for retained session keys, locale, and account-role parsing in `test/contracts/session_contract_test.dart`
+- [x] T004 [P] Add regression coverage for cart-line serialization, `listingId`, options, and quantity in `test/contracts/cart_persistence_contract_test.dart`
+- [x] T005 [P] Add regression coverage for password-reset proof handling and redacted diagnostics in `test/contracts/recovery_contract_test.dart`
+- [x] T006 Extend checkout-attempt replay and duplicate-submit coverage in `test/t140_secure_store_client_test.dart`
+- [x] T007 Resolve each critical capability decision for favorites, address books, saved payment methods, advanced filters, and 3D/360 in `specs/001-store-mobile-ui/evidence/backend-capabilities.md`
+- [x] T008 Define reference viewport sizes, supported device matrix, screenshot naming, and visual-diff tolerance in `specs/001-store-mobile-ui/evidence/visual-baseline.md`
+- [x] T009 Capture ownership and planned implementation phase for all eight boards and all 44 screen contracts in `specs/001-store-mobile-ui/evidence/reference-ownership.md`
 
 **Checkpoint**: Existing security and persistence behavior is protected, every blocking backend gap has
 an owner or an explicit capability-off decision, and the visual comparison method is reproducible.
@@ -37,20 +37,20 @@ an owner or an explicit capability-off decision, and the visual comparison metho
 
 **Purpose**: Establish the reusable visual/state layer that blocks all screen work.
 
-- [ ] T010 Add approved Cairo font assets and declare required weights in `pubspec.yaml` and `assets/font/`
-- [ ] T011 [P] Define approved palette, spacing, radii, elevation, icon sizes, and motion tokens in `lib/core/theme/store_tokens.dart`
-- [ ] T012 [P] Define Cairo typography roles and Arabic-first text styles in `lib/core/theme/store_typography.dart`
-- [ ] T013 Integrate Store tokens and typography without breaking theme persistence in `lib/core/theme/light.dart` and `lib/core/functions/theme_services.dart`
-- [ ] T014 [P] Add typed loading, content, empty, offline, error, and success presentation states in `lib/core/classes/store_view_state.dart`
-- [ ] T015 [P] Build accessible primary, secondary, text, and destructive controls in `lib/core/widget/store_buttons.dart`
-- [ ] T016 [P] Build RTL-safe fields, password fields, selectors, and validation presentation in `lib/core/widget/store_fields.dart`
-- [ ] T017 [P] Build shared product, category, status, discount, rating, and filter chips in `lib/core/widget/store_cards.dart` and `lib/core/widget/store_chips.dart`
-- [ ] T018 [P] Build stable media placeholder, broken-image fallback, and typed media badge in `lib/core/widget/store_media.dart`
-- [ ] T019 [P] Build skeleton, empty, offline, error, success, and pull-to-refresh wrappers in `lib/core/widget/store_states.dart`
-- [ ] T020 Build the reusable customer top bar and inline expandable search in `lib/core/widget/store_top_bar.dart`
-- [ ] T021 Build the five-destination RTL-safe bottom navigation in `lib/core/widget/store_bottom_navigation.dart`
-- [ ] T022 [P] Add widget coverage for tokens, RTL layout, semantics, and text scaling in `test/widgets/store_foundation_test.dart`
-- [ ] T023 Compare shared components against `docs/design-reference/08-design-system.png` and record annotated pass/fail evidence in `specs/001-store-mobile-ui/evidence/phase-02-visual.md`
+- [x] T010 Add approved Cairo font assets and declare required weights in `pubspec.yaml` and `assets/font/`
+- [x] T011 [P] Define approved palette, spacing, radii, elevation, icon sizes, and motion tokens in `lib/core/theme/store_tokens.dart`
+- [x] T012 [P] Define Cairo typography roles and Arabic-first text styles in `lib/core/theme/store_typography.dart`
+- [x] T013 Integrate Store tokens and typography without breaking theme persistence in `lib/core/theme/light.dart` and `lib/core/functions/theme_services.dart`
+- [x] T014 [P] Add typed loading, content, empty, offline, error, and success presentation states in `lib/core/classes/store_view_state.dart`
+- [x] T015 [P] Build accessible primary, secondary, text, and destructive controls in `lib/core/widget/store_buttons.dart`
+- [x] T016 [P] Build RTL-safe fields, password fields, selectors, and validation presentation in `lib/core/widget/store_fields.dart`
+- [x] T017 [P] Build shared product, category, status, discount, rating, and filter chips in `lib/core/widget/store_cards.dart` and `lib/core/widget/store_chips.dart`
+- [x] T018 [P] Build stable media placeholder, broken-image fallback, and typed media badge in `lib/core/widget/store_media.dart`
+- [x] T019 [P] Build skeleton, empty, offline, error, success, and pull-to-refresh wrappers in `lib/core/widget/store_states.dart`
+- [x] T020 Build the reusable customer top bar and inline expandable search in `lib/core/widget/store_top_bar.dart`
+- [x] T021 Build the five-destination RTL-safe bottom navigation in `lib/core/widget/store_bottom_navigation.dart`
+- [x] T022 [P] Add widget coverage for tokens, RTL layout, semantics, and text scaling in `test/widgets/store_foundation_test.dart`
+- [x] T023 Compare shared components against `docs/design-reference/08-design-system.png` and record annotated pass/fail evidence in `specs/001-store-mobile-ui/evidence/phase-02-visual.md`
 
 **Checkpoint**: The design foundation passes Arabic RTL, semantics, scaling, and board-08 visual review;
 compatibility wrappers allow incremental migration of existing screens.

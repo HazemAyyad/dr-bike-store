@@ -1,29 +1,66 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:io';
 
+import 'package:doctor_bike/controller/LocalizationController.dart';
+import 'package:doctor_bike/core/constants/app_constants.dart';
+import 'package:doctor_bike/features/splash/splash.dart';
 import 'package:doctor_bike/my_app.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+  late Directory storageDirectory;
+
+  setUp(() async {
+    Get.testMode = true;
+    SharedPreferences.setMockInitialValues({
+      AppConstants.LANGUAGE_CODE: 'ar',
+      AppConstants.COUNTRY_CODE: 'SA',
+      AppConstants.FirstLog: true,
+    });
+    final preferences = await SharedPreferences.getInstance();
+    storageDirectory = Directory(
+      '${Directory.systemTemp.path}${Platform.pathSeparator}'
+      'doctor-bike-store-widget-test',
+    );
+    await storageDirectory.create(recursive: true);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          pathProviderChannel,
+          (_) async => storageDirectory.path,
+        );
+    await GetStorage.init();
+    await GetStorage().erase();
+    Get.put(
+      LocalizationController(sharedPreferences: preferences),
+      permanent: true,
+    );
+  });
+
+  tearDown(() async {
+    await GetStorage().erase();
+    Get.reset();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(pathProviderChannel, null);
+  });
+
+  testWidgets('Store app bootstrap builds the configured initial route', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(GetMaterialApp), findsOneWidget);
+    expect(find.byType(SplashScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
   });
 }
