@@ -19,9 +19,14 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  late final StreamSubscription<InternetStatus> _connectionSubscription;
+
   @override
   void initState() {
-    InternetConnection().onStatusChange.listen((event) {
+    super.initState();
+    _connectionSubscription = InternetConnection().onStatusChange.listen((
+      event,
+    ) {
       switch (event) {
         case InternetStatus.connected:
           _navigatetohome();
@@ -30,7 +35,12 @@ class _SplashScreenState extends State<SplashScreen> {
           break;
       }
     });
-    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _connectionSubscription.cancel();
+    super.dispose();
   }
 
   _navigatetohome() async {
