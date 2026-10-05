@@ -7,8 +7,7 @@ import '../../features/acount/personal_screen.dart';
 import '../../features/acount/profile_screen.dart';
 import '../../features/acount/terms_and_condotions.dart';
 import '../../features/auth/signin/sign_in_screen.dart';
-import '../../features/auth/forget_password/done_screen.dart';
-import '../../features/auth/forget_password/send_otp_screen.dart';
+import '../../features/auth/forget_password/forget_password_page.dart';
 import '../../features/auth/signup/sign_up_screen.dart';
 import '../../features/category/filter_screen.dart';
 import '../../features/home_screen/home_page.dart';
@@ -24,6 +23,8 @@ import '../../features/search/search_screen.dart';
 import '../../features/shop/check_out_done.dart';
 import '../../features/shop/check_out_screen.dart';
 import '../../features/splash/splash.dart';
+import '../../features/splash/store_unavailable_screen.dart';
+import '../../features/splash/update_required_screen.dart';
 import '../../features/supCategory/supCategory.dart';
 
 class RouteHelper {
@@ -33,9 +34,9 @@ class RouteHelper {
   static const String intoLog = '/IntroLog';
   static const String signIn = '/SignInScreen';
   static const String signUp = '/SignUpScreen';
-  // static const String otpPage = '/OtpPage';
-  static const String sendOtpPage = '/SendOtpScreen';
-  static const String doneScreen = '/DoneScreen';
+  static const String forgotPassword = '/ForgotPasswordScreen';
+  static const String storeUnavailable = '/StoreUnavailableScreen';
+  static const String updateRequired = '/UpdateRequiredScreen';
   static const String homePage = '/HomePage';
   static const String categoreyPage = '/CategoreyPage';
   static const String checkOutScreen = '/CheckOutScreen';
@@ -71,9 +72,24 @@ class RouteHelper {
       page: () => const SignUpScreen(),
       transition: Transition.upToDown,
     ),
-    // GetPage(name: otpPage, page: () => const OtpPage()),
-    GetPage(name: sendOtpPage, page: () => const SendOtpScreen()),
-    GetPage(name: doneScreen, page: () => const DoneScreen()),
+    GetPage(
+      name: forgotPassword,
+      page: () {
+        final arguments = Get.arguments;
+        return ForgetPasswordPage(
+          initialIdentifier:
+              arguments is Map ? arguments['identifier']?.toString() : null,
+        );
+      },
+    ),
+    GetPage(
+      name: storeUnavailable,
+      page: () => StoreUnavailableScreen.fromArguments(Get.arguments),
+    ),
+    GetPage(
+      name: updateRequired,
+      page: () => UpdateRequiredScreen.fromArguments(Get.arguments),
+    ),
     GetPage(
       name: homePage,
       page: () => const HomePage(),
