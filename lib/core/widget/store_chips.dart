@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
@@ -24,16 +25,22 @@ class StoreStatusChip extends StatelessWidget {
         StorePalette.textSecondary,
         StorePalette.background,
       ),
-      StoreStatusTone.info => (StorePalette.info, StorePalette.infoSoft),
+      StoreStatusTone.info => (
+        StorePalette.info,
+        StorePalette.derivedInfoSurface,
+      ),
       StoreStatusTone.success => (
         StorePalette.success,
-        StorePalette.successSoft,
+        StorePalette.derivedSuccessSurface,
       ),
       StoreStatusTone.warning => (
         StorePalette.warning,
-        StorePalette.warningSoft,
+        StorePalette.derivedWarningSurface,
       ),
-      StoreStatusTone.error => (StorePalette.error, StorePalette.errorSoft),
+      StoreStatusTone.error => (
+        StorePalette.error,
+        StorePalette.derivedErrorSurface,
+      ),
     };
 
     return Semantics(
@@ -79,7 +86,7 @@ class StoreAvailabilityChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => StoreStatusChip(
-    label: inStock ? 'متوفر' : 'غير متوفر',
+    label: inStock ? 'storeAvailable'.tr : 'storeUnavailable'.tr,
     tone: inStock ? StoreStatusTone.success : StoreStatusTone.error,
   );
 }
@@ -105,8 +112,15 @@ class StoreRating extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safeValue = value.clamp(0, 5).toStringAsFixed(1);
+    final semanticsLabel =
+        count == null
+            ? 'storeRating'.trParams({'value': safeValue})
+            : 'storeRatingWithReviews'.trParams({
+              'value': safeValue,
+              'count': '$count',
+            });
     return Semantics(
-      label: 'التقييم $safeValue من 5${count == null ? '' : '، $count مراجعة'}',
+      label: semanticsLabel,
       excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -145,10 +159,10 @@ class StoreFilterChip extends StatelessWidget {
     onSelected: onSelected,
     label: Text(count == null ? label : '$label ($count)'),
     labelStyle: StoreTypography.label.copyWith(
-      color: selected ? StorePalette.purpleDark : StorePalette.textPrimary,
+      color: selected ? StorePalette.navy : StorePalette.textPrimary,
     ),
     backgroundColor: StorePalette.surface,
-    selectedColor: StorePalette.purpleSoft,
+    selectedColor: StorePalette.lightPurple,
     checkmarkColor: StorePalette.purple,
     side: BorderSide(
       color: selected ? StorePalette.purple : StorePalette.border,

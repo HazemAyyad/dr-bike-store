@@ -1,4 +1,5 @@
 import 'package:doctor_bike/core/classes/store_view_state.dart';
+import 'package:doctor_bike/core/locale/locale.dart';
 import 'package:doctor_bike/core/theme/light.dart';
 import 'package:doctor_bike/core/theme/store_tokens.dart';
 import 'package:doctor_bike/core/theme/store_typography.dart';
@@ -13,6 +14,7 @@ import 'package:doctor_bike/core/widget/store_top_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -26,8 +28,32 @@ void main() {
     await materialIcons.load();
   });
 
+  setUp(() => Get.testMode = true);
+  tearDown(Get.reset);
+
   test('approved tokens and Cairo roles remain stable', () {
+    expect(StorePalette.navy, const Color(0xFF0F0F31));
     expect(StorePalette.purple, const Color(0xFF6B65BD));
+    expect(StorePalette.lightPurple, const Color(0xFFE9E8F7));
+    expect(StorePalette.background, const Color(0xFFF8F9FB));
+    expect(StorePalette.surface, const Color(0xFFFFFFFF));
+    expect(StorePalette.success, const Color(0xFF22A06B));
+    expect(StorePalette.warning, const Color(0xFFF5A623));
+    expect(StorePalette.error, const Color(0xFFEB4D4F));
+    expect(StorePalette.info, const Color(0xFF3B82F6));
+    expect(StorePalette.textPrimary, const Color(0xFF17172B));
+    expect(StorePalette.textSecondary, const Color(0xFF73737D));
+    expect(StorePalette.textDisabled, const Color(0xFFA0A3B1));
+    expect(StorePalette.border, const Color(0xFFE5E6EA));
+    final theme = light();
+    expect(theme.primaryColor, StorePalette.purple);
+    expect(theme.colorScheme.secondary, StorePalette.navy);
+    expect(theme.colorScheme.surface, StorePalette.surface);
+    expect(theme.colorScheme.error, StorePalette.error);
+    expect(theme.scaffoldBackgroundColor, StorePalette.background);
+    expect(theme.disabledColor, StorePalette.textDisabled);
+    expect(theme.dividerColor, StorePalette.border);
+    expect(theme.hoverColor, StorePalette.lightPurple);
     expect(StoreSpacing.md, 16);
     expect(StoreRadii.lg, 16);
     expect(StoreCalibration.controlHeight, 48);
@@ -51,6 +77,60 @@ void main() {
     expect(success, isA<StoreSuccess<List<int>>>());
   });
 
+  test('shared foundation translation keys cover every supported locale', () {
+    const requiredKeys = [
+      'storeNavHome',
+      'storeNavCategories',
+      'storeNavOrders',
+      'storeNavFavorites',
+      'storeNavProfile',
+      'storeGreeting',
+      'storeSearchHint',
+      'storeOpenSearch',
+      'storeCloseSearch',
+      'storeNotifications',
+      'storeCart',
+      'storeSearchField',
+      'storeRetry',
+      'storeStateEmptyTitle',
+      'storeStateOfflineTitle',
+      'storeStateErrorTitle',
+      'storeStateSuccessTitle',
+      'storeLoading',
+      'storeAvailable',
+      'storeUnavailable',
+      'storeRating',
+      'storeRatingWithReviews',
+      'storeMediaImage',
+      'storeMediaVideo',
+      'storeMedia3d',
+      'storeMedia360',
+      'storeMediaUnavailable',
+      'storeShowPassword',
+      'storeHidePassword',
+      'storeAddFavorite',
+      'storeRemoveFavorite',
+      'storeAddToCart',
+      'storeProductCount',
+      'storeProductCardSemantics',
+      'storeCategoryCardSemantics',
+    ];
+    final translations = MyLocale().keys;
+
+    for (final locale in const ['ar', 'en', 'he']) {
+      final localeKeys = translations[locale];
+      expect(localeKeys, isNotNull, reason: 'Missing locale: $locale');
+      for (final key in requiredKeys) {
+        expect(
+          localeKeys,
+          contains(key),
+          reason: 'Missing $key for locale $locale',
+        );
+        expect(localeKeys![key], isNotEmpty);
+      }
+    }
+  });
+
   testWidgets('five destinations are RTL-safe, semantic, and selectable', (
     tester,
   ) async {
@@ -70,6 +150,10 @@ void main() {
     );
 
     expect(StoreDestination.values, hasLength(5));
+    final navigationContext = tester.element(
+      find.byType(StoreBottomNavigation),
+    );
+    expect(Directionality.of(navigationContext), TextDirection.rtl);
     expect(find.bySemanticsLabel('الرئيسية'), findsOneWidget);
     expect(find.bySemanticsLabel('الأقسام'), findsOneWidget);
     expect(find.bySemanticsLabel('طلباتي'), findsOneWidget);
@@ -83,6 +167,28 @@ void main() {
     await tester.tap(find.bySemanticsLabel('المفضلة'));
     await tester.pump();
     expect(selected, StoreDestination.favorites);
+  });
+
+  testWidgets('state wrappers resolve Arabic copy and retry in RTL', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        child: Scaffold(
+          body: StoreStateView<List<int>>(
+            state: const StoreError<List<int>>(message: 'تفاصيل الخطأ'),
+            contentBuilder: (_, _) => const SizedBox.shrink(),
+            onRetry: _noop,
+          ),
+        ),
+      ),
+    );
+
+    final stateContext = tester.element(find.byType(StoreMessageState));
+    expect(Directionality.of(stateContext), TextDirection.rtl);
+    expect(find.text('تعذر إكمال الطلب'), findsOneWidget);
+    expect(find.text('إعادة المحاولة'), findsOneWidget);
+    expect(find.text('تفاصيل الخطأ'), findsOneWidget);
   });
 
   testWidgets('controls preserve semantics at 1.3 text scale', (tester) async {
@@ -110,6 +216,7 @@ void main() {
 
     expect(find.bySemanticsLabel('متابعة الطلب'), findsOneWidget);
     expect(find.bySemanticsLabel('كلمة المرور'), findsWidgets);
+    expect(find.byTooltip('إظهار كلمة المرور'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -168,9 +275,11 @@ class _TestApp extends StatelessWidget {
   final double textScale;
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) => GetMaterialApp(
     debugShowCheckedModeBanner: false,
     theme: light(),
+    locale: const Locale('ar'),
+    translations: MyLocale(),
     home: MediaQuery(
       data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
       child: Directionality(textDirection: TextDirection.rtl, child: child),

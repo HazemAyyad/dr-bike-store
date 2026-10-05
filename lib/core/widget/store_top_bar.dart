@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
@@ -8,7 +9,7 @@ import 'store_fields.dart';
 class StoreTopBar extends StatefulWidget {
   const StoreTopBar({
     required this.displayName,
-    this.greeting = 'مرحبًا',
+    this.greeting,
     this.avatar,
     this.notificationCount,
     this.cartCount,
@@ -16,13 +17,13 @@ class StoreTopBar extends StatefulWidget {
     this.onCart,
     this.onSearch,
     this.onSearchChanged,
-    this.searchHint = 'ابحث عن منتج',
+    this.searchHint,
     this.initialSearchExpanded = false,
     super.key,
   });
 
   final String displayName;
-  final String greeting;
+  final String? greeting;
   final Widget? avatar;
   final int? notificationCount;
   final int? cartCount;
@@ -30,7 +31,7 @@ class StoreTopBar extends StatefulWidget {
   final VoidCallback? onCart;
   final ValueChanged<String>? onSearch;
   final ValueChanged<String>? onSearchChanged;
-  final String searchHint;
+  final String? searchHint;
   final bool initialSearchExpanded;
 
   @override
@@ -82,7 +83,7 @@ class _StoreTopBarState extends State<StoreTopBar> {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: StorePalette.purpleSoft,
+                    backgroundColor: StorePalette.lightPurple,
                     child:
                         widget.avatar ??
                         const Icon(
@@ -96,7 +97,10 @@ class _StoreTopBarState extends State<StoreTopBar> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.greeting, style: StoreTypography.caption),
+                        Text(
+                          widget.greeting ?? 'storeGreeting'.tr,
+                          style: StoreTypography.caption,
+                        ),
                         Text(
                           widget.displayName,
                           maxLines: 1,
@@ -109,18 +113,20 @@ class _StoreTopBarState extends State<StoreTopBar> {
                   StoreIconButton(
                     icon: _searchExpanded ? Icons.close : Icons.search,
                     semanticLabel:
-                        _searchExpanded ? 'إغلاق البحث' : 'فتح البحث',
+                        _searchExpanded
+                            ? 'storeCloseSearch'.tr
+                            : 'storeOpenSearch'.tr,
                     onPressed: _toggleSearch,
                   ),
                   StoreIconButton(
                     icon: Icons.notifications_none,
-                    semanticLabel: 'الإشعارات',
+                    semanticLabel: 'storeNotifications'.tr,
                     badgeCount: widget.notificationCount,
                     onPressed: widget.onNotifications,
                   ),
                   StoreIconButton(
                     icon: Icons.shopping_cart_outlined,
-                    semanticLabel: 'سلة التسوق',
+                    semanticLabel: 'storeCart'.tr,
                     badgeCount: widget.cartCount,
                     onPressed: widget.onCart,
                   ),
@@ -137,8 +143,8 @@ class _StoreTopBarState extends State<StoreTopBar> {
                         child: StoreTextField(
                           controller: _searchController,
                           focusNode: _searchFocusNode,
-                          hint: widget.searchHint,
-                          semanticLabel: 'حقل البحث',
+                          hint: widget.searchHint ?? 'storeSearchHint'.tr,
+                          semanticLabel: 'storeSearchField'.tr,
                           prefixIcon: Icons.search,
                           textInputAction: TextInputAction.search,
                           onChanged: widget.onSearchChanged,
