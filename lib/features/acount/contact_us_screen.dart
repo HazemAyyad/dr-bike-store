@@ -119,7 +119,7 @@ class ContactUsPage extends StatelessWidget {
                       children: [
                         _buildSocialIcon(
                           Images.facebookIcon,
-                          onTap: accountControllerImp.openFacebook,
+                          onTap: accountControllerImp.openTwitter,
                         ),
                         const SizedBox(width: 20),
                         _buildSocialIcon(

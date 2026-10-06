@@ -25,6 +25,23 @@ enum AccountViewStatus { guest, initial, loading, content, offline, error }
 
 enum AccountMutationStatus { idle, submitting, success, failure }
 
+typedef ConnectivityChecker = Future<bool> Function();
+
+Future<bool> _defaultConnectivityChecker() async =>
+    await CheckInternet.checkInternet() == true;
+
+Uri? safeHttpUri(String? value) {
+  final uri = Uri.tryParse(value?.trim() ?? '');
+  if (uri == null || !uri.hasAuthority) return null;
+  if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+  return uri;
+}
+
+bool isValidAccountDeletionResponse(Response response) =>
+    response.statusCode == 200 &&
+    response.body is Map &&
+    response.body['message'] == 'success';
+
 Map<String, Object?> profileEditPayload({
   required String fullName,
   required String email,
@@ -53,7 +70,7 @@ abstract class AccountController extends GetxController {
 
 class AccountControllerImp extends AccountController {
   GlobalKey<FormState> formstate = GlobalKey<FormState>();
-  bool isDarkMode = ThemeServices().loadThemeFromBox();
+  late bool isDarkMode;
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
@@ -80,8 +97,14 @@ class AccountControllerImp extends AccountController {
   AccountMutationStatus mutationStatus = AccountMutationStatus.idle;
   String? message;
   final AuthRepository authRepository;
+  final ConnectivityChecker connectivityChecker;
   late StatusRequest statusRequest;
-  AccountControllerImp({required this.authRepository});
+  AccountControllerImp({
+    required this.authRepository,
+    ConnectivityChecker? connectivityChecker,
+    bool? initialDarkMode,
+  }) : connectivityChecker = connectivityChecker ?? _defaultConnectivityChecker,
+       isDarkMode = initialDarkMode ?? ThemeServices().loadThemeFromBox();
   @override
   getUserById({bool navigate = true}) async {
     token = await AppUsageService.getToken();
@@ -176,15 +199,16 @@ class AccountControllerImp extends AccountController {
 
   @override
   editeUser() async {
-    if (await CheckInternet.checkInternet()) {
+    if (await connectivityChecker()) {
       try {
         mutationStatus = AccountMutationStatus.submitting;
         message = null;
         update();
         if (userModel!.fullName != nameController.text ||
+            userModel!.email != emailController.text ||
             userModel!.phoneNumber != phoneNumberController.text ||
             userModel!.phoneNumber2 != phoneNumber2Controller.text ||
-            userModel!.cityId != selectedCityId ||
+            userModel!.cityId?.toString() != selectedCityId ||
             userModel!.address != addressController.text) {
           statusRequest = StatusRequest.loading;
           for (int i = 0; i < cities.length; i++) {
@@ -211,17 +235,19 @@ class AccountControllerImp extends AccountController {
             userModel = authoritative;
             mutationStatus = AccountMutationStatus.success;
             profileStatus = AccountViewStatus.content;
+            _populateProfile(authoritative);
+            await AppUsageService.saveUserName(authoritative.fullName ?? '');
+            await AppUsageService.saveUserEmail(authoritative.email);
             showCustomSnackBar(
               "Account information has been updated".tr,
               isError: false,
             );
-            await AppUsageService.saveUserName(authoritative.fullName ?? '');
-            await AppUsageService.saveUserEmail(authoritative.email);
-            _populateProfile(authoritative);
           } else {
             mutationStatus = AccountMutationStatus.failure;
             message = 'تعذر حفظ بيانات الحساب';
           }
+        } else {
+          mutationStatus = AccountMutationStatus.idle;
         }
       } catch (e) {
         mutationStatus = AccountMutationStatus.failure;
@@ -256,10 +282,7 @@ class AccountControllerImp extends AccountController {
     update();
     try {
       final response = await authRepository.deleteUserAccount();
-      final valid =
-          response.statusCode == 200 &&
-          response.body is Map &&
-          response.body['message'] == 'success';
+      final valid = isValidAccountDeletionResponse(response);
       if (!valid) {
         mutationStatus = AccountMutationStatus.failure;
         update();
@@ -291,42 +314,7 @@ class AccountControllerImp extends AccountController {
     update();
   }
 
-  deleteUserAccount() async {
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        statusRequest = StatusRequest.loading;
-
-        var response = await authRepository.deleteUserAccount();
-        if (response.statusCode == 200) {
-          await AppUsageService.deleteIsLogin();
-          await AppUsageService.deleteToken();
-          await AppUsageService.deleteUserEmail();
-          await AppUsageService.deleteUserId();
-          await AppUsageService.deleteUserName();
-          await AppUsageService.deleteTypeUser();
-          await loadingToken();
-          Get.back();
-          OverlayLoadingProgress.stop();
-          showCustomSnackBar("The account has been deleted".tr, isError: false);
-        }
-        OverlayLoadingProgress.stop();
-        update();
-      } catch (e) {
-        debugPrint('[STORE_ACCOUNT] getAllOrders error=$e', wrapWidth: 1024);
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-    OverlayLoadingProgress.stop();
-  }
+  Future<bool> deleteUserAccount() => deactivateAccount(confirmed: true);
 
   @override
   getAllOrders() async {
@@ -512,48 +500,22 @@ class AccountControllerImp extends AccountController {
     }
   }
 
-  void openInstagram() async {
-    if (conactUsModel!.data.instagram == null) {
-      if (await canLaunch('')) {
-        await launch('');
-      } else {
-        showCustomSnackBar(
-          "Try using another means of communication.".tr,
-          isError: true,
-        );
-      }
-    } else {
-      if (await canLaunch(conactUsModel!.data.instagram!)) {
-        await launch(conactUsModel!.data.instagram!);
-      } else {
-        showCustomSnackBar(
-          "Try using another means of communication.".tr,
-          isError: true,
-        );
-      }
-    }
-  }
+  Future<void> openInstagram() =>
+      _openConfiguredHttpUrl(conactUsModel?.data.instagram);
 
-  void openFacebook() async {
-    if (conactUsModel!.data.twitter == null) {
-      if (await canLaunch('')) {
-        await launch('');
-      } else {
-        showCustomSnackBar(
-          "Try using another means of communication.".tr,
-          isError: true,
-        );
-      }
-    } else {
-      if (await canLaunch(conactUsModel!.data.twitter!)) {
-        await launch(conactUsModel!.data.twitter!);
-      } else {
-        showCustomSnackBar(
-          "Try using another means of communication.".tr,
-          isError: true,
-        );
-      }
+  Future<void> openTwitter() =>
+      _openConfiguredHttpUrl(conactUsModel?.data.twitter);
+
+  Future<void> _openConfiguredHttpUrl(String? value) async {
+    final uri = safeHttpUri(value);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
     }
+    showCustomSnackBar(
+      "Try using another means of communication.".tr,
+      isError: true,
+    );
   }
 
   void openCall() async {
