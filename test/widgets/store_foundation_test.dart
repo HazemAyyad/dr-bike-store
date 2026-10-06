@@ -273,6 +273,38 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'compact product card fits its calibrated size at 1.3 text scale',
+    (tester) async {
+      await tester.pumpWidget(
+        const _TestApp(
+          textScale: 1.3,
+          child: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: StoreCalibration.homeProductCardWidth,
+                height: StoreCalibration.homeProductCardHeight,
+                child: StoreProductCard(
+                  name: 'سكوتر كهربائي عملي للتنقل اليومي داخل المدينة',
+                  price: 1350,
+                  rating: 4.5,
+                  discountPercent: 10,
+                  compact: true,
+                  media: ColoredBox(color: StorePalette.background),
+                  onTap: _noop,
+                  onAddToCart: _noop,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('foundation renders at the reference viewport', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));

@@ -151,13 +151,14 @@ avatar, and 72 px bottom navigation.
 - `test/widgets/home_search_test.dart` covers Arabic RTL, shell preservation, compact/small viewport,
   1.30 text scale, loaded/skeleton/discovery/results/no-results, and all five phase goldens.
 - `test/widgets/store_foundation_test.dart` covers the added localized View all and Search again
-  keys alongside the shared foundation contract.
+  keys, the shared foundation contract, and the compact `112 x 236` product card at 1.30 text
+  scale without layout overflow.
 
 ## Validation
 
 - `dart format` completed on every modified Dart file.
 - `flutter analyze`: no issues found.
-- `flutter test`: 84 tests passed.
+- `flutter test`: 85 tests passed.
 - `git diff --check`: clean.
 
 ## Acceptance Boundary
