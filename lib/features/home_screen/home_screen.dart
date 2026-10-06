@@ -16,6 +16,7 @@ import '../../core/widget/store_states.dart';
 import '../../core/widget/store_top_bar.dart';
 import '../acount/profile_screen.dart';
 import '../search/search_screen.dart';
+import '../favorites/favorites_screen.dart';
 import '../shop/shop_car_screen.dart';
 import 'home_page.dart';
 import 'widget/main_categorys.dart';
@@ -66,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
       controller: controller,
     ),
     StoreDestination.orders => const _OrdersDestination(),
-    StoreDestination.favorites => const _FavoritesUnavailable(),
+    StoreDestination.favorites => const FavoritesScreen(),
     StoreDestination.profile => ProfileScreen(),
   };
 
@@ -253,17 +254,6 @@ class _OrdersDestination extends StatelessWidget {
         await Get.find<AccountControllerImp>().getAllOrders();
       }
     },
-  );
-}
-
-class _FavoritesUnavailable extends StatelessWidget {
-  const _FavoritesUnavailable();
-
-  @override
-  Widget build(BuildContext context) => StoreMessageState(
-    kind: StoreMessageKind.empty,
-    title: 'storeFavoritesUnavailableTitle'.tr,
-    message: 'storeFavoritesUnavailableMessage'.tr,
   );
 }
 

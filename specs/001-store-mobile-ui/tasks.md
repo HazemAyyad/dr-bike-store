@@ -171,16 +171,16 @@ supported 360 media, options, quantities, reviews, similar items, share, cart, a
 **Independent Test**: Add/remove favorites as guest and user per resolved policy; add option variants to
 cart, change quantity, remove lines, apply coupon intent, restart the app, and preserve line identity.
 
-- [ ] T069 [P] [US6] Add favorites authority, guest policy, persistence, and failure-transition tests in `test/controllers/favorites_controller_test.dart`
-- [ ] T070 [P] [US6] Add cart identity, quantity, coupon intent, retained restart, and invalid-listing tests in `test/controllers/cart_controller_test.dart`
-- [ ] T071 [US6] Implement favorites repository behavior only for the resolved authority in `lib/repository/favorites/favorites_repository.dart`
-- [ ] T072 [US6] Implement capability-gated favorites orchestration and guest/auth transitions in `lib/controller/favorites/favorites_controller.dart`
-- [ ] T073 [US6] Build favorites content, remove, add-to-cart, loading, empty, offline, and error states in `lib/features/favorites/favorites_screen.dart`
-- [ ] T074 [US6] Refactor cart state around stable listing/option identity and server-revalidation boundaries in `lib/controller/shop/shop_controller.dart`
-- [ ] T075 [US6] Rebuild cart layout, summary, coupon entry, clear/remove confirmations, and checkout gate in `lib/features/shop/shop_car_screen.dart`
-- [ ] T076 [P] [US6] Refactor cart line, quantity, media, availability, and option presentation in `lib/features/shop/widget/item_shop_car.dart`
-- [ ] T077 [P] [US6] Align empty-cart and bill-summary components with shared global states/tokens in `lib/features/shop/widget/empty_car.dart` and `lib/features/shop/widget/bill_details.dart`
-- [ ] T078 [US6] Compare SCR-23 and SCR-24 with boards 02, 03, 06, and 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-08-us6-visual.md`
+- [x] T069 [P] [US6] Add favorites authority, guest policy, persistence, and failure-transition tests in `test/controllers/favorites_controller_test.dart`
+- [x] T070 [P] [US6] Add cart identity, quantity, coupon intent, retained restart, and invalid-listing tests in `test/controllers/cart_controller_test.dart`
+- [x] T071 [US6] Implement favorites repository behavior only for the resolved authority in `lib/repository/favorites/favorites_repository.dart`
+- [x] T072 [US6] Implement capability-gated favorites orchestration and guest/auth transitions in `lib/controller/favorites/favorites_controller.dart`
+- [x] T073 [US6] Build favorites content, remove, add-to-cart, loading, empty, offline, and error states in `lib/features/favorites/favorites_screen.dart`
+- [x] T074 [US6] Refactor cart state around stable listing/option identity and server-revalidation boundaries in `lib/controller/shop/shop_controller.dart`
+- [x] T075 [US6] Rebuild cart layout, summary, coupon entry, clear/remove confirmations, and checkout gate in `lib/features/shop/shop_car_screen.dart`
+- [x] T076 [P] [US6] Refactor cart line, quantity, media, availability, and option presentation in `lib/features/shop/widget/item_shop_car.dart`
+- [x] T077 [P] [US6] Align empty-cart and bill-summary components with shared global states/tokens in `lib/features/shop/widget/empty_car.dart` and `lib/features/shop/widget/bill_details.dart`
+- [x] T078 [US6] Compare SCR-23 and SCR-24 with boards 02, 03, 06, and 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-08-us6-visual.md`
 
 **Checkpoint**: US6 works under the resolved favorites policy; retained cart remains intent, not authority.
 
