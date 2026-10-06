@@ -51,34 +51,45 @@ class PromoCard extends StatelessWidget {
                 widthFactor: 0.58,
                 child: Padding(
                   padding: const EdgeInsets.all(StoreSpacing.md),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: StoreTypography.headline,
-                      ),
-                      if (description?.trim().isNotEmpty ?? false) ...[
-                        const SizedBox(height: StoreSpacing.xxs),
-                        Text(
-                          description!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: StoreTypography.caption,
+                  child: LayoutBuilder(
+                    builder:
+                        (context, constraints) => FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: AlignmentDirectional.centerStart,
+                          child: SizedBox(
+                            width: constraints.maxWidth,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: StoreTypography.headline,
+                                ),
+                                if (description?.trim().isNotEmpty ??
+                                    false) ...[
+                                  const SizedBox(height: StoreSpacing.xxs),
+                                  Text(
+                                    description!,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: StoreTypography.caption,
+                                  ),
+                                ],
+                                const SizedBox(height: StoreSpacing.sm),
+                                StoreButton(
+                                  label: buttonText,
+                                  onPressed: onPressed,
+                                  expand: false,
+                                  height: StoreCalibration.compactControlHeight,
+                                  variant: StoreButtonVariant.secondary,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ],
-                      const SizedBox(height: StoreSpacing.sm),
-                      StoreButton(
-                        label: buttonText,
-                        onPressed: onPressed,
-                        expand: false,
-                        height: StoreCalibration.compactControlHeight,
-                        variant: StoreButtonVariant.secondary,
-                      ),
-                    ],
                   ),
                 ),
               ),

@@ -48,6 +48,41 @@ class StoreProductCard extends StatelessWidget {
       'currency': currency,
       'availability': availability,
     });
+    final productMedia = Stack(
+      fit: StackFit.expand,
+      children: [
+        media,
+        if (discountPercent != null)
+          PositionedDirectional(
+            top: StoreSpacing.xs,
+            start: StoreSpacing.xs,
+            child: StoreDiscountChip(percent: discountPercent!),
+          ),
+        if (compact && discountPercent == null)
+          PositionedDirectional(
+            top: StoreSpacing.xs,
+            start: StoreSpacing.xs,
+            child: StoreAvailabilityChip(inStock: inStock),
+          ),
+        if (onFavorite != null)
+          PositionedDirectional(
+            top: StoreSpacing.xxs,
+            end: StoreSpacing.xxs,
+            child: IconButton.filledTonal(
+              tooltip:
+                  isFavorite ? 'storeRemoveFavorite'.tr : 'storeAddFavorite'.tr,
+              onPressed: onFavorite,
+              icon: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                color:
+                    isFavorite
+                        ? StorePalette.error
+                        : StorePalette.textSecondary,
+              ),
+            ),
+          ),
+      ],
+    );
 
     return Semantics(
       button: true,
@@ -66,48 +101,13 @@ class StoreProductCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AspectRatio(
-                  aspectRatio: StoreCalibration.productMediaAspectRatio,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      media,
-                      if (discountPercent != null)
-                        PositionedDirectional(
-                          top: StoreSpacing.xs,
-                          start: StoreSpacing.xs,
-                          child: StoreDiscountChip(percent: discountPercent!),
-                        ),
-                      if (compact && discountPercent == null)
-                        PositionedDirectional(
-                          top: StoreSpacing.xs,
-                          start: StoreSpacing.xs,
-                          child: StoreAvailabilityChip(inStock: inStock),
-                        ),
-                      if (onFavorite != null)
-                        PositionedDirectional(
-                          top: StoreSpacing.xxs,
-                          end: StoreSpacing.xxs,
-                          child: IconButton.filledTonal(
-                            tooltip:
-                                isFavorite
-                                    ? 'storeRemoveFavorite'.tr
-                                    : 'storeAddFavorite'.tr,
-                            onPressed: onFavorite,
-                            icon: Icon(
-                              isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color:
-                                  isFavorite
-                                      ? StorePalette.error
-                                      : StorePalette.textSecondary,
-                            ),
-                          ),
-                        ),
-                    ],
+                if (compact)
+                  Expanded(child: productMedia)
+                else
+                  AspectRatio(
+                    aspectRatio: StoreCalibration.productMediaAspectRatio,
+                    child: productMedia,
                   ),
-                ),
                 Padding(
                   padding: EdgeInsets.all(
                     compact ? StoreSpacing.xs : StoreSpacing.sm,
