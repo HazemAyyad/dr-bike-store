@@ -89,9 +89,7 @@ class Mybinding extends Bindings {
       () => ReviewController(
         repository: ReviewRepository(apiClient: Get.find()),
         isAuthenticated: () => Get.find<HomeControllerImp>().isAuthenticated,
-        accountRoles:
-            () =>
-                Get.find<ShopController>().userModel?.accountRoles ?? const [],
+        accountRoles: () => Get.find<ShopController>().userModel?.accountRoles,
       ),
       fenix: true,
     );
