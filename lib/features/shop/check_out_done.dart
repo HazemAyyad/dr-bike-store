@@ -1,82 +1,67 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import '../../controller/shop/shop_controller.dart';
-import '../../core/constants/dimensions.dart';
-import '../../core/constants/images.dart';
-import '../../core/constants/styles.dart';
 import '../../core/helper/route_helper.dart';
+import '../../core/theme/store_tokens.dart';
+import '../../core/theme/store_typography.dart';
+import '../../core/widget/store_buttons.dart';
 
-class CheckOutDone extends StatefulWidget {
+class CheckOutDone extends StatelessWidget {
   const CheckOutDone({super.key});
 
   @override
-  State<CheckOutDone> createState() => _CheckOutDoneState();
-}
-
-class _CheckOutDoneState extends State<CheckOutDone> {
-  @override
-  void initState() {
-    _navigatetohome();
-    super.initState();
-  }
-
-  _navigatetohome() async {
-    await Future.delayed(const Duration(seconds: 3), () {
-      Get.toNamed(RouteHelper.homePage);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GetBuilder<ShopController>(
-      builder: (controller) {
-        return Scaffold(
-          body: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(width: double.infinity),
-                SvgPicture.asset(
-                  Images.done,
-                  width: 160.w,
-                  fit: BoxFit.fitWidth,
-                ),
-                SizedBox(height: 30.h),
-                SizedBox(
-                  width: 270.w,
-                  child: Text(
-                    "Your order has been completed".tr,
-                    textAlign: TextAlign.center,
-                    style: robotoRegular.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: Dimensions.paddingSizeExtremeLarge,
-                      color: Theme.of(context).hintColor,
-                    ),
+  Widget build(BuildContext context) => GetBuilder<ShopController>(
+    builder: (controller) {
+      final orderId = controller.checkoutState.orderId ?? controller.OrderId;
+      if (orderId == null || orderId.trim().isEmpty) {
+        return const Scaffold(
+          body: Center(child: Text('تعذر عرض تأكيد دون رقم طلب معتمد.')),
+        );
+      }
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: StorePalette.background,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(StoreSpacing.lg),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    size: 88,
+                    color: StorePalette.success,
                   ),
-                ),
-                SizedBox(height: 20.h),
-                SizedBox(
-                  width: 270.w,
-                  child: Text(
-                    "Your order is being followed up with number #${controller.OrderId} and you will receive a notification of the order status"
-                        .tr,
+                  const SizedBox(height: StoreSpacing.lg),
+                  Text(
+                    'تم استلام طلبك بنجاح',
+                    style: StoreTypography.headline,
                     textAlign: TextAlign.center,
-                    style: robotoRegular.copyWith(
-                      fontSize: Dimensions.fontSizeExtraLarge2,
-                      color: Theme.of(context).hintColor,
-                    ),
                   ),
-                ),
-                SizedBox(height: 50.h),
-              ],
+                  const SizedBox(height: StoreSpacing.sm),
+                  Text(
+                    'رقم الطلب المعتمد: #$orderId',
+                    style: StoreTypography.title,
+                  ),
+                  const SizedBox(height: StoreSpacing.xl),
+                  StoreButton(
+                    label: 'عرض طلباتي',
+                    onPressed: () => Get.offAllNamed(RouteHelper.homePage),
+                  ),
+                  const SizedBox(height: StoreSpacing.sm),
+                  StoreButton(
+                    label: 'العودة للرئيسية',
+                    variant: StoreButtonVariant.secondary,
+                    onPressed: () => Get.offAllNamed(RouteHelper.homePage),
+                  ),
+                ],
+              ),
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
 }

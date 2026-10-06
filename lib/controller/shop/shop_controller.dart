@@ -15,6 +15,7 @@ import '../../core/helper/route_helper.dart';
 import '../../core/model/auth_eesponse.dart';
 import '../../core/model/city_model.dart';
 import '../../core/model/cart_line_model.dart';
+import '../../core/model/checkout_flow_model.dart';
 import '../../core/model/discount_code_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../../repository/shop/shop_repository.dart';
@@ -24,6 +25,10 @@ class ShopController extends GetxController {
   static const cartStorageKey = 'store_cart_v2';
   static const couponIntentStorageKey = 'store_cart_coupon_intent';
   final CheckoutAttempt _checkoutAttempt = CheckoutAttempt();
+  CheckoutFlowState checkoutState = const CheckoutFlowState();
+  CheckoutPaymentCapability get paymentCapability =>
+      CheckoutPaymentCapability.cash;
+  String? get checkoutAttemptId => _checkoutAttempt.currentId;
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
@@ -135,6 +140,8 @@ class ShopController extends GetxController {
   ShopController({required this.shopRepository, GetStorage? storage})
     : box = storage ?? GetStorage();
   getUserById() async {
+    checkoutState = checkoutState.copyWith(stage: CheckoutStage.loadingProfile);
+    update();
     if (await CheckInternet.checkInternet()) {
       OverlayLoadingProgress.start();
       try {
@@ -177,8 +184,17 @@ class ShopController extends GetxController {
           }
         }
 
+        final resolution = resolveCheckoutRoles(
+          userModel?.accountRoles ?? const [],
+        );
+        checkoutState = CheckoutFlowState(
+          stage: CheckoutStage.address,
+          selectedRole: resolution.role,
+          availableRoles: resolution.availableRoles,
+        );
         Get.toNamed(RouteHelper.checkOutScreen);
       } catch (e, stackTrace) {
+        checkoutState = const CheckoutFlowState(stage: CheckoutStage.error);
         debugPrint('[STORE_CHECKOUT] getUserById error=$e');
         debugPrint('[STORE_CHECKOUT] getUserById stack=$stackTrace');
         showCustomSnackBar(
@@ -662,7 +678,106 @@ class ShopController extends GetxController {
     return confirmCheckoutRole(resolution, selectedRole);
   }
 
-  createOrder() async {
+  void setCheckoutStage(CheckoutStage stage) {
+    checkoutState = checkoutState.copyWith(stage: stage);
+    update();
+  }
+
+  void selectCheckoutRole(String role) {
+    if (!checkoutState.availableRoles.contains(role)) return;
+    checkoutState = checkoutState.copyWith(selectedRole: role);
+    update();
+  }
+
+  Future<void> submitCheckout() async {
+    if (!_checkoutAttempt.begin()) return;
+    final role =
+        checkoutState.selectedRole ?? await _resolveCheckoutAccountRole();
+    if (role == null || selectedCityId == null || selectedVillageId == null) {
+      _checkoutAttempt.finish(successful: false);
+      checkoutState = checkoutState.copyWith(
+        stage: CheckoutStage.validationError,
+        message: 'يرجى استكمال العنوان والشحن ونوع الحساب.',
+      );
+      update();
+      return;
+    }
+    checkoutState = checkoutState.copyWith(stage: CheckoutStage.submitting);
+    update();
+    try {
+      final online = await CheckInternet.checkInternet();
+      if (!online) {
+        checkoutState = checkoutState.copyWith(
+          stage: CheckoutStage.uncertain,
+          message: 'تعذر تأكيد وصول الطلب. أعد المحاولة بنفس رقم المحاولة.',
+        );
+        return;
+      }
+      final coupon = activeCode == true ? couponModel?.code : null;
+      final response = await shopRepository.submitNativeCheckout(
+        _checkoutAttempt.attachTo(
+          buildNativeCheckoutPayload(
+            items: items,
+            accountRole: role,
+            customerAddress: addressController.text,
+            shiplyCityId: int.parse(selectedCityId!),
+            shiplyVillageId: int.parse(selectedVillageId!),
+            couponCode: coupon,
+          ),
+        ),
+      );
+      final success = completeCheckoutAttempt(
+        _checkoutAttempt,
+        response.statusCode,
+        response.body,
+      );
+      if (success != null) {
+        OrderId = success.orderId;
+        checkoutState = CheckoutFlowState(
+          stage: CheckoutStage.success,
+          orderId: success.orderId,
+          replayed: success.replayed,
+          selectedRole: role,
+          availableRoles: checkoutState.availableRoles,
+        );
+        clearCart();
+        Get.offNamed(RouteHelper.checkOutDone);
+        return;
+      }
+      if (response.statusCode == 422 || response.statusCode == 400) {
+        checkoutState = checkoutState.copyWith(
+          stage: CheckoutStage.validationError,
+          validationKind: classifyCheckoutValidation(response.body),
+          message: 'تعذر اعتماد بعض بيانات الطلب. راجع البيانات وحاول مجددًا.',
+        );
+      } else if (response.statusCode == 200 || response.statusCode == 201) {
+        checkoutState = checkoutState.copyWith(
+          stage: CheckoutStage.uncertain,
+          message: 'وصل رد غير مكتمل. أعد المحاولة بنفس رقم المحاولة.',
+        );
+      } else {
+        checkoutState = checkoutState.copyWith(
+          stage: CheckoutStage.error,
+          message: 'تعذر إتمام الطلب. لم يتم مسح السلة.',
+        );
+      }
+    } catch (_) {
+      checkoutState = checkoutState.copyWith(
+        stage: CheckoutStage.uncertain,
+        message: 'قد يكون الطلب وصل إلى الخادم. أعد المحاولة للتحقق.',
+      );
+    } finally {
+      if (checkoutState.stage != CheckoutStage.success) {
+        _checkoutAttempt.finish(successful: false);
+      }
+      update();
+    }
+  }
+
+  createOrder() => submitCheckout();
+
+  // ignore: unused_element
+  _legacyCreateOrder() async {
     if (selectedCityId == null || selectedVillageId == null) {
       showCustomSnackBar('Choose city and village'.tr, isError: true);
       return;
@@ -866,7 +981,10 @@ class ShopController extends GetxController {
     OverlayLoadingProgress.stop();
   }
 
-  createOrderWithCode() async {
+  createOrderWithCode() => submitCheckout();
+
+  // ignore: unused_element
+  _legacyCreateOrderWithCode() async {
     if (selectedCityId == null || selectedVillageId == null) {
       showCustomSnackBar('Choose city and village'.tr, isError: true);
       return;
