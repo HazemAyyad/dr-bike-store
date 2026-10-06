@@ -20,6 +20,9 @@ class ShopRepository extends GetxService {
     );
   }
 
+  Future<Response> submitNativeCheckout(Map<String, dynamic> request) =>
+      createOrder(body: request);
+
   Future<Response> getUser() async {
     String? id = await AppUsageService.getUserId();
     return await apiClient.postData(

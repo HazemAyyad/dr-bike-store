@@ -193,16 +193,16 @@ cart, change quantity, remove lines, apply coupon intent, restart the app, and p
 **Independent Test**: Complete COD checkout across address and Shiply choices, dual-role selection,
 coupon/fee changes, rapid duplicate taps, timeout/retry, malformed success, and confirmed success.
 
-- [ ] T079 [P] [US7] Add address/delivery/payment capability and checkout transition tests in `test/controllers/checkout_flow_test.dart`
-- [ ] T080 [US7] Split checkout state into address, quote, payment, review, submitting, uncertain, and success states in `lib/controller/shop/shop_controller.dart`
-- [ ] T081 [US7] Preserve listing IDs, account roles, coupon, Shiply destination, and idempotency in request mapping in `lib/repository/shop/shop_repository.dart`
-- [ ] T082 [US7] Rebuild checkout as explicit address, shipping, payment, and review steps in `lib/features/shop/check_out_screen.dart`
-- [ ] T083 [P] [US7] Build capability-gated address selection/editor with documented profile fallback in `lib/features/shop/widget/checkout_address_step.dart`
-- [ ] T084 [P] [US7] Build authoritative Shiply destination, fee, method, pickup, and time controls in `lib/features/shop/widget/checkout_shipping_step.dart`
-- [ ] T085 [P] [US7] Build supported-payment-only selection and role-choice presentation in `lib/features/shop/widget/checkout_payment_step.dart`
-- [ ] T086 [US7] Add final review, in-flight lock, uncertain retry, and recoverable validation presentation in `lib/features/shop/widget/checkout_review_step.dart`
-- [ ] T087 [US7] Require an authoritative order identity before clearing cart and rebuild success actions in `lib/features/shop/check_out_done.dart`
-- [ ] T088 [US7] Compare SCR-25 through SCR-29 with boards 03 and 06 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-09-us7-visual.md`
+- [x] T079 [P] [US7] Add address/delivery/payment capability and checkout transition tests in `test/controllers/checkout_flow_test.dart`
+- [x] T080 [US7] Split checkout state into address, quote, payment, review, submitting, uncertain, and success states in `lib/controller/shop/shop_controller.dart`
+- [x] T081 [US7] Preserve listing IDs, account roles, coupon, Shiply destination, and idempotency in request mapping in `lib/repository/shop/shop_repository.dart`
+- [x] T082 [US7] Rebuild checkout as explicit address, shipping, payment, and review steps in `lib/features/shop/check_out_screen.dart`
+- [x] T083 [P] [US7] Build capability-gated address selection/editor with documented profile fallback in `lib/features/shop/widget/checkout_address_step.dart`
+- [x] T084 [P] [US7] Build authoritative Shiply destination, fee, method, pickup, and time controls in `lib/features/shop/widget/checkout_shipping_step.dart`
+- [x] T085 [P] [US7] Build supported-payment-only selection and role-choice presentation in `lib/features/shop/widget/checkout_payment_step.dart`
+- [x] T086 [US7] Add final review, in-flight lock, uncertain retry, and recoverable validation presentation in `lib/features/shop/widget/checkout_review_step.dart`
+- [x] T087 [US7] Require an authoritative order identity before clearing cart and rebuild success actions in `lib/features/shop/check_out_done.dart`
+- [x] T088 [US7] Compare SCR-25 through SCR-29 with boards 03 and 06 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-09-us7-visual.md`
 
 **Checkpoint**: US7 is independently testable; retries reuse the attempt identity and unsupported payment promises are absent.
 
