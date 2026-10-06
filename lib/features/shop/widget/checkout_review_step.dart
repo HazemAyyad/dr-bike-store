@@ -14,16 +14,20 @@ class CheckoutReviewStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = controller.checkoutState;
-    if (state.stage == CheckoutStage.uncertain ||
+    if (state.stage == CheckoutStage.offline ||
+        state.stage == CheckoutStage.uncertain ||
         state.stage == CheckoutStage.validationError ||
         state.stage == CheckoutStage.error) {
       return StoreMessageState(
         kind:
-            state.stage == CheckoutStage.uncertain
+            state.stage == CheckoutStage.offline ||
+                    state.stage == CheckoutStage.uncertain
                 ? StoreMessageKind.offline
                 : StoreMessageKind.error,
         title:
-            state.stage == CheckoutStage.uncertain
+            state.stage == CheckoutStage.offline
+                ? 'لا يوجد اتصال بالإنترنت'
+                : state.stage == CheckoutStage.uncertain
                 ? 'نتيجة الطلب غير مؤكدة'
                 : 'راجع بيانات الطلب',
         message: state.message ?? 'تعذر إتمام الطلب.',

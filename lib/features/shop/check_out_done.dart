@@ -1,11 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../controller/home/home_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
+import '../../core/widget/store_bottom_navigation.dart';
+
+enum CheckoutSuccessAction { orders, home }
+
+StoreDestination checkoutSuccessDestination(CheckoutSuccessAction action) =>
+    switch (action) {
+      CheckoutSuccessAction.orders => StoreDestination.orders,
+      CheckoutSuccessAction.home => StoreDestination.home,
+    };
+
+Future<void> openCheckoutSuccessDestination(
+  CheckoutSuccessAction action,
+) async {
+  final destination = checkoutSuccessDestination(action);
+  if (Get.isRegistered<HomeControllerImp>()) {
+    await Get.find<HomeControllerImp>().selectDestination(destination);
+  }
+  await Get.offAllNamed(RouteHelper.homePage);
+}
 
 class CheckOutDone extends StatelessWidget {
   const CheckOutDone({super.key});
@@ -48,13 +68,19 @@ class CheckOutDone extends StatelessWidget {
                   const SizedBox(height: StoreSpacing.xl),
                   StoreButton(
                     label: 'عرض طلباتي',
-                    onPressed: () => Get.offAllNamed(RouteHelper.homePage),
+                    onPressed:
+                        () => openCheckoutSuccessDestination(
+                          CheckoutSuccessAction.orders,
+                        ),
                   ),
                   const SizedBox(height: StoreSpacing.sm),
                   StoreButton(
                     label: 'العودة للرئيسية',
                     variant: StoreButtonVariant.secondary,
-                    onPressed: () => Get.offAllNamed(RouteHelper.homePage),
+                    onPressed:
+                        () => openCheckoutSuccessDestination(
+                          CheckoutSuccessAction.home,
+                        ),
                   ),
                 ],
               ),

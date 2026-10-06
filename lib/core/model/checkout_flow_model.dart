@@ -6,10 +6,41 @@ enum CheckoutStage {
   payment,
   review,
   submitting,
+  offline,
   uncertain,
   validationError,
   success,
   error,
+}
+
+enum CheckoutTransportKind { response, offline, uncertain }
+
+class CheckoutTransportResult<T> {
+  const CheckoutTransportResult._(this.kind, [this.response]);
+
+  final CheckoutTransportKind kind;
+  final T? response;
+
+  const CheckoutTransportResult.response(T response)
+    : this._(CheckoutTransportKind.response, response);
+  const CheckoutTransportResult.offline()
+    : this._(CheckoutTransportKind.offline);
+  const CheckoutTransportResult.uncertain()
+    : this._(CheckoutTransportKind.uncertain);
+}
+
+Future<CheckoutTransportResult<T>> runCheckoutTransport<T>({
+  required Future<bool> Function() connectivityCheck,
+  required Future<T> Function() submit,
+}) async {
+  if (!await connectivityCheck()) {
+    return const CheckoutTransportResult.offline();
+  }
+  try {
+    return CheckoutTransportResult.response(await submit());
+  } catch (_) {
+    return const CheckoutTransportResult.uncertain();
+  }
 }
 
 enum CheckoutPaymentCapability { cash }

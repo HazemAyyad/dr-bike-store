@@ -2,6 +2,8 @@ import 'package:doctor_bike/core/functions/checkout_attempt.dart';
 import 'package:doctor_bike/core/functions/native_checkout.dart';
 import 'package:doctor_bike/core/model/checkout_flow_model.dart';
 import 'package:doctor_bike/core/model/get_all_item_model.dart';
+import 'package:doctor_bike/core/widget/store_bottom_navigation.dart';
+import 'package:doctor_bike/features/shop/check_out_done.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -24,6 +26,40 @@ void main() {
     'valid cash checkout',
     () => expect(payload()['payment'], {'type': 'cash', 'paid_amount': 0}),
   );
+  test('checkout success orders action targets Orders destination', () {
+    expect(
+      checkoutSuccessDestination(CheckoutSuccessAction.orders),
+      StoreDestination.orders,
+    );
+  });
+  test('checkout success home action targets Home destination', () {
+    expect(
+      checkoutSuccessDestination(CheckoutSuccessAction.home),
+      StoreDestination.home,
+    );
+  });
+  test('preflight offline is recoverable and never submits', () async {
+    var submitCalls = 0;
+    final cart = <int>[1];
+    final result = await runCheckoutTransport<int>(
+      connectivityCheck: () async => false,
+      submit: () async {
+        submitCalls++;
+        return 200;
+      },
+    );
+    expect(result.kind, CheckoutTransportKind.offline);
+    expect(result.kind, isNot(CheckoutTransportKind.uncertain));
+    expect(submitCalls, 0);
+    expect(cart, [1], reason: 'preflight offline retains cart intent');
+  });
+  test('thrown checkout request remains uncertain ambiguity', () async {
+    final result = await runCheckoutTransport<int>(
+      connectivityCheck: () async => true,
+      submit: () async => throw Exception('connection reset'),
+    );
+    expect(result.kind, CheckoutTransportKind.uncertain);
+  });
   test(
     'request includes listingId',
     () => expect((payload()['items'] as List).first['listing_id'], 407),
