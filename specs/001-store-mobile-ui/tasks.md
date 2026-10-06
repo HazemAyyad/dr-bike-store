@@ -149,16 +149,16 @@ and verify authoritative prices, stock, ratings, discounts, and listing identity
 **Independent Test**: Open single- and multi-image products, valid/invalid video, missing media,
 supported 360 media, options, quantities, reviews, similar items, share, cart, and buy-now.
 
-- [ ] T059 [P] [US5] Add typed product/media parsing and controller-state tests in `test/controllers/product_detail_test.dart`
-- [ ] T060 [US5] Split product-detail orchestration into identity, media, option, quantity, review, and purchase state in `lib/controller/product/product_controller.dart`
-- [ ] T061 [US5] Introduce explicit image, video, and interactive-360 media capability types in `lib/core/model/product_media_model.dart`
-- [ ] T062 [US5] Recompose the monolithic product page into approved hierarchy and reusable sections in `lib/features/product/product_details_screen.dart`
-- [ ] T063 [P] [US5] Rebuild fullscreen image gallery with index, swipe/arrows, zoom, thumbnails, and fallback in `lib/features/product/widget/image_view.dart`
-- [ ] T064 [P] [US5] Rebuild video presentation with poster, controls, progress, fullscreen, and terminal error in `lib/features/product/widget/video_view.dart`
-- [ ] T065 [US5] Add a capability-gated interactive viewer or explicit unavailable presentation in `lib/features/product/widget/product_360_view.dart`
-- [ ] T066 [US5] Coordinate typed thumbnail selection and fullscreen navigation in `lib/features/product/widget/view_image_and_video.dart`
-- [ ] T067 [P] [US5] Refactor reviews and similar items to shared cards and honest states in `lib/features/product/widget/commints.dart` and `lib/features/product/widget/items_similar.dart`
-- [ ] T068 [US5] Compare SCR-19 through SCR-22 with every media variant in boards 04 and 05 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-07-us5-visual.md`
+- [x] T059 [P] [US5] Add typed product/media parsing and controller-state tests in `test/controllers/product_detail_test.dart`
+- [x] T060 [US5] Split product-detail orchestration into identity, media, option, quantity, review, and purchase state in `lib/controller/product/product_controller.dart`
+- [x] T061 [US5] Introduce explicit image, video, and interactive-360 media capability types in `lib/core/model/product_media_model.dart`
+- [x] T062 [US5] Recompose the monolithic product page into approved hierarchy and reusable sections in `lib/features/product/product_details_screen.dart`
+- [x] T063 [P] [US5] Rebuild fullscreen image gallery with index, swipe/arrows, zoom, thumbnails, and fallback in `lib/features/product/widget/image_view.dart`
+- [x] T064 [P] [US5] Rebuild video presentation with poster, controls, progress, fullscreen, and terminal error in `lib/features/product/widget/video_view.dart`
+- [x] T065 [US5] Add a capability-gated interactive viewer or explicit unavailable presentation in `lib/features/product/widget/product_360_view.dart`
+- [x] T066 [US5] Coordinate typed thumbnail selection and fullscreen navigation in `lib/features/product/widget/view_image_and_video.dart`
+- [x] T067 [P] [US5] Refactor reviews and similar items to shared cards and honest states in `lib/features/product/widget/commints.dart` and `lib/features/product/widget/items_similar.dart`
+- [x] T068 [US5] Compare SCR-19 through SCR-22 with every media variant in boards 04 and 05 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-07-us5-visual.md`
 
 **Checkpoint**: US5 works independently; no static image is labeled interactive and no bad video spins forever.
 
