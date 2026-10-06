@@ -1,38 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../../../core/constants/dimensions.dart';
-import '../../../core/constants/images.dart';
-import '../../../core/constants/styles.dart';
+import '../../../core/theme/store_tokens.dart';
+import '../../../core/widget/store_states.dart';
 
 class EmptyCar extends StatelessWidget {
   const EmptyCar({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            Images.shopCar,
-            width: 250.w,
-            height: 250.h,
-            filterQuality: FilterQuality.high,
-          ),
-          SizedBox(
-            height: 20.h,
-          ),
-          Text(
-            "Your shopping cart is empty".tr,
-            style: robotoBold.copyWith(
-              fontSize: Dimensions.fontSizeExtraLarge2,
-              color: Theme.of(context).hoverColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ColoredBox(
+    color: StorePalette.background,
+    child: StoreMessageState(
+      kind: StoreMessageKind.empty,
+      icon: Icons.shopping_cart_outlined,
+      title: 'Your shopping cart is empty'.tr,
+      message: 'أضف المنتجات التي تريد الاحتفاظ بها لإتمام الطلب لاحقًا.',
+    ),
+  );
 }

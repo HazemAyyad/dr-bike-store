@@ -14,29 +14,28 @@ import '../../core/functions/native_checkout.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/model/auth_eesponse.dart';
 import '../../core/model/city_model.dart';
+import '../../core/model/cart_line_model.dart';
 import '../../core/model/discount_code_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../../repository/shop/shop_repository.dart';
 import '../LocalizationController.dart';
 
 class ShopController extends GetxController {
+  static const cartStorageKey = 'store_cart_v2';
+  static const couponIntentStorageKey = 'store_cart_coupon_intent';
   final CheckoutAttempt _checkoutAttempt = CheckoutAttempt();
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
-  final box = GetStorage();
-  RxList<Item> cartItems = <Item>[].obs;
+  final GetStorage box;
+  final RxList<CartLine> cartLines = <CartLine>[].obs;
+  final RxList<Item> items = <Item>[].obs;
+  RxList<Item> get cartItems => items;
   late bool isNormail;
   String? token;
-  void addToCart(Item item) {
-    int index = cartItems.indexWhere((e) => e.id == item.id);
-    if (index != -1) {
-      cartItems[index].count += item.count;
-    } else {
-      cartItems.add(item);
-    }
-    saveCart();
-  }
+  String couponIntent = '';
+
+  bool addToCart(Item item) => addItem(item, closeAfterAdd: false);
 
   loadingIsNormail() async {
     isNormail = await AppUsageService.getTypeUser() == "Normail";
@@ -44,35 +43,52 @@ class ShopController extends GetxController {
   }
 
   void removeFromCart(Item item) {
-    cartItems.removeWhere((element) {
-      return (element.id == item.id &&
-          element.itemSizeId == item.itemSizeId &&
-          element.itemSizeColorId == item.itemSizeColorId);
-    });
-    saveCart();
+    try {
+      removeLine(CartLineIdentity.fromItem(item));
+    } on FormatException {
+      return;
+    }
   }
 
   void clearCart() {
-    cartItems.clear();
+    cartLines.clear();
+    items.clear();
+    box.remove(cartStorageKey);
     box.remove('cart');
-  }
-
-  void saveCart() async {
-    isNormail = await AppUsageService.getTypeUser() == "Normail";
-    List<Map<String, dynamic>> itemsAsJson =
-        cartItems.map((item) => item.toJson()).toList();
-    box.write('cart', itemsAsJson);
     update();
   }
 
-  loadCart() {
-    List? savedItems = box.read<List>('cart');
+  void saveCart() {
+    _syncLinesFromItems();
+    box.write(
+      cartStorageKey,
+      cartLines.map((line) => line.toJson()).toList(growable: false),
+    );
+    box.write(couponIntentStorageKey, couponIntent);
+    update();
+  }
 
-    if (savedItems != null) {
-      cartItems.value =
-          savedItems.map((itemJson) => Item.fromJson2(itemJson)).toList();
-      items = cartItems;
+  void loadCart() {
+    final savedLines = box.read<List<dynamic>>(cartStorageKey);
+    final restored = <CartLine>[];
+    if (savedLines != null) {
+      for (final raw in savedLines) {
+        try {
+          if (raw is! Map) continue;
+          restored.add(CartLine.fromJson(Map<String, dynamic>.from(raw)));
+        } on FormatException {
+          // Invalid/legacy rows fail closed; productId is never a listing fallback.
+        } catch (_) {
+          // A malformed retained row must not crash app startup.
+        }
+      }
+    } else {
+      _migrateLegacyCart();
+      return;
     }
+    cartLines.assignAll(restored);
+    _syncItemsFromLines();
+    couponIntent = box.read<String>(couponIntentStorageKey) ?? '';
   }
 
   GlobalKey<FormState> formstate = GlobalKey<FormState>();
@@ -87,7 +103,6 @@ class ShopController extends GetxController {
   double totalPriceWithOutDiscount = 0;
   double totalPriceWithOutDiscountOrders = 0;
   double totalPriceWithDiscountOrders = 0;
-  List<Item> items = <Item>[].obs;
 
   bool isLoading = false;
   bool isVillagesLoading = false;
@@ -117,7 +132,8 @@ class ShopController extends GetxController {
   double? discoundCodePercent; // Default selected city
   late StatusRequest statusRequest;
   String? OrderId;
-  ShopController({required this.shopRepository});
+  ShopController({required this.shopRepository, GetStorage? storage})
+    : box = storage ?? GetStorage();
   getUserById() async {
     if (await CheckInternet.checkInternet()) {
       OverlayLoadingProgress.start();
@@ -428,109 +444,175 @@ class ShopController extends GetxController {
   }
 
   double deliveryQuotePrice() {
-    double total = 0;
-    for (final item in items) {
-      final basePrice =
-          item.isSize
-              ? (item.itemSizeColorsprice ?? 0)
-              : (token == null
-                  ? item.normailPrice
-                  : (isNormail ? item.normailPrice : item.wholesalePrice));
-      final discount =
-          item.isSize ? (item.itemSizediscount ?? 0) : item.discount;
-      total += item.count * basePrice * (1 - (discount / 100));
-    }
-    return total;
+    return cartTotal;
   }
 
-  cal() {
-    quantity = 0;
-    priceItems = 0;
-    for (int i = 0; i < items.length; i++) {
-      quantity = quantity + items[i].count;
-      priceItems =
-          priceItems +
-          (items[i].count *
-              (token == null
-                  ? items[i].normailPrice
-                  : (isNormail
-                      ? items[i].normailPrice
-                      : items[i].wholesalePrice)));
-    }
+  int get cartQuantity =>
+      cartLines.fold(0, (total, line) => total + line.quantity);
+  double get cartSubtotal =>
+      cartLines.fold(0, (total, line) => total + line.subtotal);
+  double get cartTotal =>
+      cartLines.fold(0, (total, line) => total + line.total);
+  bool get canCheckout =>
+      cartLines.isNotEmpty && cartLines.every((line) => line.structurallyValid);
+
+  void cal() {
+    quantity = cartQuantity;
+    priceItems = cartSubtotal;
+    totalPrice = cartTotal;
   }
 
-  deletItem(id) {
-    for (int i = 0; i < items.length; i++) {
-      if (id == items[i].id) {
-        items.remove(items[i]);
-      }
+  void deletItem(dynamic id) {
+    final line = cartLines.firstWhereOrNull(
+      (line) => line.identity.listingId == id,
+    );
+    if (line != null) removeLine(line.identity);
+  }
+
+  bool addItem(Item item, {bool closeAfterAdd = true}) {
+    late final CartLine candidate;
+    try {
+      candidate = CartLine.fromItem(item);
+    } on FormatException {
+      showCustomSnackBar('storeCartInvalidListing'.tr, isError: true);
+      return false;
     }
+    final index = cartLines.indexWhere(
+      (line) => line.identity == candidate.identity,
+    );
+    if (index >= 0) {
+      final maximum = cartLines[index].knownAvailableQuantity;
+      final requested = cartLines[index].quantity + candidate.quantity;
+      cartLines[index].quantity =
+          maximum == null ? requested : requested.clamp(1, maximum);
+    } else {
+      cartLines.add(candidate);
+    }
+    _syncItemsFromLines();
+    cal();
     saveCart();
+    showCustomSnackBar('Product added'.tr, isError: false);
+    if (closeAfterAdd && Get.key.currentState?.canPop() == true) Get.back();
+    update();
+    return true;
+  }
+
+  void add(dynamic identity) {
+    final line = _resolveLine(identity);
+    if (line != null) incrementLine(line.identity);
+  }
+
+  void mins(dynamic identity) {
+    final line = _resolveLine(identity);
+    if (line != null) decrementLine(line.identity);
+  }
+
+  bool incrementLine(CartLineIdentity identity) {
+    final line = cartLines.firstWhereOrNull(
+      (line) => line.identity == identity,
+    );
+    if (line == null) return false;
+    final maximum = line.knownAvailableQuantity;
+    if (maximum != null && line.quantity >= maximum) return false;
+    line.quantity++;
+    _afterCartMutation();
+    return true;
+  }
+
+  bool decrementLine(CartLineIdentity identity) {
+    final line = cartLines.firstWhereOrNull(
+      (line) => line.identity == identity,
+    );
+    if (line == null || line.quantity <= 1) return false;
+    line.quantity--;
+    _afterCartMutation();
+    return true;
+  }
+
+  bool setLineQuantity(CartLineIdentity identity, int value) {
+    final line = cartLines.firstWhereOrNull(
+      (line) => line.identity == identity,
+    );
+    if (line == null || value < 1) return false;
+    final maximum = line.knownAvailableQuantity;
+    if (maximum != null && value > maximum) return false;
+    line.quantity = value;
+    _afterCartMutation();
+    return true;
+  }
+
+  void removeLine(CartLineIdentity identity) {
+    cartLines.removeWhere((line) => line.identity == identity);
+    _afterCartMutation();
+  }
+
+  void retainCouponIntent(String value) {
+    couponIntent = value.trim();
+    discountCodeController.text = couponIntent;
+    box.write(couponIntentStorageKey, couponIntent);
     update();
   }
 
-  addItem(Item iteme) {
-    bool isAdd = false;
-
-    for (int i = 0; i < items.length; i++) {
-      if (iteme.id == items[i].id) {
-        if (iteme.itemSizeId == items[i].itemSizeId) {
-          if (iteme.itemSizeColorId == items[i].itemSizeColorId) {
-            isAdd = true;
-          }
-        }
-      }
-    }
-
+  void _afterCartMutation() {
+    _syncItemsFromLines();
+    saveCart();
+    cal();
     update();
-    if (isAdd == false) {
-      items.add(iteme);
+  }
 
-      showCustomSnackBar("Product added".tr, isError: false);
-      Get.back();
-    } else if (isAdd == true) {
-      showCustomSnackBar(
-        "The product has been added previously".tr,
-        isError: false,
+  CartLine? _resolveLine(dynamic identity) {
+    if (identity is CartLineIdentity) {
+      return cartLines.firstWhereOrNull((line) => line.identity == identity);
+    }
+    if (identity is int) {
+      return cartLines.firstWhereOrNull(
+        (line) => line.identity.listingId == identity,
       );
-
-      isAdd = false;
     }
-
-    cal();
-    saveCart();
-
-    update();
+    return null;
   }
 
-  add(i) {
-    for (var action in items) {
-      if (action.id == i) {
-        action.count++;
-      }
-    }
-    saveCart();
-    cal();
-    update();
+  void _syncItemsFromLines() {
+    items.assignAll(
+      cartLines.map((line) {
+        line.itemSnapshot.count = line.quantity;
+        return line.itemSnapshot;
+      }),
+    );
   }
 
-  mins(id) {
-    for (int i = 0; i < items.length; i++) {
-      if (items[i].id == id) {
-        if (items[i].count > 1) {
-          items[i].count--;
-        } else if (items[i].count == 1) {
-          items.remove(items[i]);
-          showCustomSnackBar(
-            "The product has been removed.".tr,
-            isError: false,
-          );
-        }
+  void _syncLinesFromItems() {
+    for (final item in items) {
+      try {
+        final identity = CartLineIdentity.fromItem(item);
+        final line = cartLines.firstWhereOrNull(
+          (line) => line.identity == identity,
+        );
+        if (line != null) line.quantity = item.count;
+      } on FormatException {
+        continue;
       }
     }
+  }
+
+  void _migrateLegacyCart() {
+    final legacy = box.read<List<dynamic>>('cart');
+    final migrated = <CartLine>[];
+    for (final raw in legacy ?? const <dynamic>[]) {
+      try {
+        if (raw is! Map) continue;
+        final item = Item.fromJson2(Map<String, dynamic>.from(raw));
+        migrated.add(
+          CartLine.fromItem(item)..status = CartLineStatus.needsValidation,
+        );
+      } catch (_) {
+        // Legacy lines without a valid listing identity are deliberately dropped.
+      }
+    }
+    cartLines.assignAll(migrated);
+    _syncItemsFromLines();
+    box.remove('cart');
     saveCart();
-    cal();
-    update();
   }
 
   Future<String?> _resolveCheckoutAccountRole() async {
@@ -748,8 +830,6 @@ class ShopController extends GetxController {
         if (success != null) {
           OrderId = success.orderId;
           Get.offNamed(RouteHelper.checkOutDone);
-          items = [];
-          saveCart();
           clearCart();
           totalPriceWithDiscountOrders = 0;
           totalPriceWithOutDiscountOrders = 0;
@@ -955,8 +1035,6 @@ class ShopController extends GetxController {
         if (success != null) {
           OrderId = success.orderId;
           Get.offNamed(RouteHelper.checkOutDone);
-          items = [];
-          saveCart();
           clearCart();
           totalPriceWithDiscountOrders = 0;
           totalPriceWithOutDiscountOrders = 0;
@@ -1304,16 +1382,17 @@ class ShopController extends GetxController {
 
   @override
   void onInit() {
-    cal();
-    loadCart();
-    loadingToken();
-    loadingIsNormail();
     emailController = TextEditingController();
     nameController = TextEditingController();
     phoneNumberController = TextEditingController();
     phoneNumber2Controller = TextEditingController();
     addressController = TextEditingController();
     discountCodeController = TextEditingController();
+    loadCart();
+    discountCodeController.text = couponIntent;
+    cal();
+    loadingToken();
+    loadingIsNormail();
     super.onInit();
   }
 
