@@ -10,6 +10,7 @@ import '../../core/widget/store_chips.dart';
 import 'widget/commints.dart';
 import 'widget/items_similar.dart';
 import 'widget/view_image_and_video.dart';
+import 'review_screen.dart';
 
 class ProductDetailsScreen extends StatelessWidget {
   const ProductDetailsScreen({super.key});
@@ -161,6 +162,13 @@ class _ProductContent extends StatelessWidget {
           ProductReviewsSection(
             state: controller.reviewsState,
             onRetry: () => controller.loadReviews(item.productId),
+          ),
+          const SizedBox(height: StoreSpacing.sm),
+          TextButton.icon(
+            onPressed:
+                () => Get.to(() => ReviewScreen(productId: item.productId)),
+            icon: const Icon(Icons.rate_review_outlined),
+            label: const Text('عرض وكتابة التقييمات'),
           ),
           const SizedBox(height: StoreSpacing.lg),
           SimilarItemsSection(controller: controller),

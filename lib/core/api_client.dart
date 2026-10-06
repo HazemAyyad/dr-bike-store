@@ -21,12 +21,17 @@ class ApiClient {
 
   ApiClient({required this.sharedPreferences});
 
-  Future<Response> getData(String uri, {Map<String, dynamic>? query}) async {
+  Future<Response> getData(
+    String uri, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async {
     final url = AppConstants.appBaseUrl + uri;
     try {
       _logRequest('GET', url);
+      final requestUri = Uri.parse(url).replace(queryParameters: query);
       http.Response response = await http
-          .get(Uri.parse(url))
+          .get(requestUri, headers: _jsonHeaders(headers))
           .timeout(Duration(seconds: timeoutInSeconds));
       _logRawResponse(response);
       return handleResponse(response, uri);

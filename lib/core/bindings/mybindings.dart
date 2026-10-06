@@ -11,12 +11,14 @@ import '../../controller/favorites/favorites_controller.dart';
 import '../../controller/notification/notification_controller.dart';
 import '../../controller/order/order_controller.dart';
 import '../../controller/product/product_controller.dart';
+import '../../controller/product/review_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../repository/auth/auth_repository.dart';
 import '../../repository/categories/categories_repository.dart';
 import '../../repository/home/home_repository.dart';
 import '../../repository/favorites/favorites_repository.dart';
 import '../../repository/shop/shop_repository.dart';
+import '../../repository/product/review_repository.dart';
 import '../api_client.dart';
 
 class Mybinding extends Bindings {
@@ -83,7 +85,22 @@ class Mybinding extends Bindings {
       ),
       fenix: true,
     );
-    Get.lazyPut(() => NotificationController(), fenix: true);
+    Get.lazyPut(
+      () => ReviewController(
+        repository: ReviewRepository(apiClient: Get.find()),
+        isAuthenticated: () => Get.find<HomeControllerImp>().isAuthenticated,
+        accountRoles:
+            () =>
+                Get.find<ShopController>().userModel?.accountRoles ?? const [],
+      ),
+      fenix: true,
+    );
+    Get.lazyPut(
+      () => NotificationController(
+        repository: HomeRepository(apiClient: Get.find()),
+      ),
+      fenix: true,
+    );
     Get.lazyPut(
       () =>
           ShopController(shopRepository: ShopRepository(apiClient: Get.find())),
