@@ -1,3 +1,5 @@
+import 'product_media_model.dart';
+
 class ItemsResponse {
   final List<Item> rows;
 
@@ -33,7 +35,7 @@ class Item {
   final String readinessState;
   final bool available;
   final bool purchasable;
-  final List<StorefrontMedia> storefrontMedia;
+  final List<ProductMedia> storefrontMedia;
   final String nameAr;
   final String nameEng;
   final String nameAbree;
@@ -78,7 +80,7 @@ class Item {
     this.readinessState = 'legacy',
     this.available = true,
     this.purchasable = true,
-    this.storefrontMedia = const <StorefrontMedia>[],
+    this.storefrontMedia = const <ProductMedia>[],
     required this.nameAr,
     required this.nameEng,
     required this.nameAbree,
@@ -316,50 +318,33 @@ class Item {
   };
 }
 
-class StorefrontMedia {
+@Deprecated('Use ProductMedia')
+class StorefrontMedia extends ProductMedia {
+  // ignore: use_super_parameters
   const StorefrontMedia({
-    required this.id,
-    required this.path,
-    required this.sourceType,
-    required this.isMain,
-    required this.sortOrder,
-    this.mediaMetadata,
-  });
+    required int id,
+    required String path,
+    required String sourceType,
+    int? sourceId,
+    required bool isMain,
+    required int sortOrder,
+    Map<String, dynamic>? mediaMetadata,
+  }) : super(
+         id: id,
+         path: path,
+         sourceType: sourceType,
+         sourceId: sourceId,
+         type: ProductMediaType.image,
+         isMain: isMain,
+         isVisible: true,
+         sortOrder: sortOrder,
+         metadata: mediaMetadata ?? const <String, dynamic>{},
+       );
 
-  final int id;
-  final String path;
-  final String sourceType;
-  final bool isMain;
-  final int sortOrder;
-  final Map<String, dynamic>? mediaMetadata;
-
-  factory StorefrontMedia.fromJson(Map<String, dynamic> json) {
-    final path = _requiredString(json, 'path');
-    final sourceType = _requiredString(json, 'source_type');
-    return StorefrontMedia(
-      id: _requiredPositiveInt(json, 'id'),
-      path: path,
-      sourceType: sourceType,
-      isMain: _requiredBool(json, 'is_main'),
-      sortOrder: _requiredInt(json, 'sort_order'),
-      mediaMetadata:
-          json['media_metadata'] is Map<String, dynamic>
-              ? json['media_metadata'] as Map<String, dynamic>
-              : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'path': path,
-    'source_type': sourceType,
-    'is_main': isMain,
-    'sort_order': sortOrder,
-    'media_metadata': mediaMetadata,
-  };
+  Map<String, dynamic>? get mediaMetadata => metadata.isEmpty ? null : metadata;
 }
 
-List<StorefrontMedia> _mediaList(dynamic value) {
+List<ProductMedia> _mediaList(dynamic value) {
   if (value is! List) {
     throw const FormatException('storefrontMedia must be a list');
   }
@@ -368,8 +353,9 @@ List<StorefrontMedia> _mediaList(dynamic value) {
         if (item is! Map<String, dynamic>) {
           throw const FormatException('media item must be an object');
         }
-        return StorefrontMedia.fromJson(item);
+        return ProductMedia.fromJson(item);
       })
+      .where((item) => item.isVisible)
       .toList(growable: false)
     ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
   return result;

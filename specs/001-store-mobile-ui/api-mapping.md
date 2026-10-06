@@ -31,14 +31,14 @@ missing.
 
 | Method and endpoint | Current caller | Auth | Current typed use | UI coverage | Status / gap |
 |---------------------|----------------|------|-------------------|-------------|--------------|
-| `POST /MainCategorys/GetAllShowMainCategories` | `HomeRepository.getMainCategories` | No | `MainCategoresModel.Category` | SCR-13/16 | Compatibility name now returns authoritative inventory Store sections; reuse |
-| `POST /OnlineAds/GetAllAds` | Home | No | `Ad` | SCR-13 hero | Reusable; service/offers/new-arrivals are not separate feeds |
+| `POST /MainCategorys/GetAllShowMainCategories` | `HomeRepository.getMainCategories` | No | `OnlineStoreCategory` hierarchy | SCR-13/16 | Compatibility name returns active `online_store_categories`; identity is the Online Store category ID |
+| `POST /OnlineAds/GetAllAds` | Home | No | `Ad` | SCR-13 hero | Banner/Home presentation is owned by the Online Store content layer; no inventory-section semantics |
 | `POST /Items/GetAllItemIsMoreSales` | Home | No | `Item` list | SCR-13 best sellers | Reusable; publication/listing identity required in every row |
 | `POST /Items/GetAllItemByName?Name=&language=` | Home search | No | `Item` list | SCR-14/15 | Reusable; recent searches are local intent, suggestions/chips need mapping |
-| `POST /Items/GetAllItemsShowByMainCategory?MainCategory=` | Categories | No | `ItemsResponse` | SCR-16/17 | Compatibility route filters by `store_section_id`; reuse |
-| `POST /Items/GetItemById?itemId=` | Product | No | `Item` | SCR-19..22 | Reusable; brand/code/specs/policies/typed media gaps remain |
-| `POST /Items/GetAllShowItemsBySupCatId?supCategoryId=` | Categories/product | No | `Item` list | Optional hierarchy/similar products | Reusable only where subcategory relation remains authoritative |
-| `POST /SupCategorys/GetAllShowSupCategories?mainCategoryId=` | Categories | No | subcategory `Category` list | SCR-16 | Hierarchy semantics require confirmation after inventory-section migration |
+| `POST /Items/GetAllItemsShowByMainCategory?MainCategory=` | Categories | No | eligible `OnlineStoreListing` rows as `ItemsResponse` | SCR-16/17 | Filters through active `online_store_category_listing` membership; Product alone is not publication authority |
+| `POST /Items/GetItemById?itemId=` | Product | No | eligible `OnlineStoreListing -> Product` Storefront payload | SCR-19..22 | Product compatibility identity is `productId`; response retains distinct `listingId`, retail display price, availability, and typed `storefrontMedia` from `online_store_media_presentations` |
+| `POST /Items/GetAllShowItemsBySupCatId?supCategoryId=` | Categories/product | No | eligible `OnlineStoreListing` list | Optional hierarchy/similar products | Compatibility alias maps `supCategoryId` to an Online Store category and uses the same active category-listing membership query |
+| `POST /SupCategorys/GetAllShowSupCategories?mainCategoryId=` | Categories | No | Online Store child categories | SCR-16 | Compatibility hierarchy is backed by `online_store_categories`, not inventory Store sections |
 | `POST /Comments/GetAllCommentsToItem?ItemId=` | Product | No | `Review` list | SCR-35 | Reusable; endpoint path differs from older doc `/api/Comments/...` |
 | `POST /Comments/ManageComment` | Product | Bearer | Success/error | SCR-35 | Eligibility/edit/moderation response requires clarification |
 
@@ -99,7 +99,7 @@ missing.
 | Saved payments | Tokenized methods, list/add/remove/default | SCR-27/36/39 | Show only verified COD; omit card/wallet/bank/saved toggle | Blocks non-COD methods |
 | Filter/sort | Supported fields, ranges, facets, server request shape | SCR-15/17/18 | Enable only verified price/local presentation filtering; label remaining controls unavailable or omit | Partial block |
 | Product metadata | Brand, distinct code, structured specs, policies, color values | SCR-17/19 | Omit absent fields; do not derive business meaning from text | Partial block |
-| True 3D/360 | Asset type/source/viewer compatibility | SCR-19/22 | Omit interactive control; existing 3D images may be labeled only according to verified type | Blocks interactive viewer |
+| True 3D/360 | Explicit `media_metadata.media_type` / `is_360` capability | SCR-19/22 | Show interactive control only when metadata proves support; `image3d` source alone remains a static/unsupported medium | Capability-gated per media item |
 | Home feeds | Service, offers, new arrivals, store-category feed definitions | SCR-13 | Render sections only from mapped authoritative data; no hard-coded commercial claims | Partial block |
 | Shipping methods/time | Method IDs, availability, ETA/time windows, pickup | SCR-26 | Use current city/village fee flow and verified method only | Partial block |
 | Order actions | Eligibility plus edit-address/note/reorder/share endpoints | SCR-31/33 | Show cancellation only when contract authorizes; omit other actions | Partial block |
