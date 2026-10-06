@@ -51,7 +51,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 ListTile(
                   leading: const Icon(Icons.alternate_email),
                   title: const Text('Twitter'),
-                  onTap: c.openFacebook,
+                  onTap: c.openTwitter,
                 ),
               const Divider(),
               ListTile(
