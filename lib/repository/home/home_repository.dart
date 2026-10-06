@@ -13,7 +13,12 @@ abstract interface class HomeDataSource {
   Future<Response> search(dynamic name, dynamic lang);
 }
 
-class HomeRepository extends GetxService implements HomeDataSource {
+abstract interface class StoreHomeDataSource {
+  Future<Response> getStoreHome();
+}
+
+class HomeRepository extends GetxService
+    implements HomeDataSource, StoreHomeDataSource {
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
@@ -23,6 +28,10 @@ class HomeRepository extends GetxService implements HomeDataSource {
 
   HomeRepository({required this.apiClient});
   String tok = AppUsageService.getToken().toString();
+
+  @override
+  Future<Response> getStoreHome() => apiClient.getData('/OnlineStore/Home');
+
   @override
   Future<Response> getMainCategories() async {
     return await apiClient.postData(

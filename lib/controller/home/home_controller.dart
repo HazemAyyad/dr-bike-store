@@ -13,6 +13,7 @@ import '../../core/model/ads_response.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
 import '../../core/model/notification_model.dart';
+import '../../core/model/online_store_home_model.dart';
 import '../../core/widget/store_bottom_navigation.dart';
 import '../../repository/home/home_repository.dart';
 import '../LocalizationController.dart';
@@ -74,6 +75,9 @@ class HomeControllerImp extends HomeController {
   );
   final heroState = Rx<StoreViewState<List<Ad>>>(const StoreInitial());
   final productsState = Rx<StoreViewState<List<Item>>>(const StoreInitial());
+  final homeSectionsState = Rx<StoreViewState<List<OnlineStoreHomeSection>>>(
+    const StoreInitial(),
+  );
 
   final isLoadingSearch = false.obs;
   final isLoadingGetOnlineAds = false.obs;
@@ -83,6 +87,7 @@ class HomeControllerImp extends HomeController {
   final mainCategoresModel = <Category>[].obs;
   final adsResponse = <Ad>[].obs;
   final itemList = <Item>[].obs;
+  final homeSections = <OnlineStoreHomeSection>[].obs;
   final itemListSearch = <Item>[].obs;
   final notificationIsNotRead = <int>[].obs;
   final isNotificationNotRead = false.obs;
@@ -193,6 +198,7 @@ class HomeControllerImp extends HomeController {
       return;
     }
     await Future.wait<void>([
+      getStoreHome(),
       getOnlineAds(),
       getAllItemIsMoreSales(),
       getMainCategores(),
@@ -200,7 +206,49 @@ class HomeControllerImp extends HomeController {
     ]);
   }
 
+  Future<void> getStoreHome() async {
+    final source = homeRepository;
+    if (source is! StoreHomeDataSource) return;
+    homeSectionsState.value = StoreLoading(
+      previousData: homeSections.isEmpty ? null : homeSections.toList(),
+    );
+    try {
+      final response = await (source as StoreHomeDataSource).getStoreHome();
+      if (response.statusCode != 200 || response.body is! Map) {
+        throw const FormatException('home-response-status');
+      }
+      final data = (response.body as Map)['data'];
+      if (data is! Map || data['sections'] is! List) {
+        throw const FormatException('home.sections');
+      }
+      final sections = (data['sections'] as List)
+          .map((value) {
+            if (value is! Map) throw const FormatException('home.section');
+            return OnlineStoreHomeSection.fromJson(
+              Map<String, dynamic>.from(value),
+            );
+          })
+          .toList(growable: false);
+      homeSections.assignAll(sections);
+      homeSectionsState.value =
+          sections.isEmpty
+              ? StoreEmpty(message: 'storeNoProductsMessage'.tr)
+              : StoreContent(sections);
+    } catch (_) {
+      homeSectionsState.value = StoreError(
+        message: 'storeHomeSectionError'.tr,
+        previousData: homeSections.isEmpty ? null : homeSections.toList(),
+      );
+    } finally {
+      update();
+    }
+  }
+
   void _setHomeOffline() {
+    homeSectionsState.value = StoreOffline(
+      message: 'storeOfflineMessage'.tr,
+      previousData: homeSections.isEmpty ? null : homeSections.toList(),
+    );
     categoriesState.value = StoreOffline(
       message: 'storeOfflineMessage'.tr,
       previousData:
