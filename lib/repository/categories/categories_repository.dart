@@ -34,6 +34,10 @@ class CategoriesRepository extends GetxService {
     );
   }
 
+  Future<Response> getListingsByOnlineStoreCategory({
+    required int categoryId,
+  }) => getAllCategoriesByMainCategoresId(mainCategoresId: categoryId);
+
   Future<Response> getCategoriesById({required categoryId}) async {
     return await apiClient.postData(
       "/Items/GetItemById?itemId=$categoryId",

@@ -4,8 +4,19 @@ class ItemsResponse {
   ItemsResponse({required this.rows});
 
   factory ItemsResponse.fromJson(Map<String, dynamic> json) {
+    final rows = json['rows'];
+    if (rows is! List) {
+      throw const FormatException('catalog.rows must be a list');
+    }
     return ItemsResponse(
-      rows: List<Item>.from(json['rows'].map((x) => Item.fromJson(x))),
+      rows: rows
+          .map((x) {
+            if (x is! Map<String, dynamic>) {
+              throw const FormatException('catalog row must be an object');
+            }
+            return Item.fromJson(x);
+          })
+          .toList(growable: false),
     );
   }
 
@@ -17,6 +28,12 @@ class ItemsResponse {
 class Item {
   final int id;
   final int? listingId;
+  final int productId;
+  final String listingStatus;
+  final String readinessState;
+  final bool available;
+  final bool purchasable;
+  final List<StorefrontMedia> storefrontMedia;
   final String nameAr;
   final String nameEng;
   final String nameAbree;
@@ -56,6 +73,12 @@ class Item {
   Item({
     required this.id,
     this.listingId,
+    int? productId,
+    this.listingStatus = 'legacy',
+    this.readinessState = 'legacy',
+    this.available = true,
+    this.purchasable = true,
+    this.storefrontMedia = const <StorefrontMedia>[],
     required this.nameAr,
     required this.nameEng,
     required this.nameAbree,
@@ -91,33 +114,72 @@ class Item {
     this.itemSizeColorId,
     this.itemSizeColorSelect,
     this.itemSizeSelect,
-  });
+  }) : productId = productId ?? id;
 
   factory Item.fromJson(Map<String, dynamic> json) {
+    final id = _requiredPositiveInt(json, 'id');
+    final storefront = json.containsKey('listingStatus');
+    final productId = storefront ? _requiredPositiveInt(json, 'productId') : id;
+    final listingId =
+        storefront
+            ? _requiredPositiveInt(json, 'listingId')
+            : int.tryParse(json['listingId']?.toString() ?? '');
+    if (storefront && id != productId) {
+      throw const FormatException('id must be the product identity');
+    }
+    final status =
+        storefront ? _requiredString(json, 'listingStatus') : 'legacy';
+    final readiness =
+        storefront ? _requiredString(json, 'readinessState') : 'legacy';
+    if (storefront && (status != 'published' || readiness != 'complete')) {
+      throw const FormatException('listing is not storefront eligible');
+    }
+    final available = storefront ? _requiredBool(json, 'available') : true;
+    final purchasable = storefront ? _requiredBool(json, 'purchasable') : true;
+    final media = _mediaList(json['storefrontMedia'] ?? const <dynamic>[]);
+    if (storefront && media.where((item) => item.isMain).length != 1) {
+      throw const FormatException('storefront media requires one main item');
+    }
     return Item(
-      id: json['id'],
-      listingId: int.tryParse(json['listingId']?.toString() ?? ''),
+      id: id,
+      productId: productId,
+      listingId: listingId,
+      listingStatus: status,
+      readinessState: readiness,
+      available: available,
+      purchasable: purchasable,
+      storefrontMedia: media,
       nameAr: json['nameAr'] ?? "",
       nameEng: json['nameEng'] ?? "",
       nameAbree: json['nameAbree'] ?? "",
-      isShow: json['isShow'],
+      isShow:
+          storefront ? _requiredBool(json, 'isShow') : json['isShow'] == true,
       descriptionAr: json['descriptionAr'] ?? "",
       descriptionEng: json['descriptionEng'] ?? "",
       descriptionAbree: json['descriptionAbree'] ?? "",
       videoUrl: json['videoUrl'],
-      normailPrice: (json['normailPrice'] ?? 0).toDouble(),
+      normailPrice:
+          storefront
+              ? _requiredNumber(json, 'normailPrice').toDouble()
+              : (json['normailPrice'] ?? 0).toDouble(),
       wholesalePrice: (json['wholesalePrice'] ?? 0).toDouble(),
-      stock: json['stock'] ?? 0,
+      stock: storefront ? _requiredInt(json, 'stock') : json['stock'] ?? 0,
       model: json['model'] ?? "",
-      isNewItem: json['isNewItem'],
-      isMoreSales: json['isMoreSales'],
+      isNewItem:
+          storefront
+              ? _requiredBool(json, 'isNewItem')
+              : json['isNewItem'] == true,
+      isMoreSales:
+          storefront
+              ? _requiredBool(json, 'isMoreSales')
+              : json['isMoreSales'] == true,
       rate: (json['rate'] ?? 0.0).toDouble(),
       manufactureYear: json['manufactureYear'],
       discount: (json['discount'] ?? 0.0).toDouble(),
       userIdAdd: json['userIdAdd'],
-      dateAdd: DateTime.parse(json['dateAdd']),
+      dateAdd: DateTime.tryParse(json['dateAdd']?.toString() ?? ''),
       userIdUpdate: json['userIdUpdate'],
-      dateUpdate: DateTime.parse(json['dateUpdate']),
+      dateUpdate: DateTime.tryParse(json['dateUpdate']?.toString() ?? ''),
 
       supCategory: List<SupCategory>.from(
         json['supCategory'].map((x) => SupCategory.fromJson(x)),
@@ -144,6 +206,13 @@ class Item {
     return Item(
       id: json['id'],
       listingId: int.tryParse(json['listingId']?.toString() ?? ''),
+      productId:
+          int.tryParse(json['productId']?.toString() ?? '') ?? json['id'],
+      listingStatus: json['listingStatus']?.toString() ?? 'published',
+      readinessState: json['readinessState']?.toString() ?? 'complete',
+      available: json['available'] == true,
+      purchasable: json['purchasable'] == true,
+      storefrontMedia: _mediaList(json['storefrontMedia'] ?? []),
       nameAr: json['nameAr'] ?? "",
       nameEng: json['nameEng'] ?? "",
       nameAbree: json['nameAbree'] ?? "",
@@ -198,7 +267,13 @@ class Item {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'productId': productId,
     'listingId': listingId,
+    'listingStatus': listingStatus,
+    'readinessState': readinessState,
+    'available': available,
+    'purchasable': purchasable,
+    'storefrontMedia': storefrontMedia.map((item) => item.toJson()).toList(),
     'nameAr': nameAr,
     'nameEng': nameEng,
     'nameAbree': nameAbree,
@@ -239,6 +314,99 @@ class Item {
     "itemSizeColorSelect": itemSizeColorSelect,
     "itemSizeSelect": itemSizeSelect,
   };
+}
+
+class StorefrontMedia {
+  const StorefrontMedia({
+    required this.id,
+    required this.path,
+    required this.sourceType,
+    required this.isMain,
+    required this.sortOrder,
+    this.mediaMetadata,
+  });
+
+  final int id;
+  final String path;
+  final String sourceType;
+  final bool isMain;
+  final int sortOrder;
+  final Map<String, dynamic>? mediaMetadata;
+
+  factory StorefrontMedia.fromJson(Map<String, dynamic> json) {
+    final path = _requiredString(json, 'path');
+    final sourceType = _requiredString(json, 'source_type');
+    return StorefrontMedia(
+      id: _requiredPositiveInt(json, 'id'),
+      path: path,
+      sourceType: sourceType,
+      isMain: _requiredBool(json, 'is_main'),
+      sortOrder: _requiredInt(json, 'sort_order'),
+      mediaMetadata:
+          json['media_metadata'] is Map<String, dynamic>
+              ? json['media_metadata'] as Map<String, dynamic>
+              : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'path': path,
+    'source_type': sourceType,
+    'is_main': isMain,
+    'sort_order': sortOrder,
+    'media_metadata': mediaMetadata,
+  };
+}
+
+List<StorefrontMedia> _mediaList(dynamic value) {
+  if (value is! List) {
+    throw const FormatException('storefrontMedia must be a list');
+  }
+  final result = value
+      .map((item) {
+        if (item is! Map<String, dynamic>) {
+          throw const FormatException('media item must be an object');
+        }
+        return StorefrontMedia.fromJson(item);
+      })
+      .toList(growable: false)
+    ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+  return result;
+}
+
+int _requiredPositiveInt(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value is! int || value <= 0) {
+    throw FormatException('$key must be a positive integer');
+  }
+  return value;
+}
+
+int _requiredInt(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value is! int) throw FormatException('$key must be an integer');
+  return value;
+}
+
+num _requiredNumber(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value is! num) throw FormatException('$key must be numeric');
+  return value;
+}
+
+bool _requiredBool(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value is! bool) throw FormatException('$key must be boolean');
+  return value;
+}
+
+String _requiredString(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value is! String || value.trim().isEmpty) {
+    throw FormatException('$key must be a non-empty string');
+  }
+  return value;
 }
 
 class SupCategory {

@@ -128,15 +128,15 @@ submit a query, clear recent searches, refresh, and distinguish zero results fro
 **Independent Test**: Open a section, switch list/grid, sort, apply/reset supported filters, refresh,
 and verify authoritative prices, stock, ratings, discounts, and listing identity.
 
-- [ ] T050 [P] [US4] Add parsing and controller tests for inventory sections, product cards, filters, pagination, and failure states in `test/controllers/catalog_browse_test.dart`
-- [ ] T051 [US4] Replace ambiguous category state with typed inventory-section and listing states in `lib/controller/categores/categores_controller.dart`
-- [ ] T052 [US4] Normalize section/listing response parsing and reject incompatible field types in `lib/repository/categories/categories_repository.dart`
-- [ ] T053 [US4] Rebuild inventory-backed category hierarchy, search, counts, and states in `lib/features/category/category_screen.dart`
-- [ ] T054 [P] [US4] Rebuild authoritative product grid cards with availability, pricing, rating, favorite capability, and cart action in `lib/features/category/widget/build_grid_view.dart`
-- [ ] T055 [P] [US4] Rebuild authoritative product list cards with matching behavior in `lib/features/category/widget/build_list_view.dart`
-- [ ] T056 [US4] Implement list/grid switch, paging/refresh, sort entry, and selected-filter count in `lib/features/category/category_and_filtter.dart`
-- [ ] T057 [US4] Restrict the filter sheet to capability-confirmed price, brand, stock, and rating controls with reset/apply behavior in `lib/features/category/filter_screen.dart`
-- [ ] T058 [US4] Compare SCR-16 through SCR-18 with boards 02, 06, and 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-06-us4-visual.md`
+- [x] T050 [P] [US4] Add parsing and controller tests for Online Store categories, product cards, capability gates, pagination metadata, and failure states in `test/controllers/catalog_browse_test.dart`
+- [x] T051 [US4] Replace ambiguous category state with typed Online Store category and listing states in `lib/controller/categores/categores_controller.dart`
+- [x] T052 [US4] Normalize Online Store category/listing response parsing and reject incompatible field types in `lib/repository/categories/categories_repository.dart`
+- [x] T053 [US4] Rebuild the Online Store category hierarchy and complete async states in `lib/features/category/category_screen.dart` and `lib/features/home_screen/home_screen.dart`
+- [x] T054 [P] [US4] Rebuild authoritative product grid cards with availability, pricing, rating, favorite capability, and cart action in `lib/features/category/widget/build_grid_view.dart`
+- [x] T055 [P] [US4] Rebuild authoritative product list cards with matching behavior in `lib/features/category/widget/build_list_view.dart`
+- [x] T056 [US4] Implement list/grid switch and refresh while omitting unsupported pagination and selected-filter claims in `lib/features/category/category_and_filtter.dart`
+- [x] T057 [US4] Gate unsupported server filtering and sorting with truthful unavailable presentation in `lib/features/category/filter_screen.dart`
+- [x] T058 [US4] Compare SCR-16 through SCR-18 with boards 02, 06, and 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-06-us4-visual.md`
 
 **Checkpoint**: US4 works independently and unsupported filters are omitted or visibly disabled.
 

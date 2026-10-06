@@ -133,7 +133,7 @@ class HomePage extends StatelessWidget {
       category,
       Get.locale?.languageCode ?? 'ar',
     );
-    await controller.getProductsByStoreSection(category.id);
+    await controller.getProductsByOnlineStoreCategory(category.id);
   }
 
   Future<void> _openProduct(Item item) async {
