@@ -210,18 +210,59 @@ void main() {
       await controller.load();
       expect(controller.inboxState, isA<StoreError<List<NotificationItem>>>());
     });
-    test('mark one read calls backend and waits for success', () async {
+    test(
+      'real Laravel response marks item read and decrements unread',
+      () async {
+        repository.rows = [row()];
+        await controller.load();
+        repository.markCompleter = Future.value(
+          const Response(
+            statusCode: 200,
+            body: {
+              'message': 'success',
+              'isSuccess': true,
+              'error': null,
+              'isFailure': false,
+            },
+          ),
+        );
+        expect(
+          await controller.markRead(controller.notifications.single),
+          isTrue,
+        );
+        expect(repository.marked, [7]);
+        expect(controller.unreadCount, 0);
+      },
+    );
+    test('isSuccess false preserves unread', () async {
       repository.rows = [row()];
       await controller.load();
       repository.markCompleter = Future.value(
-        const Response(statusCode: 200, body: {'success': true}),
+        const Response(
+          statusCode: 200,
+          body: {'isSuccess': false, 'isFailure': false},
+        ),
       );
       expect(
         await controller.markRead(controller.notifications.single),
-        isTrue,
+        isFalse,
       );
-      expect(repository.marked, [7]);
-      expect(controller.unreadCount, 0);
+      expect(controller.unreadCount, 1);
+    });
+    test('isFailure true preserves unread', () async {
+      repository.rows = [row()];
+      await controller.load();
+      repository.markCompleter = Future.value(
+        const Response(
+          statusCode: 200,
+          body: {'isSuccess': true, 'isFailure': true},
+        ),
+      );
+      expect(
+        await controller.markRead(controller.notifications.single),
+        isFalse,
+      );
+      expect(controller.notifications.single.isRead, isFalse);
     });
     test('backend failure preserves unread', () async {
       repository.rows = [row()];
@@ -274,7 +315,17 @@ class FakeHomeRepository implements HomeDataSource {
   Future<Response> postNotificationIsRead(id) {
     marked.add(id as int);
     return markCompleter ??
-        Future.value(const Response(statusCode: 200, body: {'ok': true}));
+        Future.value(
+          const Response(
+            statusCode: 200,
+            body: {
+              'message': 'success',
+              'isSuccess': true,
+              'error': null,
+              'isFailure': false,
+            },
+          ),
+        );
   }
 
   @override

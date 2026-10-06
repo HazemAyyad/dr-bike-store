@@ -6,7 +6,7 @@ import '../../core/functions/checkInternet.dart';
 import '../../core/model/commint_model.dart';
 import '../../repository/product/review_repository.dart';
 
-enum ReviewMutationState { idle, submitting, success, failure }
+enum ReviewMutationState { idle, submitting, success, syncRequired, failure }
 
 class ReviewController extends GetxController {
   ReviewController({
@@ -20,7 +20,7 @@ class ReviewController extends GetxController {
 
   final ReviewDataSource repository;
   final bool Function() isAuthenticated;
-  final List<String> Function() accountRoles;
+  final List<String>? Function() accountRoles;
   final Future<bool> Function() connectivityCheck;
   final commentController = TextEditingController();
 
@@ -32,9 +32,14 @@ class ReviewController extends GetxController {
   Review? ownReview;
   String? message;
 
-  bool get canSubmit =>
-      isAuthenticated() &&
-      accountRoles().map((e) => e.toLowerCase()).contains('customer');
+  bool get canSubmit {
+    if (!isAuthenticated()) return false;
+    final roles = accountRoles();
+    if (roles == null) return true;
+    return roles.map((e) => e.toLowerCase()).contains('customer');
+  }
+
+  bool get rolesKnown => accountRoles() != null;
   bool get isGuest => !isAuthenticated();
   bool get canEdit => ownReview?.canEdit == true;
 
@@ -98,17 +103,7 @@ class ReviewController extends GetxController {
     ownState = const StoreLoading();
     update();
     try {
-      final response = await repository.ownReviews();
-      if (response.statusCode != 200 || response.body is! Map) {
-        throw const FormatException('own reviews');
-      }
-      final raw = (response.body as Map)['data'];
-      if (raw is! List) throw const FormatException('own reviews data');
-      final reviews =
-          raw
-              .whereType<Map>()
-              .map((row) => Review.fromOwnJson(Map<String, dynamic>.from(row)))
-              .toList();
+      final reviews = await _fetchOwnReviews();
       ownReview = reviews.firstWhereOrNull(
         (review) => review.productId == productId,
       );
@@ -163,18 +158,17 @@ class ReviewController extends GetxController {
     if (current == null || !current.canEdit || validate() != null) return false;
     mutationState = ReviewMutationState.submitting;
     update();
+    Response response;
     try {
-      final response = await repository.updatePendingReview(
+      response = await repository.updatePendingReview(
         current.id,
         current.productId,
         rating,
         _commentOrNull(),
       );
-      ownReview = _parseMutation(response, expectedStatus: 200);
-      mutationState = ReviewMutationState.success;
-      message = 'تم تحديث تقييمك وهو قيد المراجعة.';
-      update();
-      return true;
+      if (!_isAcceptedCompatibilityMutation(response)) {
+        throw const FormatException('review update acknowledgment');
+      }
     } catch (_) {
       ownReview = current;
       mutationState = ReviewMutationState.failure;
@@ -182,6 +176,42 @@ class ReviewController extends GetxController {
       update();
       return false;
     }
+
+    try {
+      final reviews = await _fetchOwnReviews();
+      final refreshed = reviews.firstWhere(
+        (review) =>
+            review.id == current.id && review.productId == current.productId,
+      );
+      ownReview = refreshed;
+      ownState = StoreContent(reviews);
+      mutationState = ReviewMutationState.success;
+      message = 'تم تحديث تقييمك وهو قيد المراجعة.';
+    } catch (_) {
+      mutationState = ReviewMutationState.syncRequired;
+      message = 'تم حفظ التقييم، لكن تعذر تحديث حالته. أعد المحاولة.';
+    }
+    update();
+    return true;
+  }
+
+  bool _isAcceptedCompatibilityMutation(Response response) {
+    if (response.statusCode != 200 || response.body is! Map) return false;
+    final body = response.body as Map;
+    return body['isSuccess'] == true && body['isFailure'] != true;
+  }
+
+  Future<List<Review>> _fetchOwnReviews() async {
+    final response = await repository.ownReviews();
+    if (response.statusCode != 200 || response.body is! Map) {
+      throw const FormatException('own reviews');
+    }
+    final raw = (response.body as Map)['data'];
+    if (raw is! List) throw const FormatException('own reviews data');
+    return raw
+        .whereType<Map>()
+        .map((row) => Review.fromOwnJson(Map<String, dynamic>.from(row)))
+        .toList(growable: false);
   }
 
   Review _parseMutation(Response response, {required int expectedStatus}) {

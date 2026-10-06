@@ -181,18 +181,85 @@ void main() {
       await controller.updatePending();
       expect(repository.updateArgs, [3, 12, 5, 'جيد']);
     });
-    test('update waits for backend success', () async {
+    test(
+      'real compatibility response is accepted and reloads own reviews',
+      () async {
+        await controller.loadOwn();
+        repository.reloadedOwnRow = {
+          ...repository.ownRow,
+          'comment': 'جديد',
+          'status': 'published',
+          'is_verified_purchase': true,
+        };
+        final callsBefore = repository.ownCalls;
+        expect(await controller.updatePending(), isTrue);
+        expect(repository.ownCalls, callsBefore + 1);
+        expect(controller.ownReview?.comment, 'جديد');
+        expect(controller.ownReview?.status, ReviewStatus.published);
+        expect(controller.ownReview?.isVerifiedPurchase, isTrue);
+      },
+    );
+    test(
+      'isSuccess false is mutation failure and preserves original',
+      () async {
+        await controller.loadOwn();
+        final original = controller.ownReview;
+        repository.updateResponse = const Response(
+          statusCode: 200,
+          body: {'isSuccess': false, 'isFailure': false},
+        );
+        expect(await controller.updatePending(), isFalse);
+        expect(controller.ownReview, same(original));
+      },
+    );
+    test('isFailure true is mutation failure', () async {
       await controller.loadOwn();
-      repository.updateResponse = const Response(statusCode: 500);
+      final original = controller.ownReview;
+      repository.updateResponse = const Response(
+        statusCode: 200,
+        body: {'isSuccess': true, 'isFailure': true},
+      );
       expect(await controller.updatePending(), isFalse);
-      expect(controller.ownReview?.id, 3);
+      expect(controller.ownReview, same(original));
     });
-    test('update failure preserves original review', () async {
+    test('malformed update 200 is mutation failure', () async {
+      await controller.loadOwn();
+      repository.updateResponse = const Response(
+        statusCode: 200,
+        body: {'message': 'success'},
+      );
+      expect(await controller.updatePending(), isFalse);
+      expect(controller.mutationState, ReviewMutationState.failure);
+    });
+    test('HTTP update failure preserves original review', () async {
       await controller.loadOwn();
       final original = controller.ownReview;
       repository.updateResponse = const Response(statusCode: 500);
-      await controller.updatePending();
+      expect(await controller.updatePending(), isFalse);
       expect(controller.ownReview, same(original));
+    });
+    test(
+      'accepted mutation plus reload failure is recoverable sync state',
+      () async {
+        await controller.loadOwn();
+        final original = controller.ownReview;
+        repository.ownResponse = const Response(statusCode: 500);
+        expect(await controller.updatePending(), isTrue);
+        expect(controller.mutationState, ReviewMutationState.syncRequired);
+        expect(controller.message, contains('تم حفظ التقييم'));
+        expect(controller.ownReview, same(original));
+      },
+    );
+    test('unknown roles let authenticated backend remain authority', () async {
+      controller = ReviewController(
+        repository: repository,
+        isAuthenticated: () => true,
+        accountRoles: () => null,
+        connectivityCheck: () async => true,
+      )..bindProduct(12);
+      controller.setRating(5);
+      expect(controller.rolesKnown, isFalse);
+      expect(await controller.submit(), isTrue);
     });
     test('public list loads only public endpoint', () async {
       await controller.loadPublic();
@@ -258,7 +325,8 @@ class FakeReviewRepository implements ReviewDataSource {
   bool authorityFieldsSent = false;
   List<Object?> updateArgs = [];
   Future<Response>? publicResponse;
-  Response? submitResponse, updateResponse;
+  Response? submitResponse, updateResponse, ownResponse;
+  Map<String, dynamic>? reloadedOwnRow;
   Map<String, dynamic> get ownRow => {
     'id': 3,
     'product_id': 12,
@@ -286,10 +354,11 @@ class FakeReviewRepository implements ReviewDataSource {
   @override
   Future<Response> ownReviews() async {
     ownCalls++;
+    if (ownResponse case final response?) return response;
     return Response(
       statusCode: 200,
       body: {
-        'data': [ownRow],
+        'data': [reloadedOwnRow ?? ownRow],
         'meta': {'total': 1},
       },
     );
@@ -316,6 +385,15 @@ class FakeReviewRepository implements ReviewDataSource {
     String? comment,
   ) async {
     updateArgs = [id, productId, rating, comment];
-    return updateResponse ?? Response(statusCode: 200, body: {'data': ownRow});
+    return updateResponse ??
+        const Response(
+          statusCode: 200,
+          body: {
+            'message': 'success',
+            'isSuccess': true,
+            'error': null,
+            'isFailure': false,
+          },
+        );
   }
 }

@@ -114,11 +114,8 @@ class NotificationController extends GetxController {
   }
 
   bool _isAcceptedMutation(dynamic body) {
-    if (body == true) return true;
     if (body is! Map) return false;
-    return body['success'] == true ||
-        body['ok'] == true ||
-        body['isRead'] == true;
+    return body['isSuccess'] == true && body['isFailure'] != true;
   }
 
   Future<void> getToken() async {
