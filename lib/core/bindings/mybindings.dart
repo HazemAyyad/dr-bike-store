@@ -9,6 +9,7 @@ import '../../controller/categores/categores_controller.dart';
 import '../../controller/home/home_controller.dart';
 import '../../controller/favorites/favorites_controller.dart';
 import '../../controller/notification/notification_controller.dart';
+import '../../controller/order/order_controller.dart';
 import '../../controller/product/product_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../repository/auth/auth_repository.dart';
@@ -70,6 +71,10 @@ class Mybinding extends Bindings {
       () => AccountControllerImp(
         authRepository: AuthRepository(apiClient: Get.find()),
       ),
+      fenix: true,
+    );
+    Get.lazyPut(
+      () => OrderController(repository: AuthRepository(apiClient: Get.find())),
       fenix: true,
     );
     Get.lazyPut(

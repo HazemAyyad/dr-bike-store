@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../controller/account/account_controller.dart';
 import '../../controller/categores/categores_controller.dart';
 import '../../controller/home/home_controller.dart';
 import '../../controller/shop/shop_controller.dart';
+import '../../controller/order/order_controller.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
 import '../../core/theme/store_tokens.dart';
-import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_bottom_navigation.dart';
-import '../../core/widget/store_buttons.dart';
 import '../../core/widget/store_states.dart';
 import '../../core/widget/store_top_bar.dart';
 import '../acount/profile_screen.dart';
 import '../search/search_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../shop/shop_car_screen.dart';
+import '../order/order_screen.dart';
 import 'home_page.dart';
 import 'widget/main_categorys.dart';
 
@@ -66,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
     StoreDestination.categories => _CategoriesDestination(
       controller: controller,
     ),
-    StoreDestination.orders => const _OrdersDestination(),
+    StoreDestination.orders => const OrderScreen(embedded: true),
     StoreDestination.favorites => const FavoritesScreen(),
     StoreDestination.profile => ProfileScreen(),
   };
@@ -79,8 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     if (destination == StoreDestination.orders &&
-        Get.isRegistered<AccountControllerImp>()) {
-      await Get.find<AccountControllerImp>().getAllOrders();
+        Get.isRegistered<OrderController>()) {
+      await Get.find<OrderController>().load();
     }
   }
 
@@ -238,68 +237,6 @@ List<_CategoryHierarchyEntry> _flattenCategories(List<Category> roots) {
     append(root, 0);
   }
   return result;
-}
-
-class _OrdersDestination extends StatelessWidget {
-  const _OrdersDestination();
-
-  @override
-  Widget build(BuildContext context) => _ShellGateway(
-    icon: Icons.receipt_long_outlined,
-    title: 'storeOrdersGatewayTitle'.tr,
-    message: 'storeOrdersGatewayMessage'.tr,
-    action: 'storeOpenOrders'.tr,
-    onPressed: () async {
-      if (Get.isRegistered<AccountControllerImp>()) {
-        await Get.find<AccountControllerImp>().getAllOrders();
-      }
-    },
-  );
-}
-
-class _ShellGateway extends StatelessWidget {
-  const _ShellGateway({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.action,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String title;
-  final String message;
-  final String action;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(StoreSpacing.lg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 52, color: StorePalette.purple),
-          const SizedBox(height: StoreSpacing.md),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: StoreTypography.title,
-          ),
-          const SizedBox(height: StoreSpacing.xs),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: StoreTypography.body.copyWith(
-              color: StorePalette.textSecondary,
-            ),
-          ),
-          const SizedBox(height: StoreSpacing.md),
-          StoreButton(label: action, onPressed: onPressed, expand: false),
-        ],
-      ),
-    ),
-  );
 }
 
 String _categoryName(Category category) {
