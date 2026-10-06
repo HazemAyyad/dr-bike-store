@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.2.0+9
+version: 2.2.1+10
 
 environment:
   sdk: ^3.7.0
@@ -60,6 +60,8 @@ dependencies:
   path_provider: ^2.1.5
   intl: ^0.20.2
   shared_preferences: ^2.5.3
+  package_info_plus: ^9.0.1
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +101,19 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
+    # Cairo is an OFL variable font. FontWeight drives its 200-1000 weight axis.
+    - family: Cairo
+      fonts:
+        - asset: assets/font/Cairo-Variable.ttf
+          weight: 300
+        - asset: assets/font/Cairo-Variable.ttf
+          weight: 400
+        - asset: assets/font/Cairo-Variable.ttf
+          weight: 500
+        - asset: assets/font/Cairo-Variable.ttf
+          weight: 600
+        - asset: assets/font/Cairo-Variable.ttf
+          weight: 700
     - family: Almarai
       fonts:
         - asset: assets/font/Almarai-Regular.ttf

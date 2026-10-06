@@ -4,7 +4,21 @@ import '../../controller/LocalizationController.dart';
 import '../../core/api_client.dart';
 import '../../core/functions/app_usage_service.dart';
 
-class HomeRepository extends GetxService {
+abstract interface class HomeDataSource {
+  Future<Response> getMainCategories();
+  Future<Response> getOnlineAds();
+  Future<Response> getAllItemIsMoreSales();
+  Future<Response> getNotification();
+  Future<Response> postNotificationIsRead(dynamic id);
+  Future<Response> search(dynamic name, dynamic lang);
+}
+
+abstract interface class StoreHomeDataSource {
+  Future<Response> getStoreHome();
+}
+
+class HomeRepository extends GetxService
+    implements HomeDataSource, StoreHomeDataSource {
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
@@ -14,6 +28,11 @@ class HomeRepository extends GetxService {
 
   HomeRepository({required this.apiClient});
   String tok = AppUsageService.getToken().toString();
+
+  @override
+  Future<Response> getStoreHome() => apiClient.getData('/OnlineStore/Home');
+
+  @override
   Future<Response> getMainCategories() async {
     return await apiClient.postData(
       "/MainCategorys/GetAllShowMainCategories",
@@ -30,6 +49,7 @@ class HomeRepository extends GetxService {
     );
   }
 
+  @override
   Future<Response> getOnlineAds() async {
     return await apiClient.postData(
       "/OnlineAds/GetAllAds",
@@ -57,6 +77,7 @@ class HomeRepository extends GetxService {
     );
   }
 
+  @override
   Future<Response> getAllItemIsMoreSales() async {
     return await apiClient.postData(
       "/Items/GetAllItemIsMoreSales",
@@ -80,6 +101,7 @@ class HomeRepository extends GetxService {
     );
   }
 
+  @override
   Future<Response> getNotification() async {
     return await apiClient.postData(
       "/Notifications/GetNotifications?UserId=${await AppUsageService.getUserId()}",
@@ -96,6 +118,7 @@ class HomeRepository extends GetxService {
     );
   }
 
+  @override
   Future<Response> postNotificationIsRead(id) async {
     return await apiClient.postData(
       "/Notifications/EditNotification?NotificationId=$id&IsRead=true",
@@ -112,9 +135,12 @@ class HomeRepository extends GetxService {
     );
   }
 
+  @override
   Future<Response> search(name, lang) async {
+    final encodedName = Uri.encodeQueryComponent(name.toString());
+    final encodedLanguage = Uri.encodeQueryComponent(lang.toString());
     return await apiClient.postData(
-      "/Items/GetAllItemByName?Name=$name&language=$lang",
+      "/Items/GetAllItemByName?Name=$encodedName&language=$encodedLanguage",
       body: {
         "listRelatedObjects": [
           "ViewImgs",

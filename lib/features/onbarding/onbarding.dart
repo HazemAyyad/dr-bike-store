@@ -1,233 +1,253 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
 
-import '../../core/functions/app_usage_service.dart';
-import '../../core/constants/dimensions.dart';
 import '../../core/constants/images.dart';
-import '../../core/constants/styles.dart';
+import '../../core/functions/app_usage_service.dart';
 import '../../core/helper/route_helper.dart';
-import '../../core/widget/button.dart';
+import '../../core/theme/store_tokens.dart';
+import '../../core/theme/store_typography.dart';
+import '../../core/widget/store_buttons.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({this.onSkip, this.onStart, super.key});
+
+  final Future<void> Function()? onSkip;
+  final Future<void> Function()? onStart;
 
   @override
-  _OnboardingScreenState createState() => _OnboardingScreenState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  final RxInt _currentPage = 0.obs;
+  final _pageController = PageController();
+  int _currentPage = 0;
 
-  List<Map<String, String>> onboardingData = [
-    {
-      "image": Images.onBoarding1,
-      "title": "${"intro".tr} ${"nameApp".tr}",
-      "description": "bodySplash1".tr,
-    },
-    {
-      "image": Images.onBoarding2,
-      "title": "titleSplash2".tr,
-      "description": "bodySplash2".tr,
-    },
-    {
-      "image": Images.onBoarding3,
-      "title": "titleSplash3".tr,
-      "description": "bodySplash3".tr,
-    },
+  List<_OnboardingItem> get _items => [
+    _OnboardingItem(
+      image: Images.onBoarding3,
+      title: 'storeOnboardingAllTitle'.tr,
+      description: 'storeOnboardingAllBody'.tr,
+    ),
+    _OnboardingItem(
+      image: Images.onBoarding2,
+      title: 'storeOnboardingQualityTitle'.tr,
+      description: 'storeOnboardingQualityBody'.tr,
+    ),
+    _OnboardingItem(
+      image: Images.onBoarding1,
+      title: 'storeOnboardingServiceTitle'.tr,
+      description: 'storeOnboardingServiceBody'.tr,
+    ),
   ];
+
+  Future<void> _complete({required bool startAuthentication}) async {
+    await AppUsageService.saveIsFirst(true);
+    final callback = startAuthentication ? widget.onStart : widget.onSkip;
+    if (callback != null) {
+      await callback();
+      return;
+    }
+    Get.offAllNamed(
+      startAuthentication ? RouteHelper.signIn : RouteHelper.homePage,
+    );
+  }
+
+  void _next() {
+    if (_currentPage == _items.length - 1) {
+      _complete(startAuthentication: true);
+      return;
+    }
+    _pageController.nextPage(
+      duration: StoreMotion.standard,
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _previous() {
+    if (_currentPage == 0) return;
+    _pageController.previousPage(
+      duration: StoreMotion.standard,
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final items = _items;
     return Scaffold(
-      body: Padding(
-        padding: EdgeInsetsDirectional.symmetric(
-          horizontal: Dimensions.paddingSizeDefault.w,
-        ),
+      backgroundColor: StorePalette.background,
+      body: SafeArea(
         child: Column(
           children: [
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Padding(
-                padding: EdgeInsets.only(top: 45.h),
-                child: DefaultButtom(
-                  color: const Color(0xffeeeeee),
-                  Child: Text(
-                    "skip".tr,
-                    textAlign: TextAlign.center,
-                    style: robotoRegular.copyWith(
-                      color: Theme.of(context).primaryColor,
-                      fontSize: Dimensions.fontSizeExtraLarge,
-                    ),
-                  ),
-                  colorShadow: Colors.transparent,
-                  colorBorder: Colors.white,
-                  radius: Dimensions.radiusExtraLarge,
-                  Height: 30.h,
-                  Width: 65.w,
-                  PaddingHorizontal: 0,
-                  PaddingVertical: 0,
-                  OnTap: () {
-                    // await CacheHelper.savedata(
-                    //     key: AppConstants.FirstLog, value: true);
-                    AppUsageService.isFirstTime();
-                    AppUsageService.saveIsFirst(true);
-                    Get.offAndToNamed(RouteHelper.homePage);
-                  },
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                StoreSpacing.md,
+                StoreSpacing.xs,
+                StoreSpacing.md,
+                0,
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: StoreButton(
+                  label: 'storeSkip'.tr,
+                  onPressed: () => _complete(startAuthentication: false),
+                  variant: StoreButtonVariant.text,
+                  expand: false,
                 ),
               ),
             ),
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: onboardingData.length,
-                onPageChanged: (index) {
-                  _currentPage.value = index;
-                },
-                itemBuilder: (context, index) {
-                  return OnboardingPage(
-                    image: onboardingData[index]["image"]!,
-                    title: onboardingData[index]["title"]!,
-                    description: onboardingData[index]["description"]!,
-                  );
-                },
+                itemCount: items.length,
+                onPageChanged: (page) => setState(() => _currentPage = page),
+                itemBuilder: (_, index) => _OnboardingPage(item: items[index]),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                onboardingData.length,
-                (index) => buildDot(index),
-              ),
-            ),
-            SizedBox(height: 10.h),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Stack(
-                alignment: AlignmentDirectional.center,
+            Padding(
+              padding: const EdgeInsets.all(StoreSpacing.md),
+              child: Column(
                 children: [
-                  Obx(
-                    () => CircularPercentIndicator(
-                      animation: true,
-                      radius: 30.w,
-                      animateFromLastPercent: true,
-                      lineWidth: 4,
-                      animationDuration: 300,
-                      percent:
-                          _currentPage.value == 0
-                              ? 0.33
-                              : _currentPage.value == 1
-                              ? 0.66
-                              : 1,
-                      progressColor: Theme.of(context).primaryColor,
-                      backgroundColor: const Color.fromARGB(255, 206, 205, 205),
-                      circularStrokeCap: CircularStrokeCap.round,
+                  Semantics(
+                    label: 'storeOnboardingProgress'.trParams({
+                      'current': '${_currentPage + 1}',
+                      'total': '${items.length}',
+                    }),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        items.length,
+                        (index) => AnimatedContainer(
+                          duration: StoreMotion.fast,
+                          width: index == _currentPage ? 24 : 8,
+                          height: 8,
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: StoreSpacing.xxs,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                index == _currentPage
+                                    ? StorePalette.purple
+                                    : StorePalette.border,
+                            borderRadius: BorderRadius.circular(
+                              StoreRadii.round,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  InkWell(
-                    radius: 20.r,
-                    onTap: () {
-                      _pageController.nextPage(
-                        duration: const Duration(milliseconds: 500),
-                        curve: Curves.linear,
-                      );
-                      if (_currentPage.value == onboardingData.length - 1) {
-                        // await CacheHelper.savedata(
-                        //     key: AppConstants.FirstLog, value: true);
-                        AppUsageService.isFirstTime();
-                        AppUsageService.saveIsFirst(true);
-                        Get.offAndToNamed(RouteHelper.homePage);
-                      }
-                    },
-                    child: Container(
-                      height: 40.h,
-                      width: 45.w,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          Dimensions.paddingSizeExtremeLarge.r,
+                  const SizedBox(height: StoreSpacing.lg),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StoreButton(
+                          label: 'storePrevious'.tr,
+                          onPressed: _currentPage == 0 ? null : _previous,
+                          variant: StoreButtonVariant.text,
                         ),
-                        color: Theme.of(context).primaryColor,
                       ),
-                      child: const Icon(Icons.arrow_forward_ios, size: 20),
-                    ),
+                      const SizedBox(width: StoreSpacing.sm),
+                      Expanded(
+                        flex: 2,
+                        child: StoreButton(
+                          label:
+                              _currentPage == items.length - 1
+                                  ? 'storeStartNow'.tr
+                                  : 'storeNext'.tr,
+                          onPressed: _next,
+                          icon:
+                              Directionality.of(context) == TextDirection.rtl
+                                  ? Icons.arrow_back
+                                  : Icons.arrow_forward,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 24.h),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget buildDot(int index) {
-    return Obx(
-      () => AnimatedContainer(
-        margin: EdgeInsets.symmetric(horizontal: 3.w),
-        width: _currentPage.value == index ? 34.w : 8,
-        height: 8.h,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(Dimensions.radiusExtraLarge),
-          color:
-              _currentPage.value == index
-                  ? Theme.of(context).primaryColor
-                  : const Color(0xffa9a9a9),
-        ),
-        duration: const Duration(milliseconds: 500),
-      ),
+class _OnboardingPage extends StatelessWidget {
+  const _OnboardingPage({required this.item});
+
+  final _OnboardingItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mediaHeight = (constraints.maxHeight *
+                StoreCalibration.onboardingMediaFraction)
+            .clamp(
+              StoreCalibration.onboardingMediaMinHeight,
+              StoreCalibration.onboardingMediaMaxHeight,
+            );
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.lg),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  height: mediaHeight,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: StorePalette.lightPurple,
+                    borderRadius: BorderRadius.circular(StoreRadii.pill),
+                  ),
+                  padding: const EdgeInsets.all(StoreSpacing.md),
+                  child: Image.asset(
+                    item.image,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
+                ),
+                const SizedBox(height: StoreSpacing.lg),
+                Text(
+                  item.title,
+                  textAlign: TextAlign.center,
+                  style: StoreTypography.headline,
+                ),
+                const SizedBox(height: StoreSpacing.xs),
+                Text(
+                  item.description,
+                  textAlign: TextAlign.center,
+                  style: StoreTypography.body.copyWith(
+                    color: StorePalette.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: StoreSpacing.md),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-class OnboardingPage extends StatelessWidget {
-  final String image, title, description;
-  const OnboardingPage({
-    super.key,
+class _OnboardingItem {
+  const _OnboardingItem({
     required this.image,
     required this.title,
     required this.description,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Image.asset(
-              image,
-              height: 300.h,
-              filterQuality: FilterQuality.high,
-            ),
-          ),
-          SizedBox(height: 10.h),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w800,
-              color: Theme.of(context).hoverColor,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            description,
-            style: TextStyle(
-              color: Theme.of(context).hintColor,
-              fontSize: Dimensions.fontSizeExtraLarge,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  final String image;
+  final String title;
+  final String description;
 }

@@ -6,12 +6,16 @@ import '../../features/acount/contact_us_screen.dart';
 import '../../features/acount/personal_screen.dart';
 import '../../features/acount/profile_screen.dart';
 import '../../features/acount/terms_and_condotions.dart';
+import '../../features/acount/addresses_screen.dart';
+import '../../features/acount/payment_methods_screen.dart';
+import '../../features/acount/settings_screen.dart';
+import '../../features/acount/help_support_screen.dart';
+import '../../features/acount/account_actions_screen.dart';
 import '../../features/auth/signin/sign_in_screen.dart';
-import '../../features/auth/forget_password/done_screen.dart';
-import '../../features/auth/forget_password/send_otp_screen.dart';
+import '../../features/auth/forget_password/forget_password_page.dart';
 import '../../features/auth/signup/sign_up_screen.dart';
 import '../../features/category/filter_screen.dart';
-import '../../features/home_screen/home_page.dart';
+import '../../features/home_screen/home_screen.dart';
 import '../../features/intro/intro_log.dart';
 import '../../features/lang/lang_screen.dart';
 
@@ -24,6 +28,8 @@ import '../../features/search/search_screen.dart';
 import '../../features/shop/check_out_done.dart';
 import '../../features/shop/check_out_screen.dart';
 import '../../features/splash/splash.dart';
+import '../../features/splash/store_unavailable_screen.dart';
+import '../../features/splash/update_required_screen.dart';
 import '../../features/supCategory/supCategory.dart';
 
 class RouteHelper {
@@ -33,9 +39,9 @@ class RouteHelper {
   static const String intoLog = '/IntroLog';
   static const String signIn = '/SignInScreen';
   static const String signUp = '/SignUpScreen';
-  // static const String otpPage = '/OtpPage';
-  static const String sendOtpPage = '/SendOtpScreen';
-  static const String doneScreen = '/DoneScreen';
+  static const String forgotPassword = '/ForgotPasswordScreen';
+  static const String storeUnavailable = '/StoreUnavailableScreen';
+  static const String updateRequired = '/UpdateRequiredScreen';
   static const String homePage = '/HomePage';
   static const String categoreyPage = '/CategoreyPage';
   static const String checkOutScreen = '/CheckOutScreen';
@@ -54,6 +60,11 @@ class RouteHelper {
   static const String searchScreen = '/searchScreen';
   static const String supcategoryScreen = '/SupcategoryScreen';
   static const String productDetailsScreen = '/ProductDetailsScreen';
+  static const String addresses = '/AddressesScreen';
+  static const String paymentMethods = '/PaymentMethodsScreen';
+  static const String settings = '/SettingsScreen';
+  static const String helpSupport = '/HelpSupportScreen';
+  static const String accountActions = '/AccountActionsScreen';
 
   static List<GetPage> routes = [
     GetPage(name: initial, page: () => const SplashScreen()),
@@ -71,12 +82,27 @@ class RouteHelper {
       page: () => const SignUpScreen(),
       transition: Transition.upToDown,
     ),
-    // GetPage(name: otpPage, page: () => const OtpPage()),
-    GetPage(name: sendOtpPage, page: () => const SendOtpScreen()),
-    GetPage(name: doneScreen, page: () => const DoneScreen()),
+    GetPage(
+      name: forgotPassword,
+      page: () {
+        final arguments = Get.arguments;
+        return ForgetPasswordPage(
+          initialIdentifier:
+              arguments is Map ? arguments['identifier']?.toString() : null,
+        );
+      },
+    ),
+    GetPage(
+      name: storeUnavailable,
+      page: () => StoreUnavailableScreen.fromArguments(Get.arguments),
+    ),
+    GetPage(
+      name: updateRequired,
+      page: () => UpdateRequiredScreen.fromArguments(Get.arguments),
+    ),
     GetPage(
       name: homePage,
-      page: () => const HomePage(),
+      page: () => const HomeScreen(),
       transition: Transition.fadeIn,
     ),
     GetPage(name: checkOutScreen, page: () => const CheckOutScreen()),
@@ -98,5 +124,10 @@ class RouteHelper {
     GetPage(name: orderDetailsScreen, page: () => const OrderDetailsScreen()),
     GetPage(name: supcategoryScreen, page: () => const SupcategoryScreen()),
     GetPage(name: productDetailsScreen, page: () => ProductDetailsScreen()),
+    GetPage(name: addresses, page: () => const AddressesScreen()),
+    GetPage(name: paymentMethods, page: () => const PaymentMethodsScreen()),
+    GetPage(name: settings, page: () => const SettingsScreen()),
+    GetPage(name: helpSupport, page: () => const HelpSupportScreen()),
+    GetPage(name: accountActions, page: () => const AccountActionsScreen()),
   ];
 }

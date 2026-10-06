@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-class ThemeServices {
-  final GetStorage _box = GetStorage();
-  final GetStorage box2 = GetStorage();
-  final key = "isDarkMode";
+import '../constants/app_constants.dart';
 
-  saveThemeToBox(bool isDarkMode) {
+class ThemeServices {
+  ThemeServices({GetStorage? storage}) : _box = storage ?? GetStorage();
+
+  final GetStorage _box;
+  static const key = AppConstants.key;
+
+  void saveThemeToBox(bool isDarkMode) {
     _box.write(key, isDarkMode);
-    box2.write(key, isDarkMode);
   }
 
   bool loadThemeFromBox() => _box.read<bool>(key) ?? false;
@@ -17,7 +19,8 @@ class ThemeServices {
   ThemeMode get theme => loadThemeFromBox() ? ThemeMode.dark : ThemeMode.light;
 
   void switchTheme() {
-    Get.changeThemeMode(loadThemeFromBox() ? ThemeMode.light : ThemeMode.dark);
-    saveThemeToBox(!loadThemeFromBox());
+    final isDarkMode = loadThemeFromBox();
+    Get.changeThemeMode(isDarkMode ? ThemeMode.light : ThemeMode.dark);
+    saveThemeToBox(!isDarkMode);
   }
 }

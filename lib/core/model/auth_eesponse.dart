@@ -1,5 +1,10 @@
 import 'dart:convert';
 
+List<String> _accountRoles(dynamic value) =>
+    value is List
+        ? value.whereType<Object>().map((role) => role.toString()).toList()
+        : <String>[];
+
 class AuthResponse {
   final User user;
   final String token;
@@ -39,6 +44,7 @@ class User {
   final String? fullName;
   final String? phoneNumber2;
   final String? typeUser;
+  final List<String> accountRoles;
   final String? userToken;
   final String? dateAdd;
   final String? userUpdate;
@@ -69,6 +75,7 @@ class User {
     required this.fullName,
     this.phoneNumber2,
     this.typeUser,
+    this.accountRoles = const [],
     this.userToken,
     this.dateAdd,
     this.userUpdate,
@@ -100,6 +107,7 @@ class User {
     fullName: json["fullName"],
     phoneNumber2: json["phoneNumber2"],
     typeUser: json["typeUser"],
+    accountRoles: _accountRoles(json['accountRoles']),
     userToken: json["userToken"],
     dateAdd: json["dateAdd"],
     userUpdate: json["userUpdate"],
@@ -131,6 +139,7 @@ class User {
     "fullName": fullName,
     "phoneNumber2": phoneNumber2,
     "typeUser": typeUser,
+    "accountRoles": accountRoles,
     "userToken": userToken,
     "dateAdd": dateAdd,
     "userUpdate": userUpdate,
@@ -238,6 +247,7 @@ class UserSignUp {
   final String? fullName;
   final String? phoneNumber2;
   final String typeUser;
+  final List<String> accountRoles;
   final String? userToken;
   final String dateAdd;
   final String userUpdate;
@@ -268,6 +278,7 @@ class UserSignUp {
     required this.fullName,
     this.phoneNumber2,
     required this.typeUser,
+    this.accountRoles = const [],
     this.userToken,
     required this.dateAdd,
     required this.userUpdate,
@@ -299,6 +310,7 @@ class UserSignUp {
     fullName: json["fullName"],
     phoneNumber2: json["phoneNumber2"],
     typeUser: json["typeUser"],
+    accountRoles: _accountRoles(json['accountRoles']),
     userToken: json["userToken"],
     dateAdd: json["dateAdd"],
     userUpdate: json["userUpdate"],
@@ -330,6 +342,7 @@ class UserSignUp {
     "fullName": fullName,
     "phoneNumber2": phoneNumber2,
     "typeUser": typeUser,
+    "accountRoles": accountRoles,
     "userToken": userToken,
     "dateAdd": dateAdd,
     "userUpdate": userUpdate,
@@ -380,6 +393,7 @@ class UserModel {
   final String? fullName;
   final String? phoneNumber2;
   final String typeUser;
+  final List<String> accountRoles;
   final String userToken;
   final String dateAdd;
   final String userUpdate;
@@ -410,6 +424,7 @@ class UserModel {
     this.fullName,
     this.phoneNumber2,
     required this.typeUser,
+    this.accountRoles = const [],
     required this.userToken,
     required this.dateAdd,
     required this.userUpdate,
@@ -443,6 +458,7 @@ class UserModel {
       fullName: json['fullName']?.toString(),
       phoneNumber2: json['phoneNumber2']?.toString(),
       typeUser: json['typeUser']?.toString() ?? '',
+      accountRoles: _accountRoles(json['accountRoles']),
       userToken: json['userToken']?.toString() ?? '',
       dateAdd: json['dateAdd']?.toString() ?? '',
       userUpdate: json['userUpdate']?.toString() ?? '',
@@ -482,6 +498,7 @@ class UserModel {
       'fullName': fullName,
       'phoneNumber2': phoneNumber2,
       'typeUser': typeUser,
+      'accountRoles': accountRoles,
       'userToken': userToken,
       'dateAdd': dateAdd,
       'userUpdate': userUpdate,

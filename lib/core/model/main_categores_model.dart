@@ -1,16 +1,28 @@
 import 'dart:convert';
 
-class MainCategoresModel {
-  final List<Category> rows;
+class OnlineStoreCategoriesResponse {
+  final List<OnlineStoreCategory> rows;
   final PaginationInfo paginationInfo;
 
-  MainCategoresModel({required this.rows, required this.paginationInfo});
+  OnlineStoreCategoriesResponse({
+    required this.rows,
+    required this.paginationInfo,
+  });
 
-  factory MainCategoresModel.fromJson(Map<String, dynamic> json) {
-    return MainCategoresModel(
-      rows: List<Category>.from(
-        (json['rows'] ?? []).map((x) => Category.fromJson(x)),
-      ),
+  factory OnlineStoreCategoriesResponse.fromJson(Map<String, dynamic> json) {
+    final rows = json['rows'];
+    if (rows is! List) {
+      throw const FormatException('categories.rows must be a list');
+    }
+    return OnlineStoreCategoriesResponse(
+      rows: rows
+          .map((x) {
+            if (x is! Map<String, dynamic>) {
+              throw const FormatException('category must be an object');
+            }
+            return OnlineStoreCategory.fromJson(x);
+          })
+          .toList(growable: false),
       paginationInfo: PaginationInfo.fromJson(
         json['paginationInfo'] as Map<String, dynamic>? ??
             {
@@ -29,7 +41,7 @@ class MainCategoresModel {
   }
 }
 
-class Category {
+class OnlineStoreCategory {
   int id;
   String nameAr;
   String nameEng;
@@ -43,9 +55,9 @@ class Category {
   String dateAdd;
   String userEdit;
   String dateEdit;
-  List<dynamic> supCategories;
+  List<OnlineStoreCategory> children;
 
-  Category({
+  OnlineStoreCategory({
     required this.id,
     required this.nameAr,
     required this.nameEng,
@@ -59,25 +71,46 @@ class Category {
     required this.dateAdd,
     required this.userEdit,
     required this.dateEdit,
-    required this.supCategories,
+    required this.children,
   });
 
-  factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
+  factory OnlineStoreCategory.fromJson(Map<String, dynamic> json) {
+    final id = json['categoryId'] ?? json['id'];
+    if (id is! int || id <= 0) {
+      throw const FormatException('categoryId must be a positive integer');
+    }
+    if (json.containsKey('store_section_id')) {
+      throw const FormatException('store_section_id is not a catalog identity');
+    }
+    if (json['isShow'] is! bool) {
+      throw const FormatException('category visibility must be boolean');
+    }
+    final rawChildren = json['children'] ?? json['supCategories'] ?? const [];
+    if (rawChildren is! List) {
+      throw const FormatException('category children must be a list');
+    }
+    return OnlineStoreCategory(
+      id: id,
       nameAr: json['nameAr']?.toString() ?? '',
       nameEng: json['nameEng']?.toString() ?? '',
       nameAbree: json['nameAbree']?.toString() ?? '',
       descriptionAr: json['descriptionAr']?.toString(),
       descriptionEng: json['descriptionEng']?.toString(),
       descriptionAbree: json['descriptionAbree']?.toString(),
-      imageUrl: json['imageUrl']?.toString() ?? '',
-      isShow: json['isShow'] != false,
+      imageUrl: json['imageUrl'] is String ? json['imageUrl'] as String : '',
+      isShow: json['isShow'] as bool,
       userAdd: json['userAdd']?.toString() ?? '',
       dateAdd: json['dateAdd']?.toString() ?? '',
       userEdit: json['userEdit']?.toString() ?? '',
       dateEdit: json['dateEdit']?.toString() ?? '',
-      supCategories: json['supCategories'] ?? [],
+      children: rawChildren
+          .map((child) {
+            if (child is! Map<String, dynamic>) {
+              throw const FormatException('category child must be an object');
+            }
+            return OnlineStoreCategory.fromJson(child);
+          })
+          .toList(growable: false),
     );
   }
 
@@ -96,7 +129,8 @@ class Category {
       'dateAdd': dateAdd,
       'userEdit': userEdit,
       'dateEdit': dateEdit,
-      'supCategories': supCategories,
+      'children': children.map((child) => child.toJson()).toList(),
+      'supCategories': children.map((child) => child.toJson()).toList(),
     };
   }
 }
@@ -125,9 +159,12 @@ class PaginationInfo {
 }
 
 // Convert JSON string to CategoriesResponse object
-MainCategoresModel categoriesResponseFromJson(String str) =>
-    MainCategoresModel.fromJson(json.decode(str));
+typedef MainCategoresModel = OnlineStoreCategoriesResponse;
+typedef Category = OnlineStoreCategory;
+
+OnlineStoreCategoriesResponse categoriesResponseFromJson(String str) =>
+    OnlineStoreCategoriesResponse.fromJson(json.decode(str));
 
 // Convert CategoriesResponse object to JSON string
-String categoriesResponseToJson(MainCategoresModel data) =>
+String categoriesResponseToJson(OnlineStoreCategoriesResponse data) =>
     json.encode(data.toJson());

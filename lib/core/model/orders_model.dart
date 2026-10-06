@@ -13,6 +13,16 @@ class OrderResponse {
   }
 }
 
+enum StoreOrderStatusKind { current, completed, canceled, unknown }
+
+StoreOrderStatusKind storeOrderStatusKind(String rawStatus) =>
+    switch (rawStatus) {
+      'New' => StoreOrderStatusKind.current,
+      'Done' => StoreOrderStatusKind.completed,
+      'Canceled' => StoreOrderStatusKind.canceled,
+      _ => StoreOrderStatusKind.unknown,
+    };
+
 int _asInt(dynamic value, [int fallback = 0]) {
   if (value is int) return value;
   if (value is double) return value.toInt();
@@ -58,6 +68,8 @@ class Order {
   final int cityId;
   final String address;
   final String status;
+  String get rawStatus => status;
+  StoreOrderStatusKind get statusKind => storeOrderStatusKind(status);
   final bool isWholesale;
   final double priceDelivery;
   final double totalPriceWithDiscound;
@@ -106,6 +118,9 @@ class Order {
 
   factory Order.fromJson(Map<String, dynamic> json) {
     final id = _asInt(json['id']);
+    if (id <= 0) {
+      throw const FormatException('order id must be a positive integer');
+    }
     final serialNumber = _asString(json['serialNumber']);
     final orderNumber = _asString(
       json['orderNumber'],
@@ -142,9 +157,9 @@ class Order {
               : null,
       statusLogs:
           json['statusLogs'] is List
-              ? List<OrderStatusLog>.from(
+              ? (List<OrderStatusLog>.from(
                 json['statusLogs'].map((x) => OrderStatusLog.fromJson(x)),
-              )
+              )..sort((a, b) => _compareTimestamps(a.createdAt, b.createdAt)))
               : <OrderStatusLog>[],
       shiplyTracking:
           json['shiplyTracking'] is Map<String, dynamic>
@@ -262,9 +277,9 @@ class OrderShiplyTracking {
               : const <int>[],
       events:
           json['events'] is List
-              ? List<OrderShiplyTrackingEvent>.from(
+              ? (List<OrderShiplyTrackingEvent>.from(
                 json['events'].map((x) => OrderShiplyTrackingEvent.fromJson(x)),
-              )
+              )..sort((a, b) => _compareTimestamps(a.occurredAt, b.occurredAt)))
               : const <OrderShiplyTrackingEvent>[],
     );
   }
@@ -334,9 +349,14 @@ class OrderDetail {
   });
 
   factory OrderDetail.fromJson(Map<String, dynamic> json) {
+    final id = _asInt(json['id']);
+    final orderId = _asInt(json['orderId']);
+    if (id <= 0 || orderId <= 0) {
+      throw const FormatException('order detail identity is invalid');
+    }
     return OrderDetail(
-      id: _asInt(json['id']),
-      orderId: _asInt(json['orderId']),
+      id: id,
+      orderId: orderId,
       itemId: _asInt(json['itemId']),
       isOrderSize: _asBool(json['isOrderSize']),
       itemSizeColorId:
@@ -361,6 +381,15 @@ class OrderDetail {
               : Item.empty(),
     );
   }
+}
+
+int _compareTimestamps(String left, String right) {
+  final leftDate = DateTime.tryParse(left);
+  final rightDate = DateTime.tryParse(right);
+  if (leftDate == null && rightDate == null) return left.compareTo(right);
+  if (leftDate == null) return 1;
+  if (rightDate == null) return -1;
+  return leftDate.compareTo(rightDate);
 }
 
 class Item {

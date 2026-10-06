@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:overlay_kit/overlay_kit.dart';
 
 import '../../core/classes/status_request.dart';
+import '../../core/classes/store_view_state.dart';
 import '../../core/functions/app_usage_service.dart';
 import '../../core/functions/checkInternet.dart';
 import '../../core/model/get_all_item_model.dart';
@@ -48,11 +49,14 @@ class CategoresControllerImp extends CategoresController {
   late StatusRequest statusRequest;
   int selectedIndex = 0;
   ItemsResponse? itemList;
+  final catalogState = Rx<StoreViewState<List<Item>>>(const StoreInitial());
   var supCategores = <Category>[].obs;
   List<Item> allProducts = <Item>[].obs;
   RxList<Item> _filteredProducts = <Item>[].obs;
   RxList<Item> get filteredProducts => _filteredProducts;
-  int mainCategoresId = 0;
+  int selectedOnlineStoreCategoryId = 0;
+  int get mainCategoresId => selectedOnlineStoreCategoryId;
+  set mainCategoresId(int value) => selectedOnlineStoreCategoryId = value;
   late List<Widget> widgetOption = [CategoryScreen(), const FilterPage()];
   var isGrid = false.obs;
   var isTwo = false.obs;
@@ -99,52 +103,67 @@ class CategoresControllerImp extends CategoresController {
     }
   }
 
-  Future<void> getProductsByStoreSection(int storeSectionId) async {
-    isNormail = await AppUsageService.getTypeUser() == "Normail";
+  Future<void> getProductsByOnlineStoreCategory(
+    int categoryId, {
+    bool navigate = true,
+  }) async {
+    selectedOnlineStoreCategoryId = categoryId;
+    final previous = itemList?.rows;
+    catalogState.value = StoreLoading(previousData: previous);
+    isLoading.value = true;
     if (!await CheckInternet.checkInternet()) {
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
+      catalogState.value = StoreOffline(
+        message: 'Check the internet connection'.tr,
+        previousData: previous,
+      );
+      isLoading.value = false;
       return;
     }
-
-    OverlayLoadingProgress.start();
     try {
-      statusRequest = StatusRequest.loading;
-      isLoading.value = true;
       final response = await categoriesRepository
-          .getAllCategoriesByMainCategoresId(mainCategoresId: storeSectionId);
-
-      if (response.statusCode == 200) {
-        itemList = ItemsResponse.fromJson(response.body);
-        allProducts = itemList!.rows;
-        Get.toNamed(RouteHelper.categoryScreen);
+          .getListingsByOnlineStoreCategory(categoryId: categoryId);
+      if (response.statusCode != 200 ||
+          response.body is! Map<String, dynamic>) {
+        throw const FormatException('catalog response is incompatible');
       }
-    } catch (e) {
-      showCustomSnackBar(
-        'An error occurred. Please try again.'.tr,
-        isError: true,
+      final parsed = ItemsResponse.fromJson(
+        response.body as Map<String, dynamic>,
+      );
+      itemList = parsed;
+      allProducts = parsed.rows;
+      _filteredProducts.assignAll(parsed.rows);
+      catalogState.value =
+          parsed.rows.isEmpty
+              ? StoreEmpty(message: 'No Item Found'.tr)
+              : StoreContent(List<Item>.unmodifiable(parsed.rows));
+      if (navigate) Get.toNamed(RouteHelper.categoryScreen);
+    } on FormatException catch (error) {
+      catalogState.value = StoreError(
+        message: error.message,
+        previousData: previous,
+        code: 'malformed_catalog',
+      );
+    } catch (_) {
+      catalogState.value = StoreError(
+        message: 'An error occurred. Please try again.'.tr,
+        previousData: previous,
       );
     } finally {
       isLoading.value = false;
-      OverlayLoadingProgress.stop();
     }
+  }
+
+  @Deprecated('Use getProductsByOnlineStoreCategory')
+  Future<void> getProductsByStoreSection(int storeSectionId) async {
+    await getProductsByOnlineStoreCategory(storeSectionId);
   }
 
   RxList<Item> filtter() {
     _filteredProducts = <Item>[].obs;
     _filteredProducts.value =
         itemList!.rows.where((product) {
-          return (token == null
-                      ? product.normailPrice
-                      : (isNormail
-                          ? product.normailPrice
-                          : product.wholesalePrice)) >=
-                  priceRange.start &&
-              (token == null
-                      ? product.normailPrice
-                      : (isNormail
-                          ? product.normailPrice
-                          : product.wholesalePrice)) <=
-                  priceRange.end;
+          return product.normailPrice >= priceRange.start &&
+              product.normailPrice <= priceRange.end;
         }).toList();
     return _filteredProducts;
   }

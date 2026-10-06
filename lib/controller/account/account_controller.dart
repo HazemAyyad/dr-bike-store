@@ -18,7 +18,45 @@ import '../../core/model/orders_model.dart';
 import '../../core/model/user_data_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../LocalizationController.dart';
+import '../order/order_controller.dart';
 import 'package:intl/intl.dart';
+
+enum AccountViewStatus { guest, initial, loading, content, offline, error }
+
+enum AccountMutationStatus { idle, submitting, success, failure }
+
+typedef ConnectivityChecker = Future<bool> Function();
+
+Future<bool> _defaultConnectivityChecker() async =>
+    await CheckInternet.checkInternet() == true;
+
+Uri? safeHttpUri(String? value) {
+  final uri = Uri.tryParse(value?.trim() ?? '');
+  if (uri == null || !uri.hasAuthority) return null;
+  if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+  return uri;
+}
+
+bool isValidAccountDeletionResponse(Response response) =>
+    response.statusCode == 200 &&
+    response.body is Map &&
+    response.body['message'] == 'success';
+
+Map<String, Object?> profileEditPayload({
+  required String fullName,
+  required String email,
+  required String phoneNumber,
+  required String phoneNumber2,
+  required String address,
+  required String cityId,
+}) => <String, Object?>{
+  'fullName': fullName,
+  'email': email,
+  'phoneNumber': phoneNumber,
+  'phoneNumber2': phoneNumber2,
+  'address': address,
+  'cityId': cityId,
+};
 
 abstract class AccountController extends GetxController {
   getUserById({bool navigate});
@@ -32,15 +70,12 @@ abstract class AccountController extends GetxController {
 
 class AccountControllerImp extends AccountController {
   GlobalKey<FormState> formstate = GlobalKey<FormState>();
-  bool isDarkMode = ThemeServices().loadThemeFromBox();
+  late bool isDarkMode;
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
   bool isNormail = AppUsageService.getTypeUser() == "Normail";
   String? token;
-  OrderResponse? ordersDone;
-  OrderResponse? ordersCanceled;
-  OrderResponse? ordersNew;
   CitiesResponse? citiesResponse;
   ApiResponse? conactUsModel;
   late TextEditingController emailController;
@@ -57,19 +92,40 @@ class AccountControllerImp extends AccountController {
   List<Citys> cities = [];
   List<String> citiesList = [];
   UserModel? userModel;
+  UserModel? get profile => userModel;
+  AccountViewStatus profileStatus = AccountViewStatus.initial;
+  AccountMutationStatus mutationStatus = AccountMutationStatus.idle;
+  String? message;
   final AuthRepository authRepository;
+  final ConnectivityChecker connectivityChecker;
   late StatusRequest statusRequest;
-  AccountControllerImp({required this.authRepository});
+  AccountControllerImp({
+    required this.authRepository,
+    ConnectivityChecker? connectivityChecker,
+    bool? initialDarkMode,
+  }) : connectivityChecker = connectivityChecker ?? _defaultConnectivityChecker,
+       isDarkMode = initialDarkMode ?? ThemeServices().loadThemeFromBox();
   @override
   getUserById({bool navigate = true}) async {
+    token = await AppUsageService.getToken();
+    if (token == null || token!.isEmpty) {
+      profileStatus = AccountViewStatus.guest;
+      userModel = null;
+      update();
+      return;
+    }
     if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
       try {
         statusRequest = StatusRequest.loading;
+        profileStatus = AccountViewStatus.loading;
+        message = null;
+        update();
         var response = await authRepository.getUser();
         var responseCity = await authRepository.getCity();
-        if (response.statusCode == 200) {
+        if (response.statusCode == 200 &&
+            response.body is Map<String, dynamic>) {
           userModel = UserModel.fromJson(response.body);
+          if (userModel!.id.isEmpty) throw const FormatException('profile');
           nameController.text =
               userModel!.fullName == null ? '' : userModel!.fullName.toString();
           emailController.text = userModel!.email;
@@ -85,10 +141,10 @@ class AccountControllerImp extends AccountController {
           // selectedCity = userModel!.city.toString();
           addressController.text =
               userModel!.address == null ? '' : userModel!.address.toString();
-          debugPrint(
-            '[STORE_ACCOUNT] loaded user id=${userModel!.id} email=${emailController.text} phone=${phoneNumberController.text}',
-            wrapWidth: 1024,
-          );
+          profileStatus = AccountViewStatus.content;
+        } else {
+          profileStatus = AccountViewStatus.error;
+          message = 'تعذر تحميل بيانات الحساب';
         }
 
         if (responseCity.statusCode == 200 && userModel != null) {
@@ -113,17 +169,16 @@ class AccountControllerImp extends AccountController {
           update();
         }
       } catch (e) {
-        debugPrint('[STORE_ACCOUNT] getUserById error=$e', wrapWidth: 1024);
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
+        profileStatus = AccountViewStatus.error;
+        message = 'تعذر تحميل بيانات الحساب';
+        update();
       } finally {
-        OverlayLoadingProgress.stop();
+        update();
       }
     } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
+      profileStatus = AccountViewStatus.offline;
+      message = 'Check the internet connection'.tr;
+      update();
     }
   }
 
@@ -144,17 +199,16 @@ class AccountControllerImp extends AccountController {
 
   @override
   editeUser() async {
-    DateTime now = DateTime.now().toUtc();
-    String formattedDate = DateFormat(
-      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-    ).format(now);
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
+    if (await connectivityChecker()) {
       try {
+        mutationStatus = AccountMutationStatus.submitting;
+        message = null;
+        update();
         if (userModel!.fullName != nameController.text ||
+            userModel!.email != emailController.text ||
             userModel!.phoneNumber != phoneNumberController.text ||
             userModel!.phoneNumber2 != phoneNumber2Controller.text ||
-            userModel!.cityId != selectedCityId ||
+            userModel!.cityId?.toString() != selectedCityId ||
             userModel!.address != addressController.text) {
           statusRequest = StatusRequest.loading;
           for (int i = 0; i < cities.length; i++) {
@@ -171,105 +225,102 @@ class AccountControllerImp extends AccountController {
             phoneNumber2: phoneNumber2Controller.text,
             cityId: selectedCityId.toString(),
             address: addressController.text,
-            block: userModel!.block,
-            typeUser: userModel!.typeUser,
-            userUpdate: formattedDate,
           );
-          if (response.statusCode == 200) {
-            Get.back();
+          if (response.statusCode == 200 &&
+              response.body is Map<String, dynamic>) {
+            final authoritative = UserModel.fromJson(response.body);
+            if (authoritative.id.isEmpty) {
+              throw const FormatException('profile');
+            }
+            userModel = authoritative;
+            mutationStatus = AccountMutationStatus.success;
+            profileStatus = AccountViewStatus.content;
+            _populateProfile(authoritative);
+            await AppUsageService.saveUserName(authoritative.fullName ?? '');
+            await AppUsageService.saveUserEmail(authoritative.email);
             showCustomSnackBar(
               "Account information has been updated".tr,
               isError: false,
             );
-            await AppUsageService.saveUserName(response.body['fullName']);
-            await AppUsageService.saveUserEmail(response.body['email']);
+          } else {
+            mutationStatus = AccountMutationStatus.failure;
+            message = 'تعذر حفظ بيانات الحساب';
           }
+        } else {
+          mutationStatus = AccountMutationStatus.idle;
         }
       } catch (e) {
-        debugPrint('[STORE_ACCOUNT] editeUser error=$e', wrapWidth: 1024);
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
+        mutationStatus = AccountMutationStatus.failure;
+        message = 'تعذر حفظ بيانات الحساب';
       } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-  }
-
-  deleteUserAccount() async {
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        statusRequest = StatusRequest.loading;
-
-        var response = await authRepository.deleteUserAccount();
-        if (response.statusCode == 200) {
-          await AppUsageService.deleteIsLogin();
-          await AppUsageService.deleteToken();
-          await AppUsageService.deleteUserEmail();
-          await AppUsageService.deleteUserId();
-          await AppUsageService.deleteUserName();
-          await AppUsageService.deleteTypeUser();
-          await loadingToken();
-          Get.back();
-          OverlayLoadingProgress.stop();
-          showCustomSnackBar("The account has been deleted".tr, isError: false);
-        }
-        OverlayLoadingProgress.stop();
         update();
-      } catch (e) {
-        debugPrint('[STORE_ACCOUNT] getAllOrders error=$e', wrapWidth: 1024);
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        OverlayLoadingProgress.stop();
       }
     } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
+      mutationStatus = AccountMutationStatus.failure;
+      message = 'Check the internet connection'.tr;
+      update();
     }
-    OverlayLoadingProgress.stop();
   }
+
+  void _populateProfile(UserModel value) {
+    nameController.text = value.fullName ?? '';
+    emailController.text = value.email;
+    phoneNumberController.text = value.phoneNumber ?? '';
+    phoneNumber2Controller.text = value.phoneNumber2 ?? '';
+    addressController.text = value.address ?? '';
+    selectedCityId = value.cityId?.toString();
+  }
+
+  Future<void> logout({required bool confirmed}) async {
+    if (!confirmed) return;
+    await _clearSession();
+  }
+
+  Future<bool> deactivateAccount({required bool confirmed}) async {
+    if (!confirmed) return false;
+    mutationStatus = AccountMutationStatus.submitting;
+    update();
+    try {
+      final response = await authRepository.deleteUserAccount();
+      final valid = isValidAccountDeletionResponse(response);
+      if (!valid) {
+        mutationStatus = AccountMutationStatus.failure;
+        update();
+        return false;
+      }
+      await _clearSession();
+      mutationStatus = AccountMutationStatus.success;
+      update();
+      return true;
+    } catch (_) {
+      mutationStatus = AccountMutationStatus.failure;
+      update();
+      return false;
+    }
+  }
+
+  Future<void> _clearSession() async {
+    await Future.wait([
+      AppUsageService.deleteIsLogin(),
+      AppUsageService.deleteToken(),
+      AppUsageService.deleteUserId(),
+      AppUsageService.deleteUserName(),
+      AppUsageService.deleteUserEmail(),
+      AppUsageService.deleteTypeUser(),
+    ]);
+    token = null;
+    userModel = null;
+    profileStatus = AccountViewStatus.guest;
+    update();
+  }
+
+  Future<bool> deleteUserAccount() => deactivateAccount(confirmed: true);
 
   @override
   getAllOrders() async {
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        statusRequest = StatusRequest.loading;
-
-        var responseDone = await authRepository.getAllOrder("Done");
-        var responseCanceled = await authRepository.getAllOrder("Canceled");
-        var responseNew = await authRepository.getAllOrder("New");
-        if (responseDone.statusCode == 200 ||
-            responseCanceled.statusCode == 200 ||
-            responseNew.statusCode == 200) {
-          ordersDone = OrderResponse.fromJson(responseDone.body);
-          ordersNew = OrderResponse.fromJson(responseNew.body);
-          ordersCanceled = OrderResponse.fromJson(responseCanceled.body);
-          print(responseNew.body);
-        }
-        Get.toNamed(RouteHelper.ordersScreen);
-        update();
-      } catch (e) {
-        print(e.toString());
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
+    final controller = Get.find<OrderController>();
+    await controller.load();
+    Get.toNamed(RouteHelper.ordersScreen);
   }
 
   @override
@@ -327,28 +378,10 @@ class AccountControllerImp extends AccountController {
 
   @override
   editAllOrders({required Order order}) async {
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        statusRequest = StatusRequest.loading;
-
-        var response = await authRepository.cancelOrder(
-          orderId: order.id.toString(),
-        );
-        if (response.statusCode == 200) {
-          await getAllOrders();
-          Get.back();
-          showCustomSnackBar("تم إلغاء الطلب بنجاح", isError: false);
-        }
-      } catch (e) {
-        showCustomSnackBar(e.toString(), isError: true);
-      } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
+    await Get.find<OrderController>().requestCancellation(
+      order,
+      confirmed: true,
+    );
   }
 
   String formatDate(String dateString) {
@@ -467,48 +500,22 @@ class AccountControllerImp extends AccountController {
     }
   }
 
-  void openInstagram() async {
-    if (conactUsModel!.data.instagram == null) {
-      if (await canLaunch('')) {
-        await launch('');
-      } else {
-        showCustomSnackBar(
-          "Try using another means of communication.".tr,
-          isError: true,
-        );
-      }
-    } else {
-      if (await canLaunch(conactUsModel!.data.instagram!)) {
-        await launch(conactUsModel!.data.instagram!);
-      } else {
-        showCustomSnackBar(
-          "Try using another means of communication.".tr,
-          isError: true,
-        );
-      }
-    }
-  }
+  Future<void> openInstagram() =>
+      _openConfiguredHttpUrl(conactUsModel?.data.instagram);
 
-  void openFacebook() async {
-    if (conactUsModel!.data.twitter == null) {
-      if (await canLaunch('')) {
-        await launch('');
-      } else {
-        showCustomSnackBar(
-          "Try using another means of communication.".tr,
-          isError: true,
-        );
-      }
-    } else {
-      if (await canLaunch(conactUsModel!.data.twitter!)) {
-        await launch(conactUsModel!.data.twitter!);
-      } else {
-        showCustomSnackBar(
-          "Try using another means of communication.".tr,
-          isError: true,
-        );
-      }
+  Future<void> openTwitter() =>
+      _openConfiguredHttpUrl(conactUsModel?.data.twitter);
+
+  Future<void> _openConfiguredHttpUrl(String? value) async {
+    final uri = safeHttpUri(value);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
     }
+    showCustomSnackBar(
+      "Try using another means of communication.".tr,
+      isError: true,
+    );
   }
 
   void openCall() async {

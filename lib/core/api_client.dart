@@ -21,12 +21,17 @@ class ApiClient {
 
   ApiClient({required this.sharedPreferences});
 
-  Future<Response> getData(String uri, {Map<String, dynamic>? query}) async {
+  Future<Response> getData(
+    String uri, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async {
     final url = AppConstants.appBaseUrl + uri;
     try {
       _logRequest('GET', url);
+      final requestUri = Uri.parse(url).replace(queryParameters: query);
       http.Response response = await http
-          .get(Uri.parse(url))
+          .get(requestUri, headers: _jsonHeaders(headers))
           .timeout(Duration(seconds: timeoutInSeconds));
       _logRawResponse(response);
       return handleResponse(response, uri);
@@ -232,11 +237,11 @@ class ApiClient {
     final copy = Map<dynamic, dynamic>.from(body);
     for (final key in copy.keys.toList()) {
       final lower = key.toString().toLowerCase();
-      if (lower.contains('password') || lower.contains('token')) {
-        final value = copy[key]?.toString() ?? '';
-        final visibleLength = value.length < 6 ? value.length : 6;
-        copy[key] =
-            value.isEmpty ? '' : '${value.substring(0, visibleLength)}...***';
+      if (lower.contains('password') ||
+          lower.contains('token') ||
+          lower == 'otp' ||
+          lower == 'resetproof') {
+        copy[key] = '***';
       }
     }
     return copy;
@@ -263,7 +268,7 @@ class ApiClient {
       }
       if (parts.isNotEmpty) return '{${parts.join(', ')}}';
     }
-    return _shortObject(value);
+    return _shortObject(_redactBody(value));
   }
 
   String _shortText(String value) {

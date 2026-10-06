@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 
 import '../../../controller/product/product_controller.dart';
 import '../../../core/constants/dimensions.dart';
-import '../../../core/constants/images.dart';
 import '../../../core/constants/styles.dart';
 import '../../../core/model/get_all_item_model.dart';
 import '../../../core/widget/custom_image_widget.dart';
@@ -90,7 +89,7 @@ class BuildListView extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "₪ ${productControllerImp.token == null ? item.normailPrice : (productControllerImp.isNormail ? item.normailPrice : item.wholesalePrice)}",
+                      "₪ ${item.normailPrice}",
                       style: robotoBold.copyWith(
                         fontSize: Dimensions.fontSizeLarge,
                         color: Theme.of(context).hoverColor,
@@ -147,18 +146,7 @@ class BuildListView extends StatelessWidget {
   }
 
   String _itemImage(Item item) {
-    if (item.viewImagesItems.isNotEmpty) {
-      final imageUrl = item.viewImagesItems.first.imageUrl;
-      if (imageUrl.trim().isNotEmpty) return imageUrl;
-    }
-
-    final normalImages = item.normalImagesItems;
-    if (normalImages != null && normalImages.isNotEmpty) {
-      final imageUrl = normalImages.first.imageUrl;
-      if (imageUrl.trim().isNotEmpty) return imageUrl;
-    }
-
-    return Images.logo;
+    return item.storefrontMedia.firstWhere((media) => media.isMain).path;
   }
 
   String _itemCategoryName(Item item, bool isAr, bool isEng) {

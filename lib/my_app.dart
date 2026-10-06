@@ -18,41 +18,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return false;
+    return GetBuilder<LocalizationController>(
+      builder: (localizeController) {
+        return OverlayKit(
+          child: ScreenUtilInit(
+            designSize: const Size(360, 690),
+            minTextAdapt: true,
+            splitScreenMode: true,
+            builder: (_, child) {
+              return GetMaterialApp(
+                title: AppConstants.appName,
+                theme: light(),
+                darkTheme: dark(),
+                themeMode: ThemeServices().theme,
+                initialBinding: Mybinding(),
+                locale: localizeController.locale,
+                translations: MyLocale(),
+                navigatorKey: Get.key,
+                initialRoute: RouteHelper.initial,
+                // initialRoute: RouteHelper.homePage,
+                fallbackLocale: Locale(
+                  AppConstants.languages[0].languageCode!,
+                  AppConstants.languages[0].countryCode,
+                ),
+                debugShowCheckedModeBanner: false,
+                getPages: RouteHelper.routes,
+              );
+            },
+          ),
+        );
       },
-      child: GetBuilder<LocalizationController>(
-        builder: (localizeController) {
-          return OverlayKit(
-            child: ScreenUtilInit(
-              designSize: const Size(360, 690),
-              minTextAdapt: true,
-              splitScreenMode: true,
-              builder: (_, child) {
-                return GetMaterialApp(
-                  title: AppConstants.appName,
-                  theme: light(),
-                  darkTheme: dark(),
-                  themeMode: ThemeServices().theme,
-                  initialBinding: Mybinding(),
-                  locale: localizeController.locale,
-                  translations: MyLocale(),
-                  navigatorKey: Get.key,
-                  initialRoute: RouteHelper.initial,
-                  // initialRoute: RouteHelper.homePage,
-                  fallbackLocale: Locale(
-                    AppConstants.languages[0].languageCode!,
-                    AppConstants.languages[0].countryCode,
-                  ),
-                  debugShowCheckedModeBanner: false,
-                  getPages: RouteHelper.routes,
-                );
-              },
-            ),
-          );
-        },
-      ),
     );
   }
 }
