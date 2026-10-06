@@ -150,6 +150,33 @@ class StoreStateView<T> extends StatelessWidget {
       );
     }
     if (current is StoreOffline<T>) {
+      if (current.previousData case final data?) {
+        return Stack(
+          children: [
+            contentBuilder(context, data),
+            PositionedDirectional(
+              start: StoreSpacing.sm,
+              end: StoreSpacing.sm,
+              top: StoreSpacing.sm,
+              child: Material(
+                color: StorePalette.derivedWarningSurface,
+                borderRadius: BorderRadius.circular(StoreRadii.md),
+                child: ListTile(
+                  leading: const Icon(Icons.wifi_off_outlined),
+                  title: Text(current.message),
+                  trailing:
+                      onRetry == null
+                          ? null
+                          : TextButton(
+                            onPressed: onRetry,
+                            child: Text('storeRetry'.tr),
+                          ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
       return StoreMessageState(
         kind: StoreMessageKind.offline,
         message: current.message,
@@ -205,15 +232,18 @@ class _StoreSkeletonBoxState extends State<StoreSkeletonBox>
   }
 
   @override
-  Widget build(BuildContext context) => ExcludeSemantics(
-    child: FadeTransition(
-      opacity: Tween<double>(begin: 0.45, end: 0.9).animate(_controller),
-      child: Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: StorePalette.border,
-          borderRadius: BorderRadius.circular(widget.borderRadius),
+  Widget build(BuildContext context) => Semantics(
+    label: 'جاري التحميل',
+    child: ExcludeSemantics(
+      child: FadeTransition(
+        opacity: Tween<double>(begin: 0.45, end: 0.9).animate(_controller),
+        child: Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: StorePalette.border,
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+          ),
         ),
       ),
     ),
