@@ -192,7 +192,21 @@ HomeControllerImp _controller(
 Item _item({required double retailPrice, required double wholesalePrice}) =>
     Item(
       id: 1,
+      productId: 1,
       listingId: 101,
+      listingStatus: 'published',
+      readinessState: 'complete',
+      available: true,
+      purchasable: true,
+      storefrontMedia: const [
+        StorefrontMedia(
+          id: 1,
+          path: 'fixture.jpg',
+          sourceType: 'normal_image',
+          isMain: true,
+          sortOrder: 0,
+        ),
+      ],
       nameAr: 'منتج',
       nameEng: 'Product',
       nameAbree: 'Product',

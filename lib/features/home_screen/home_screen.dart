@@ -177,31 +177,35 @@ class _CategoriesDestination extends StatelessWidget {
       state: state,
       loading: const HomeLoadingSkeleton(),
       onRetry: controller.getMainCategores,
-      contentBuilder:
-          (context, categories) => RefreshIndicator(
-            onRefresh: controller.getMainCategores,
-            color: StorePalette.purple,
-            child: GridView.builder(
-              key: const PageStorageKey<String>('store-categories-scroll'),
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(StoreSpacing.md),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: StoreSpacing.sm,
-                mainAxisSpacing: StoreSpacing.sm,
-                mainAxisExtent: 164,
-              ),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                return MainCategorys(
-                  image: category.imageUrl,
-                  title: _categoryName(category),
-                  onTap: () => _openCategory(category),
-                );
-              },
+      contentBuilder: (context, categories) {
+        final hierarchy = _flattenCategories(categories);
+        return RefreshIndicator(
+          onRefresh: controller.getMainCategores,
+          color: StorePalette.purple,
+          child: GridView.builder(
+            key: const PageStorageKey<String>('store-categories-scroll'),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(StoreSpacing.md),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: StoreSpacing.sm,
+              mainAxisSpacing: StoreSpacing.sm,
+              mainAxisExtent: 164,
             ),
+            itemCount: hierarchy.length,
+            itemBuilder: (context, index) {
+              final entry = hierarchy[index];
+              final category = entry.category;
+              return MainCategorys(
+                image: category.imageUrl,
+                title:
+                    '${entry.depth == 0 ? '' : '↳ '}${_categoryName(category)}',
+                onTap: () => _openCategory(category),
+              );
+            },
           ),
+        );
+      },
     );
   });
 
@@ -210,8 +214,29 @@ class _CategoriesDestination extends StatelessWidget {
     final categoriesController = Get.find<CategoresControllerImp>();
     categoriesController.mainCategoresId = category.id;
     categoriesController.titleMain = _categoryName(category);
-    await categoriesController.getProductsByStoreSection(category.id);
+    await categoriesController.getProductsByOnlineStoreCategory(category.id);
   }
+}
+
+class _CategoryHierarchyEntry {
+  const _CategoryHierarchyEntry(this.category, this.depth);
+  final Category category;
+  final int depth;
+}
+
+List<_CategoryHierarchyEntry> _flattenCategories(List<Category> roots) {
+  final result = <_CategoryHierarchyEntry>[];
+  void append(Category category, int depth) {
+    result.add(_CategoryHierarchyEntry(category, depth));
+    for (final child in category.children) {
+      append(child, depth + 1);
+    }
+  }
+
+  for (final root in roots) {
+    append(root, 0);
+  }
+  return result;
 }
 
 class _OrdersDestination extends StatelessWidget {

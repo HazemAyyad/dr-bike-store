@@ -147,6 +147,10 @@ class MyLocale implements Translations {
       "storeNewArrivals": "وصل حديثًا",
       "storeShopNow": "تسوّق الآن",
       "storeNoCategoriesMessage": "لا توجد أقسام متاحة حاليًا.",
+      "storeCatalogFiltersUnavailableTitle":
+          "خيارات التصفية والترتيب غير متاحة حاليًا لهذه النتائج",
+      "storeCatalogFiltersUnavailableBody":
+          "سيتم تفعيلها عند توفير عقد تصفية معتمد من المتجر.",
       "storeNoProductsMessage": "لا توجد منتجات منشورة حاليًا.",
       "storeNoPromotionsMessage": "لا توجد عروض متاحة حاليًا.",
       "storeHomeSectionError": "تعذر تحميل هذا القسم. اسحب للتحديث.",
@@ -551,6 +555,10 @@ class MyLocale implements Translations {
       "storeNewArrivals": "New arrivals",
       "storeShopNow": "Shop now",
       "storeNoCategoriesMessage": "No categories are available right now.",
+      "storeCatalogFiltersUnavailableTitle":
+          "Sorting and filters are not available for these results yet.",
+      "storeCatalogFiltersUnavailableBody":
+          "They will be enabled when the Store provides an authoritative filtering contract.",
       "storeNoProductsMessage":
           "No published products are available right now.",
       "storeNoPromotionsMessage": "No promotions are available right now.",
@@ -993,6 +1001,10 @@ class MyLocale implements Translations {
       "storeNewArrivals": "הגיעו לאחרונה",
       "storeShopNow": "קנייה עכשיו",
       "storeNoCategoriesMessage": "אין קטגוריות זמינות כרגע.",
+      "storeCatalogFiltersUnavailableTitle":
+          "מיון וסינון אינם זמינים עדיין עבור תוצאות אלה.",
+      "storeCatalogFiltersUnavailableBody":
+          "הם יופעלו כאשר החנות תספק חוזה סינון מוסמך.",
       "storeNoProductsMessage": "אין מוצרים מפורסמים כרגע.",
       "storeNoPromotionsMessage": "אין מבצעים זמינים כרגע.",
       "storeHomeSectionError": "לא ניתן לטעון את האזור. משכו לרענון.",

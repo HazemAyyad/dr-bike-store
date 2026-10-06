@@ -338,7 +338,7 @@ Category _category(int id, String name) => Category(
   dateAdd: '',
   userEdit: '',
   dateEdit: '',
-  supCategories: const <Object>[],
+  children: const <Category>[],
 );
 
 Item _item(
@@ -349,7 +349,21 @@ Item _item(
   bool isNew = false,
 }) => Item(
   id: id,
+  productId: id,
   listingId: id + 100,
+  listingStatus: 'published',
+  readinessState: 'complete',
+  available: true,
+  purchasable: true,
+  storefrontMedia: [
+    StorefrontMedia(
+      id: id,
+      path: 'fixture.jpg',
+      sourceType: 'normal_image',
+      isMain: true,
+      sortOrder: 0,
+    ),
+  ],
   nameAr: name,
   nameEng: name,
   nameAbree: name,
