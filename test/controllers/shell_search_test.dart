@@ -1,6 +1,8 @@
 import 'package:doctor_bike/controller/home/home_controller.dart';
 import 'package:doctor_bike/core/classes/store_view_state.dart';
 import 'package:doctor_bike/core/helper/search_history_store.dart';
+import 'package:doctor_bike/core/constants/app_constants.dart';
+import 'package:doctor_bike/core/model/get_all_item_model.dart';
 import 'package:doctor_bike/core/widget/store_bottom_navigation.dart';
 import 'package:doctor_bike/repository/home/home_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -130,6 +132,20 @@ void main() {
   });
 
   test(
+    'public Home and Search cards never infer wholesale display pricing from typeUser',
+    () async {
+      final controller = _controller(preferences, authenticated: true);
+      final item = _item(retailPrice: 125, wholesalePrice: 80);
+
+      for (final legacyType in <String>['User', 'Normail', 'admin', '']) {
+        await preferences.setString(AppConstants.typeUser, legacyType);
+        await controller.initializeShell();
+        expect(controller.displayPriceFor(item), 125);
+      }
+    },
+  );
+
+  test(
     'search keeps no-results, server failure, and offline distinct',
     () async {
       final dataSource = _FakeHomeDataSource(
@@ -172,6 +188,32 @@ HomeControllerImp _controller(
   connectivityCheck: () async => true,
   tokenLoader: () async => authenticated ? 'token' : null,
 );
+
+Item _item({required double retailPrice, required double wholesalePrice}) =>
+    Item(
+      id: 1,
+      listingId: 101,
+      nameAr: 'منتج',
+      nameEng: 'Product',
+      nameAbree: 'Product',
+      isShow: true,
+      descriptionAr: '',
+      descriptionEng: '',
+      descriptionAbree: '',
+      normailPrice: retailPrice,
+      wholesalePrice: wholesalePrice,
+      stock: 1,
+      model: 'DB-1',
+      isNewItem: false,
+      isMoreSales: true,
+      rate: 4,
+      discount: 0,
+      supCategory: const <SupCategory>[],
+      normalImagesItems: const <NormalImageItem>[],
+      images3DItems: const <NormalImageItem>[],
+      viewImagesItems: const <NormalImageItem>[],
+      itemSizes: const <ItemSize>[],
+    );
 
 class _FakeHomeDataSource implements HomeDataSource {
   _FakeHomeDataSource({List<Response>? searchResponses})

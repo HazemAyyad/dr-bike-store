@@ -6,6 +6,7 @@ import '../../controller/categores/categores_controller.dart';
 import '../../controller/home/home_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../core/helper/route_helper.dart';
+import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
@@ -24,12 +25,14 @@ class HomeScreen extends StatefulWidget {
     this.controller,
     this.destinationPages,
     this.loadOnStart = true,
+    this.onAddToCart,
     super.key,
   });
 
   final HomeControllerImp? controller;
   final Map<StoreDestination, Widget>? destinationPages;
   final bool loadOnStart;
+  final ValueChanged<Item>? onAddToCart;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -55,7 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _defaultPage(StoreDestination destination) => switch (destination) {
-    StoreDestination.home => HomePage(controller: controller),
+    StoreDestination.home => HomePage(
+      controller: controller,
+      onAddToCart: widget.onAddToCart,
+    ),
     StoreDestination.categories => _CategoriesDestination(
       controller: controller,
     ),
@@ -74,6 +80,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (destination == StoreDestination.orders &&
         Get.isRegistered<AccountControllerImp>()) {
       await Get.find<AccountControllerImp>().getAllOrders();
+    }
+  }
+
+  void _addToCart(Item item) {
+    if (widget.onAddToCart case final callback?) {
+      callback(item);
+    } else if (Get.isRegistered<ShopController>()) {
+      Get.find<ShopController>().addToCart(item);
     }
   }
 
@@ -132,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: SearchScreen(
                             controller: controller,
                             showSearchField: false,
+                            onAddToCart: _addToCart,
                           ),
                         ),
                       ),

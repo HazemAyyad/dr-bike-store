@@ -14,6 +14,7 @@ class StoreButton extends StatelessWidget {
     this.icon,
     this.isLoading = false,
     this.expand = true,
+    this.height = StoreCalibration.controlHeight,
     this.semanticLabel,
     super.key,
   });
@@ -24,6 +25,7 @@ class StoreButton extends StatelessWidget {
   final IconData? icon;
   final bool isLoading;
   final bool expand;
+  final double height;
   final String? semanticLabel;
 
   @override
@@ -79,7 +81,7 @@ class StoreButton extends StatelessWidget {
     );
 
     final button = SizedBox(
-      height: StoreCalibration.controlHeight,
+      height: height,
       width: expand ? double.infinity : null,
       child: TextButton(
         onPressed: callback,

@@ -27,7 +27,7 @@ class PromoCard extends StatelessWidget {
     label: title,
     child: Material(
       color: StorePalette.lightPurple,
-      borderRadius: BorderRadius.circular(StoreRadii.pill),
+      borderRadius: BorderRadius.circular(StoreRadii.lg),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onPressed,
@@ -35,7 +35,7 @@ class PromoCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             PositionedDirectional(
-              start: 0,
+              end: 0,
               top: 0,
               bottom: 0,
               width: 170,
@@ -46,7 +46,7 @@ class PromoCard extends StatelessWidget {
               ),
             ),
             Align(
-              alignment: AlignmentDirectional.centerEnd,
+              alignment: AlignmentDirectional.centerStart,
               child: FractionallySizedBox(
                 widthFactor: 0.58,
                 child: Padding(
@@ -75,6 +75,7 @@ class PromoCard extends StatelessWidget {
                         label: buttonText,
                         onPressed: onPressed,
                         expand: false,
+                        height: StoreCalibration.compactControlHeight,
                         variant: StoreButtonVariant.secondary,
                       ),
                     ],

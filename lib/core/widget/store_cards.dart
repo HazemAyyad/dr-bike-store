@@ -20,6 +20,7 @@ class StoreProductCard extends StatelessWidget {
     this.isFavorite = false,
     this.onFavorite,
     this.onAddToCart,
+    this.compact = false,
     super.key,
   });
 
@@ -36,6 +37,7 @@ class StoreProductCard extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback? onFavorite;
   final VoidCallback? onAddToCart;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +78,12 @@ class StoreProductCard extends StatelessWidget {
                           start: StoreSpacing.xs,
                           child: StoreDiscountChip(percent: discountPercent!),
                         ),
+                      if (compact && discountPercent == null)
+                        PositionedDirectional(
+                          top: StoreSpacing.xs,
+                          start: StoreSpacing.xs,
+                          child: StoreAvailabilityChip(inStock: inStock),
+                        ),
                       if (onFavorite != null)
                         PositionedDirectional(
                           top: StoreSpacing.xxs,
@@ -101,7 +109,9 @@ class StoreProductCard extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(StoreSpacing.sm),
+                  padding: EdgeInsets.all(
+                    compact ? StoreSpacing.xs : StoreSpacing.sm,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -109,9 +119,18 @@ class StoreProductCard extends StatelessWidget {
                         name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: StoreTypography.bodyMedium,
+                        style:
+                            compact
+                                ? StoreTypography.label
+                                : StoreTypography.bodyMedium,
                       ),
-                      const SizedBox(height: StoreSpacing.xs),
+                      SizedBox(
+                        height: compact ? StoreSpacing.xxs : StoreSpacing.xs,
+                      ),
+                      if (compact && rating != null) ...[
+                        StoreRating(value: rating!, count: reviewCount),
+                        const SizedBox(height: StoreSpacing.xxs),
+                      ],
                       Wrap(
                         spacing: StoreSpacing.xs,
                         runSpacing: StoreSpacing.xxs,
@@ -119,9 +138,10 @@ class StoreProductCard extends StatelessWidget {
                         children: [
                           Text(
                             '$price $currency',
-                            style: StoreTypography.title.copyWith(
-                              color: StorePalette.navy,
-                            ),
+                            style: (compact
+                                    ? StoreTypography.label
+                                    : StoreTypography.title)
+                                .copyWith(color: StorePalette.navy),
                           ),
                           if (originalPrice != null)
                             Text(
@@ -132,25 +152,66 @@ class StoreProductCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      const SizedBox(height: StoreSpacing.xs),
-                      Row(
-                        children: [
-                          StoreAvailabilityChip(inStock: inStock),
-                          if (rating != null) ...[
-                            const Spacer(),
-                            StoreRating(value: rating!, count: reviewCount),
-                          ],
-                        ],
-                      ),
-                      if (onAddToCart != null) ...[
+                      if (!compact) ...[
                         const SizedBox(height: StoreSpacing.xs),
+                        Row(
+                          children: [
+                            StoreAvailabilityChip(inStock: inStock),
+                            if (rating != null) ...[
+                              const Spacer(),
+                              StoreRating(value: rating!, count: reviewCount),
+                            ],
+                          ],
+                        ),
+                      ],
+                      if (onAddToCart != null) ...[
+                        SizedBox(
+                          height: compact ? StoreSpacing.xxs : StoreSpacing.xs,
+                        ),
                         SizedBox(
                           width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: inStock ? onAddToCart : null,
-                            icon: const Icon(Icons.add_shopping_cart_outlined),
-                            label: Text('storeAddToCart'.tr),
-                          ),
+                          height:
+                              compact
+                                  ? StoreCalibration.compactControlHeight
+                                  : StoreCalibration.controlHeight,
+                          child:
+                              compact
+                                  ? FilledButton.icon(
+                                    onPressed: inStock ? onAddToCart : null,
+                                    style: FilledButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: StoreSpacing.xxs,
+                                      ),
+                                      backgroundColor: StorePalette.purple,
+                                      textStyle: StoreTypography.caption
+                                          .copyWith(
+                                            fontSize: 10.5,
+                                            fontWeight:
+                                                StoreTypography.semiBold,
+                                          ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          StoreRadii.sm,
+                                        ),
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.add_shopping_cart_outlined,
+                                      size: StoreIconSizes.small,
+                                    ),
+                                    label: Text(
+                                      'storeAddToCart'.tr,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  )
+                                  : OutlinedButton.icon(
+                                    onPressed: inStock ? onAddToCart : null,
+                                    icon: const Icon(
+                                      Icons.add_shopping_cart_outlined,
+                                    ),
+                                    label: Text('storeAddToCart'.tr),
+                                  ),
                         ),
                       ],
                     ],
@@ -171,6 +232,7 @@ class StoreCategoryCard extends StatelessWidget {
     required this.media,
     required this.onTap,
     this.itemCount,
+    this.compact = false,
     super.key,
   });
 
@@ -178,6 +240,7 @@ class StoreCategoryCard extends StatelessWidget {
   final Widget media;
   final VoidCallback onTap;
   final int? itemCount;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +265,9 @@ class StoreCategoryCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.all(StoreSpacing.sm),
+            padding: EdgeInsets.all(
+              compact ? StoreSpacing.xxs : StoreSpacing.sm,
+            ),
             decoration: BoxDecoration(
               border: Border.all(color: StorePalette.border),
               borderRadius: BorderRadius.circular(StoreRadii.lg),
@@ -210,13 +275,20 @@ class StoreCategoryCard extends StatelessWidget {
             child: Column(
               children: [
                 Expanded(child: media),
-                const SizedBox(height: StoreSpacing.xs),
+                SizedBox(height: compact ? StoreSpacing.xxs : StoreSpacing.xs),
                 Text(
                   title,
-                  maxLines: 2,
+                  maxLines: compact ? 1 : 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: StoreTypography.label,
+                  style:
+                      compact
+                          ? StoreTypography.caption.copyWith(
+                            color: StorePalette.textPrimary,
+                            fontSize: 10,
+                            fontWeight: StoreTypography.medium,
+                          )
+                          : StoreTypography.label,
                 ),
                 if (countLabel != null)
                   Text(countLabel, style: StoreTypography.caption),

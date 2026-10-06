@@ -15,6 +15,11 @@ class StoreMessageState extends StatelessWidget {
     this.title,
     this.actionLabel,
     this.onAction,
+    this.icon,
+    this.iconColor,
+    this.iconSize = 48,
+    this.actionVariant = StoreButtonVariant.secondary,
+    this.actionExpanded = false,
     super.key,
   });
 
@@ -23,6 +28,11 @@ class StoreMessageState extends StatelessWidget {
   final String? title;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final IconData? icon;
+  final Color? iconColor;
+  final double iconSize;
+  final StoreButtonVariant actionVariant;
+  final bool actionExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +68,11 @@ class StoreMessageState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 48, color: color),
+              Icon(
+                this.icon ?? icon,
+                size: iconSize,
+                color: iconColor ?? color,
+              ),
               const SizedBox(height: StoreSpacing.md),
               Text(
                 title ?? defaultTitle,
@@ -78,8 +92,8 @@ class StoreMessageState extends StatelessWidget {
                 StoreButton(
                   label: actionLabel!,
                   onPressed: onAction,
-                  expand: false,
-                  variant: StoreButtonVariant.secondary,
+                  expand: actionExpanded,
+                  variant: actionVariant,
                 ),
               ],
             ],

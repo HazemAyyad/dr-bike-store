@@ -127,7 +127,7 @@ class _StoreTopBarState extends State<StoreTopBar> {
                     ),
                   ),
                   StoreIconButton(
-                    icon: _effectiveSearchExpanded ? Icons.close : Icons.search,
+                    icon: Icons.search,
                     semanticLabel:
                         _effectiveSearchExpanded
                             ? 'storeCloseSearch'.tr
@@ -135,16 +135,16 @@ class _StoreTopBarState extends State<StoreTopBar> {
                     onPressed: _toggleSearch,
                   ),
                   StoreIconButton(
-                    icon: Icons.notifications_none,
-                    semanticLabel: 'storeNotifications'.tr,
-                    badgeCount: widget.notificationCount,
-                    onPressed: widget.onNotifications,
-                  ),
-                  StoreIconButton(
                     icon: Icons.shopping_cart_outlined,
                     semanticLabel: 'storeCart'.tr,
                     badgeCount: widget.cartCount,
                     onPressed: widget.onCart,
+                  ),
+                  StoreIconButton(
+                    icon: Icons.notifications_none,
+                    semanticLabel: 'storeNotifications'.tr,
+                    badgeCount: widget.notificationCount,
+                    onPressed: widget.onNotifications,
                   ),
                 ],
               ),
@@ -156,15 +156,30 @@ class _StoreTopBarState extends State<StoreTopBar> {
                   _effectiveSearchExpanded
                       ? Padding(
                         padding: const EdgeInsets.only(top: StoreSpacing.xs),
-                        child: StoreTextField(
-                          controller: _searchController,
-                          focusNode: _searchFocusNode,
-                          hint: widget.searchHint ?? 'storeSearchHint'.tr,
-                          semanticLabel: 'storeSearchField'.tr,
-                          prefixIcon: Icons.search,
-                          textInputAction: TextInputAction.search,
-                          onChanged: widget.onSearchChanged,
-                          onSubmitted: widget.onSearch,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: StoreTextField(
+                                controller: _searchController,
+                                focusNode: _searchFocusNode,
+                                hint: widget.searchHint ?? 'storeSearchHint'.tr,
+                                semanticLabel: 'storeSearchField'.tr,
+                                prefixIcon: Icons.search,
+                                textInputAction: TextInputAction.search,
+                                onChanged: widget.onSearchChanged,
+                                onSubmitted: widget.onSearch,
+                              ),
+                            ),
+                            const SizedBox(width: StoreSpacing.xs),
+                            SizedBox(
+                              height: StoreCalibration.controlHeight,
+                              child: TextButton(
+                                onPressed: _toggleSearch,
+                                child: Text('cancel'.tr),
+                              ),
+                            ),
+                          ],
                         ),
                       )
                       : const SizedBox.shrink(),

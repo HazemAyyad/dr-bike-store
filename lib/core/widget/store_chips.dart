@@ -145,6 +145,7 @@ class StoreFilterChip extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     this.count,
+    this.compact = false,
     super.key,
   });
 
@@ -152,6 +153,7 @@ class StoreFilterChip extends StatelessWidget {
   final bool selected;
   final ValueChanged<bool> onSelected;
   final int? count;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => FilterChip(
@@ -170,5 +172,12 @@ class StoreFilterChip extends StatelessWidget {
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(StoreRadii.pill),
     ),
+    materialTapTargetSize: compact ? MaterialTapTargetSize.shrinkWrap : null,
+    visualDensity: compact ? VisualDensity.compact : null,
+    labelPadding:
+        compact
+            ? const EdgeInsets.symmetric(horizontal: StoreSpacing.xxs)
+            : null,
+    padding: compact ? EdgeInsets.zero : null,
   );
 }
