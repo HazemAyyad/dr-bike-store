@@ -8,8 +8,15 @@ import '../../../core/widget/store_buttons.dart';
 import '../../../core/widget/store_fields.dart';
 import '../widget/store_auth_scaffold.dart';
 
-class SignInScreen extends StatelessWidget {
+class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
+
+  @override
+  State<SignInScreen> createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends State<SignInScreen> {
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +45,7 @@ class SignInScreen extends StatelessWidget {
                 ],
               ),
               child: Form(
-                key: controller.formstate,
+                key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -68,7 +75,8 @@ class SignInScreen extends StatelessWidget {
                       obscureText: true,
                       textInputAction: TextInputAction.done,
                       prefixIcon: Icons.lock_outline,
-                      onSubmitted: (_) => controller.login(),
+                      onSubmitted:
+                          (_) => controller.login(_formKey.currentState),
                       validator:
                           (value) =>
                               value == null || value.isEmpty
@@ -101,7 +109,7 @@ class SignInScreen extends StatelessWidget {
                     const SizedBox(height: StoreSpacing.sm),
                     StoreButton(
                       label: 'storeLoginAction'.tr,
-                      onPressed: controller.login,
+                      onPressed: () => controller.login(_formKey.currentState),
                       isLoading: controller.isSubmitting,
                     ),
                   ],

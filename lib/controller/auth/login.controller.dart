@@ -7,7 +7,7 @@ import '../../repository/auth/auth_repository.dart';
 import '../notification/notification_controller.dart';
 
 abstract class LoginController extends GetxController {
-  Future<void> login();
+  Future<void> login([FormState? form]);
   void goToSignUp();
   void goToForgetPassword();
 }
@@ -55,7 +55,6 @@ class LoginControllerImp extends LoginController {
   final Future<String> Function() _notificationTokenProvider;
   final VoidCallback _onAuthenticated;
 
-  final formstate = GlobalKey<FormState>();
   late final TextEditingController email;
   late final TextEditingController password;
 
@@ -72,10 +71,9 @@ class LoginControllerImp extends LoginController {
   }
 
   @override
-  Future<void> login() async {
+  Future<void> login([FormState? form]) async {
     if (isSubmitting) return;
     final identifier = email.text.trim();
-    final form = formstate.currentState;
     if ((form != null && !form.validate()) ||
         identifier.isEmpty ||
         password.text.isEmpty) {

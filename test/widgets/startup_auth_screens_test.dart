@@ -244,6 +244,27 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('concurrent login routes own distinct form keys', (tester) async {
+    Get.put(
+      LoginControllerImp(
+        authRepository: _NoopAuthGateway(),
+        sessionStore: _NoopSessionStore(),
+        notificationTokenProvider: () async => '',
+        onAuthenticated: () {},
+      ),
+    );
+
+    await tester.pumpWidget(
+      const _ArabicTestApp(
+        child: Stack(children: [SignInScreen(), SignInScreen()]),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(Form), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('registration exposes only backend-supported identity fields', (
     tester,
   ) async {
