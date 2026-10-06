@@ -215,14 +215,14 @@ coupon/fee changes, rapid duplicate taps, timeout/retry, malformed success, and 
 **Independent Test**: Filter orders, refresh, inspect snapshot totals/address/payment, view Shiply timeline,
 handle unknown statuses, cancel an eligible order with confirmation, and reject ineligible actions.
 
-- [ ] T089 [P] [US8] Add order snapshot, status, timeline ordering, eligibility, and cancellation tests in `test/controllers/orders_controller_test.dart`
-- [ ] T090 [US8] Extract order-list, detail, tracking, and action state from the shop controller in `lib/controller/order/order_controller.dart`
-- [ ] T091 [US8] Normalize unknown statuses, logs, handover, Shiply tracking, and optional fields in `lib/core/model/orders_model.dart`
-- [ ] T092 [US8] Rebuild order tabs/cards, refresh, loading, empty, offline, and error states in `lib/features/order/order_screen.dart`
-- [ ] T093 [US8] Rebuild snapshot detail, line items, totals, address, payment, notes, and action eligibility in `lib/features/order/order_details_screen.dart`
-- [ ] T094 [P] [US8] Build authoritative status timeline and optional tracking/location presentation in `lib/features/order/widget/order_tracking_timeline.dart`
-- [ ] T095 [US8] Implement confirm-then-server-success cancellation and capability gates for reorder/share/edit/note in `lib/features/order/widget/order_actions.dart`
-- [ ] T096 [US8] Compare SCR-30 through SCR-33 with boards 02, 03, and 06 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-10-us8-visual.md`
+- [x] T089 [P] [US8] Add order snapshot, status, timeline ordering, eligibility, and cancellation tests in `test/controllers/orders_controller_test.dart`
+- [x] T090 [US8] Extract order-list, detail, tracking, and action state from the shop controller in `lib/controller/order/order_controller.dart`
+- [x] T091 [US8] Normalize unknown statuses, logs, handover, Shiply tracking, and optional fields in `lib/core/model/orders_model.dart`
+- [x] T092 [US8] Rebuild order tabs/cards, refresh, loading, empty, offline, and error states in `lib/features/order/order_screen.dart`
+- [x] T093 [US8] Rebuild snapshot detail, line items, totals, address, payment, notes, and action eligibility in `lib/features/order/order_details_screen.dart`
+- [x] T094 [P] [US8] Build authoritative status timeline and optional tracking/location presentation in `lib/features/order/widget/order_tracking_timeline.dart`
+- [x] T095 [US8] Implement confirm-then-server-success cancellation and capability gates for reorder/share/edit/note in `lib/features/order/widget/order_actions.dart`
+- [x] T096 [US8] Compare SCR-30 through SCR-33 with boards 02, 03, and 06 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-10-us8-visual.md`
 
 **Checkpoint**: US8 works independently and historical values are never recalculated from current catalog data.
 

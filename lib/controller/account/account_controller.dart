@@ -18,6 +18,7 @@ import '../../core/model/orders_model.dart';
 import '../../core/model/user_data_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../LocalizationController.dart';
+import '../order/order_controller.dart';
 import 'package:intl/intl.dart';
 
 abstract class AccountController extends GetxController {
@@ -38,9 +39,6 @@ class AccountControllerImp extends AccountController {
   );
   bool isNormail = AppUsageService.getTypeUser() == "Normail";
   String? token;
-  OrderResponse? ordersDone;
-  OrderResponse? ordersCanceled;
-  OrderResponse? ordersNew;
   CitiesResponse? citiesResponse;
   ApiResponse? conactUsModel;
   late TextEditingController emailController;
@@ -239,37 +237,9 @@ class AccountControllerImp extends AccountController {
 
   @override
   getAllOrders() async {
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        statusRequest = StatusRequest.loading;
-
-        var responseDone = await authRepository.getAllOrder("Done");
-        var responseCanceled = await authRepository.getAllOrder("Canceled");
-        var responseNew = await authRepository.getAllOrder("New");
-        if (responseDone.statusCode == 200 ||
-            responseCanceled.statusCode == 200 ||
-            responseNew.statusCode == 200) {
-          ordersDone = OrderResponse.fromJson(responseDone.body);
-          ordersNew = OrderResponse.fromJson(responseNew.body);
-          ordersCanceled = OrderResponse.fromJson(responseCanceled.body);
-          print(responseNew.body);
-        }
-        Get.toNamed(RouteHelper.ordersScreen);
-        update();
-      } catch (e) {
-        print(e.toString());
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
+    final controller = Get.find<OrderController>();
+    await controller.load();
+    Get.toNamed(RouteHelper.ordersScreen);
   }
 
   @override
@@ -327,28 +297,10 @@ class AccountControllerImp extends AccountController {
 
   @override
   editAllOrders({required Order order}) async {
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        statusRequest = StatusRequest.loading;
-
-        var response = await authRepository.cancelOrder(
-          orderId: order.id.toString(),
-        );
-        if (response.statusCode == 200) {
-          await getAllOrders();
-          Get.back();
-          showCustomSnackBar("تم إلغاء الطلب بنجاح", isError: false);
-        }
-      } catch (e) {
-        showCustomSnackBar(e.toString(), isError: true);
-      } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
+    await Get.find<OrderController>().requestCancellation(
+      order,
+      confirmed: true,
+    );
   }
 
   String formatDate(String dateString) {
