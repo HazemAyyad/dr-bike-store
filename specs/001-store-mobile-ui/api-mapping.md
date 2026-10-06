@@ -41,13 +41,26 @@ missing.
 | `POST /SupCategorys/GetAllShowSupCategories?mainCategoryId=` | Categories | No | Online Store child categories | SCR-16 | Compatibility hierarchy is backed by `online_store_categories`, not inventory Store sections |
 | `POST /Comments/GetAllCommentsToItem?ItemId=` | Product | No | `Review` list | SCR-35 | Reusable; endpoint path differs from older doc `/api/Comments/...` |
 | `POST /Comments/ManageComment` | Product | Bearer | Success/error | SCR-35 | Eligibility/edit/moderation response requires clarification |
+| `GET /OnlineStore/Reviews` | Review inbox | Bearer | Own pending/published/rejected reviews | SCR-35 | Own rows stay separate from the public list |
+| `POST /OnlineStore/Reviews` | Review composer | Bearer | `201 data` review | SCR-35 | Sends only product_id, rating, and comment; new review remains server-returned pending |
+
+Review creation uses the native endpoint. Editing uses `POST /Comments/ManageComment` only for an
+authoritative pending own review, sending `id`, `productId`, `rate`, and `comment`. Flutter never
+sends or decides status, verified purchase, actor identity, or public visibility. Public reviews
+continue to come only from `GetAllCommentsToItem`.
 
 ## Notifications
 
 | Method and endpoint | Current caller | Auth | Current typed use | UI coverage | Status / gap |
 |---------------------|----------------|------|-------------------|-------------|--------------|
-| `POST /Notifications/GetNotifications?UserId=` | Home | Bearer | `NotificationResponse` | SCR-12/34 | Reusable basic list; categories/deep link types need fields |
+| `POST /Notifications/GetNotifications?UserId=` | Notification inbox | Bearer | `NotificationResponse` | SCR-12/34 | Current payload exposes no category or destination metadata |
 | `POST /Notifications/EditNotification?NotificationId=&IsRead=true` | Home | Bearer | Boolean/success body | SCR-34 | UI must wait for success; current code mutates local flag too early |
+
+Current notification rows expose only `id`, `isRead`, `title`, `content`, `toUser`, `createdAt`, and
+`updatedAt`. They therefore resolve to unknown category and only **All** is available. Optional
+future metadata is parsed through an allow-list and is never inferred from text, IDs, or dates.
+Missing, malformed, promotion, URL, and unknown destinations perform no navigation. FCM data uses
+the same resolver.
 
 ## Cart, Delivery, Coupon, and Checkout
 

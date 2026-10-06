@@ -86,7 +86,7 @@ class _ReviewCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: StoreSpacing.xs),
-        Text(review.comment, style: StoreTypography.body),
+        Text(review.comment ?? '', style: StoreTypography.body),
       ],
     ),
   );

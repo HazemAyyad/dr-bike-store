@@ -1,134 +1,117 @@
-// ignore_for_file: unused_local_variable
+import 'dart:convert';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-class FirebaseApi {
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  Future<void> iniNotifications() async {
-    await _firebaseMessaging.requestPermission();
-    FirebaseMessaging.onBackgroundMessage(handlebackgroundMessage);
-  }
+import '../model/notification_model.dart';
 
-  Future<void> handlebackgroundMessage(RemoteMessage message) async {}
+sealed class NotificationRouteTarget {
+  const NotificationRouteTarget();
+}
+
+class NotificationOrderTarget extends NotificationRouteTarget {
+  const NotificationOrderTarget(this.orderId);
+  final int orderId;
+}
+
+class NotificationProductTarget extends NotificationRouteTarget {
+  const NotificationProductTarget(this.productId);
+  final int productId;
+}
+
+class NotificationRouteResolver {
+  const NotificationRouteResolver._();
+
+  static NotificationRouteTarget? resolve(Map<String, dynamic> data) {
+    final destination = NotificationDestination.fromJson(data);
+    if (destination == null) return null;
+    return switch (destination.type) {
+      NotificationDestinationType.order => NotificationOrderTarget(
+        destination.id,
+      ),
+      NotificationDestinationType.product => NotificationProductTarget(
+        destination.id,
+      ),
+      NotificationDestinationType.unknown => null,
+    };
+  }
 }
 
 class NotificationApi {
   NotificationApi._();
   static final NotificationApi instance = NotificationApi._();
 
-  final _messaging = FirebaseMessaging.instance;
   final _localNotifications = FlutterLocalNotificationsPlugin();
-  bool _isFlutterNotificationsInitialized = false;
+  bool _initialized = false;
 
   Future<void> initialize() async {
-    _messaging.requestPermission();
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    // Request permission
-    await _requestPermission();
-
-    // setup message hundlers
-    await _setupMessageHandles();
-
-    //Get FCM token
-    final token = await _messaging.getToken();
-  }
-
-  Future<void> _requestPermission() async {
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-      announcement: false,
-      carPlay: false,
-      criticalAlert: false,
-    );
+    await FirebaseMessaging.instance.requestPermission();
+    FirebaseMessaging.onBackgroundMessage(_handleBackgroundMessage);
+    await setupFlutterNotifications();
+    FirebaseMessaging.onMessage.listen(showNotification);
   }
 
   Future<void> setupFlutterNotifications() async {
-    if (_isFlutterNotificationsInitialized) {
-      return;
-    }
-    //android setup
+    if (_initialized) return;
     const channel = AndroidNotificationChannel(
-      "high_importance_channel",
-      "High Importance Notifications",
-      description: "This channel is used for important notifications.",
+      'high_importance_channel',
+      'High Importance Notifications',
+      importance: Importance.high,
     );
     await _localNotifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.createNotificationChannel(channel);
-    const initializationSettingsAndroid = AndroidInitializationSettings(
-      "@mipmap/ic_launcher",
-    );
-
-    //ios setup
-    final initializationSettingsDarwin = DarwinInitializationSettings();
-    final initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsDarwin,
-    );
-
-    //flutter notification setup
     await _localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (details) {},
+      const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(),
+      ),
+      onDidReceiveNotificationResponse: (details) {
+        final payload = details.payload;
+        if (payload == null) return;
+        try {
+          final decoded = jsonDecode(payload);
+          if (decoded is Map) {
+            NotificationRouteResolver.resolve(
+              Map<String, dynamic>.from(decoded),
+            );
+          }
+        } catch (_) {
+          // Invalid and unknown payloads intentionally do not navigate.
+        }
+      },
     );
-    _isFlutterNotificationsInitialized = true;
+    _initialized = true;
   }
 
   Future<void> showNotification(RemoteMessage message) async {
-    RemoteNotification? notificatio = message.notification;
-    AndroidNotification? android = message.notification!.android;
-    if (notificatio != null && android != null) {
-      await _localNotifications.show(
-        notificatio.hashCode,
-        notificatio.title,
-        notificatio.body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            "high_importance_channel",
-            "High Importance Notifications",
-            channelDescription:
-                "This channel is used for important notifications.",
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: "@mipmap/ic_launcher",
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+    final notification = message.notification;
+    if (notification == null) return;
+    await _localNotifications.show(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          importance: Importance.high,
+          priority: Priority.high,
         ),
-        payload: message.data.toString(),
-      );
-    }
-  }
-
-  Future<void> _setupMessageHandles() async {
-    //forground message
-    FirebaseMessaging.onMessage.listen((message) {
-      showNotification(message);
-    });
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
-    final initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      _handleBackgroundMessage(initialMessage);
-    }
-  }
-
-  void _handleBackgroundMessage(RemoteMessage message) {
-    if (message.data['type'] == 'chat') {
-      //open chat screen
-    }
+        iOS: DarwinNotificationDetails(),
+      ),
+      payload: jsonEncode(message.data),
+    );
   }
 }
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+@pragma('vm:entry-point')
+Future<void> _handleBackgroundMessage(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  NotificationRouteResolver.resolve(message.data);
   await NotificationApi.instance.setupFlutterNotifications();
   await NotificationApi.instance.showNotification(message);
 }

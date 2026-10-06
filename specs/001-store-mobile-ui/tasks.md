@@ -235,13 +235,13 @@ handle unknown statuses, cancel an eligible order with confirmation, and reject 
 **Independent Test**: Filter notifications, mark one read with success/failure, open known/unknown deep
 links, and add/edit a review only when eligible while preserving server visibility state.
 
-- [ ] T097 [P] [US9] Add notification category, unread mutation, and safe deep-link tests in `test/controllers/notification_controller_test.dart`
-- [ ] T098 [P] [US9] Add review eligibility, submission, failure, and visibility tests in `test/controllers/review_controller_test.dart`
-- [ ] T099 [US9] Normalize optional notification type/deep-link data and preserve unread state on mutation failure in `lib/controller/notification/notification_controller.dart`
-- [ ] T100 [US9] Rebuild categorized notifications, badge/read states, refresh, empty, offline, and error views in `lib/features/notification/notification_screen.dart`
-- [ ] T101 [US9] Implement known-destination allow-listing and safe unknown-link fallback in `lib/core/functions/notification_api.dart`
-- [ ] T102 [US9] Add eligibility-gated review composer/edit flow and authoritative submission state in `lib/features/product/review_screen.dart`
-- [ ] T103 [US9] Compare SCR-34 and SCR-35 with boards 02 and 08 plus product-detail references and record results in `specs/001-store-mobile-ui/evidence/phase-11-us9-visual.md`
+- [x] T097 [P] [US9] Add notification category, unread mutation, and safe deep-link tests in `test/controllers/notification_controller_test.dart`
+- [x] T098 [P] [US9] Add review eligibility, submission, failure, and visibility tests in `test/controllers/review_controller_test.dart`
+- [x] T099 [US9] Normalize optional notification type/deep-link data and preserve unread state on mutation failure in `lib/controller/notification/notification_controller.dart`
+- [x] T100 [US9] Rebuild categorized notifications, badge/read states, refresh, empty, offline, and error views in `lib/features/notification/notification_screen.dart`
+- [x] T101 [US9] Implement known-destination allow-listing and safe unknown-link fallback in `lib/core/functions/notification_api.dart`
+- [x] T102 [US9] Add eligibility-gated review composer/edit flow and authoritative submission state in `lib/features/product/review_screen.dart`
+- [x] T103 [US9] Compare SCR-34 and SCR-35 with boards 02 and 08 plus product-detail references and record results in `specs/001-store-mobile-ui/evidence/phase-11-us9-visual.md`
 
 **Checkpoint**: US9 works independently; local optimism never falsely commits unread or review mutation state.
 

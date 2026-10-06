@@ -5,6 +5,7 @@ import '../../controller/categores/categores_controller.dart';
 import '../../controller/home/home_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../controller/order/order_controller.dart';
+import '../../controller/notification/notification_controller.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
@@ -111,7 +112,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     controller.displayName.value.isEmpty
                         ? 'storeGuest'.tr
                         : controller.displayName.value,
-                notificationCount: controller.notificationBadgeCount,
+                notificationCount:
+                    Get.isRegistered<NotificationController>()
+                        ? _notificationCount(Get.find<NotificationController>())
+                        : controller.notificationBadgeCount,
                 cartCount: cartCount == 0 ? null : cartCount,
                 searchExpanded: controller.isSearchExpanded.value,
                 searchController: controller.search,
@@ -125,6 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     await Get.toNamed(RouteHelper.intoLog);
                   } else {
                     await Get.toNamed(RouteHelper.notificationScreen);
+                    await controller.getNotifications();
                   }
                 },
                 onCart: () => Get.to(() => const ShopCarScreen()),
@@ -217,6 +222,9 @@ class _CategoriesDestination extends StatelessWidget {
     await categoriesController.getProductsByOnlineStoreCategory(category.id);
   }
 }
+
+int? _notificationCount(NotificationController controller) =>
+    controller.unreadCount == 0 ? null : controller.unreadCount;
 
 class _CategoryHierarchyEntry {
   const _CategoryHierarchyEntry(this.category, this.depth);

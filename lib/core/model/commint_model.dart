@@ -1,83 +1,120 @@
-class ReviewResponse {
-  final List<Review> rows;
-  final PaginationInfo paginationInfo;
+enum ReviewStatus { pending, published, rejected, unknown }
 
-  ReviewResponse({required this.rows, required this.paginationInfo});
+class ReviewResponse {
+  const ReviewResponse({required this.rows, required this.paginationInfo});
+  final List<Review> rows;
+  final ReviewPaginationInfo paginationInfo;
 
   factory ReviewResponse.fromJson(Map<String, dynamic> json) {
+    final raw = json['rows'];
+    if (raw is! List) throw const FormatException('reviews.rows');
     return ReviewResponse(
-      rows: List<Review>.from(json['rows'].map((x) => Review.fromJson(x))),
-      paginationInfo: PaginationInfo.fromJson(json['paginationInfo']),
+      rows:
+          raw
+              .whereType<Map>()
+              .map(
+                (row) => Review.fromPublicJson(Map<String, dynamic>.from(row)),
+              )
+              .toList(),
+      paginationInfo: ReviewPaginationInfo.fromJson(
+        json['paginationInfo'] is Map
+            ? Map<String, dynamic>.from(json['paginationInfo'])
+            : const {},
+      ),
     );
   }
-
-  Map<String, dynamic> toJson() => {
-    'rows': List<dynamic>.from(rows.map((x) => x.toJson())),
-    'paginationInfo': paginationInfo.toJson(),
-  };
 }
 
 class Review {
-  final int id;
-  final String comment;
-  final int productId;
-  final String productName;
-  final int rate;
-  final String userName;
-  final String userAddId;
-  final bool isShow;
-  final String dateAdd;
-
-  Review({
+  const Review({
     required this.id,
-    required this.comment,
     required this.productId,
-    required this.productName,
-    required this.rate,
-    required this.userName,
-    required this.userAddId,
-    required this.isShow,
-    required this.dateAdd,
+    required this.rating,
+    required this.comment,
+    required this.status,
+    required this.isVerifiedPurchase,
+    this.userName = '',
+    this.createdAt,
+    this.updatedAt,
   });
 
-  factory Review.fromJson(Map<String, dynamic> json) => Review(
-    id: json['id'],
-    comment: json['comment'],
-    productId: json['productId'],
-    productName: json['productName'],
-    rate: json['rate'],
-    userName: json['userName'],
-    userAddId: json['userAddId'],
-    isShow: json['isShow'],
-    dateAdd: json['dateAdd'],
-  );
+  final int id;
+  final int productId;
+  final int rating;
+  final String? comment;
+  final ReviewStatus status;
+  final bool isVerifiedPurchase;
+  final String userName;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'comment': comment,
-    'productId': productId,
-    'productName': productName,
-    'rate': rate,
-    'userName': userName,
-    'userAddId': userAddId,
-    'isShow': isShow,
-    'dateAdd': dateAdd,
-  };
+  int get rate => rating;
+  bool get isShow => status == ReviewStatus.published;
+  String get dateAdd => createdAt?.toIso8601String() ?? '';
+  bool get canEdit => status == ReviewStatus.pending;
+
+  factory Review.fromPublicJson(Map<String, dynamic> json) =>
+      _parse(json, isPublic: true);
+  factory Review.fromOwnJson(Map<String, dynamic> json) =>
+      _parse(json, isPublic: false);
+  factory Review.fromJson(Map<String, dynamic> json) =>
+      Review.fromPublicJson(json);
+
+  static Review _parse(Map<String, dynamic> json, {required bool isPublic}) {
+    final id = int.tryParse(json['id']?.toString() ?? '');
+    final productId = int.tryParse(
+      (json['product_id'] ?? json['productId'])?.toString() ?? '',
+    );
+    final rating = int.tryParse(
+      (json['rating'] ?? json['rate'])?.toString() ?? '',
+    );
+    if (id == null ||
+        id <= 0 ||
+        productId == null ||
+        productId <= 0 ||
+        rating == null ||
+        rating < 1 ||
+        rating > 5) {
+      throw const FormatException('review identity/rating');
+    }
+    final rawStatus = json['status']?.toString().toLowerCase();
+    final status =
+        isPublic
+            ? ReviewStatus.published
+            : switch (rawStatus) {
+              'pending' => ReviewStatus.pending,
+              'published' => ReviewStatus.published,
+              'rejected' => ReviewStatus.rejected,
+              _ => ReviewStatus.unknown,
+            };
+    return Review(
+      id: id,
+      productId: productId,
+      rating: rating,
+      comment: json['comment']?.toString(),
+      status: status,
+      isVerifiedPurchase: json['is_verified_purchase'] == true,
+      userName: json['userName']?.toString() ?? '',
+      createdAt: DateTime.tryParse(
+        (json['created_at'] ?? json['dateAdd'])?.toString() ?? '',
+      ),
+      updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? ''),
+    );
+  }
 }
 
-class PaginationInfo {
+class ReviewPaginationInfo {
+  const ReviewPaginationInfo({
+    required this.totalRowsCount,
+    required this.totalPagesCount,
+  });
   final int totalRowsCount;
   final int totalPagesCount;
-
-  PaginationInfo({required this.totalRowsCount, required this.totalPagesCount});
-
-  factory PaginationInfo.fromJson(Map<String, dynamic> json) => PaginationInfo(
-    totalRowsCount: json['totalRowsCount'],
-    totalPagesCount: json['totalPagesCount'],
-  );
-
-  Map<String, dynamic> toJson() => {
-    'totalRowsCount': totalRowsCount,
-    'totalPagesCount': totalPagesCount,
-  };
+  factory ReviewPaginationInfo.fromJson(Map<String, dynamic> json) =>
+      ReviewPaginationInfo(
+        totalRowsCount:
+            int.tryParse(json['totalRowsCount']?.toString() ?? '') ?? 0,
+        totalPagesCount:
+            int.tryParse(json['totalPagesCount']?.toString() ?? '') ?? 0,
+      );
 }
