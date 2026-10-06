@@ -9,6 +9,7 @@ class MainCategorys extends StatelessWidget {
     required this.title,
     this.onTap,
     this.itemCount,
+    this.compact = false,
     super.key,
   });
 
@@ -16,11 +17,13 @@ class MainCategorys extends StatelessWidget {
   final String title;
   final VoidCallback? onTap;
   final int? itemCount;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => StoreCategoryCard(
     title: title,
     itemCount: itemCount,
+    compact: compact,
     onTap: onTap ?? () {},
     media: StoreNetworkMedia(
       url: image,

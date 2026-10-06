@@ -90,7 +90,6 @@ class HomeControllerImp extends HomeController {
   Rx<NotificationResponse>? notifications;
   late final TextEditingController search = TextEditingController();
   String? token;
-  bool isNormail = true;
   bool isGrid = false;
   bool showFilter = false;
   bool _initialized = false;
@@ -108,7 +107,6 @@ class HomeControllerImp extends HomeController {
   Future<void> initializeShell() async {
     token = await tokenLoader();
     displayName.value = (await userNameLoader())?.trim() ?? '';
-    isNormail = await AppUsageService.getTypeUser() == 'Normail';
     recentSearches.assignAll(await searchHistoryStore.load());
     await _restoreDestination();
     _initialized = true;
@@ -430,10 +428,10 @@ class HomeControllerImp extends HomeController {
     update();
   }
 
-  Future<void> loadingIsNormail() async {
-    isNormail = await AppUsageService.getTypeUser() == 'Normail';
-    update();
-  }
+  /// Legacy catalog reads expose both price tiers but do not return a
+  /// user-specific display-price context. Retail is the only safe public
+  /// display price; checkout resolves customer/seller pricing separately.
+  num displayPriceFor(Item item) => item.normailPrice;
 
   List<Map<String, dynamic>> _rows(dynamic body) {
     if (body is! Map || body['rows'] is! List) {

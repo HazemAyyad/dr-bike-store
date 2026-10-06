@@ -141,7 +141,7 @@ void main() {
   testWidgets('Home skeleton is distinct from loaded content', (tester) async {
     final controller = await _controller(authenticated: false);
     await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byKey(const ValueKey('home-skeleton')), findsOneWidget);
     expect(find.byKey(const ValueKey('home-hero')), findsNothing);
@@ -180,7 +180,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final controller = await _loadedController();
     await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     await expectLater(
       find.byType(HomeScreen),
@@ -214,7 +214,7 @@ void main() {
     await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
     await tester.pump(const Duration(milliseconds: 100));
     controller.recentSearches.assignAll(<String>['سكوتر', 'بطاريات', 'خوذة']);
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await expectLater(
       find.byType(HomeScreen),
@@ -234,7 +234,7 @@ void main() {
     );
     controller.openSearch();
     await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     await expectLater(
       find.byType(HomeScreen),
@@ -255,7 +255,7 @@ void main() {
     );
     controller.openSearch();
     await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     await expectLater(
       find.byType(HomeScreen),

@@ -4,12 +4,14 @@ import 'package:get/get.dart';
 import '../../controller/categores/categores_controller.dart';
 import '../../controller/home/home_controller.dart';
 import '../../controller/product/product_controller.dart';
+import '../../controller/shop/shop_controller.dart';
 import '../../core/classes/store_view_state.dart';
 import '../../core/model/ads_response.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
+import '../../core/widget/store_bottom_navigation.dart';
 import '../../core/widget/store_cards.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_states.dart';
@@ -17,9 +19,10 @@ import 'widget/main_categorys.dart';
 import 'widget/promo.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({this.controller, super.key});
+  const HomePage({this.controller, this.onAddToCart, super.key});
 
   final HomeControllerImp? controller;
+  final ValueChanged<Item>? onAddToCart;
 
   @override
   Widget build(BuildContext context) {
@@ -54,43 +57,66 @@ class HomePage extends StatelessWidget {
           ),
           children: [
             _HeroSection(state: hero, controller: homeController),
-            const SizedBox(height: StoreSpacing.lg),
+            const SizedBox(height: StoreSpacing.md),
             _CategorySection(
               title: 'storeQuickCategories'.tr,
               state: categories,
               compact: true,
               onSelected: (category) => _openCategory(category),
+              onViewAll:
+                  () => homeController.selectDestination(
+                    StoreDestination.categories,
+                  ),
             ),
-            const SizedBox(height: StoreSpacing.lg),
+            const SizedBox(height: StoreSpacing.md),
             _ProductSection(
               title: 'storeBestSellers'.tr,
               state: products,
               controller: homeController,
               onSelected: _openProduct,
+              onAddToCart: onAddToCart ?? _runtimeAddToCart,
+              onViewAll:
+                  () => homeController.selectDestination(
+                    StoreDestination.categories,
+                  ),
             ),
-            const SizedBox(height: StoreSpacing.lg),
+            const SizedBox(height: StoreSpacing.md),
             _CategorySection(
               title: 'storeStoreCategories'.tr,
               state: categories,
               compact: false,
               onSelected: (category) => _openCategory(category),
+              onViewAll:
+                  () => homeController.selectDestination(
+                    StoreDestination.categories,
+                  ),
             ),
             if (homeController.specialOffers.isNotEmpty) ...[
-              const SizedBox(height: StoreSpacing.lg),
+              const SizedBox(height: StoreSpacing.md),
               _ProductSection(
                 title: 'storeSpecialOffers'.tr,
                 products: homeController.specialOffers,
                 controller: homeController,
                 onSelected: _openProduct,
+                onAddToCart: onAddToCart ?? _runtimeAddToCart,
+                onViewAll:
+                    () => homeController.selectDestination(
+                      StoreDestination.categories,
+                    ),
               ),
             ],
             if (homeController.newArrivals.isNotEmpty) ...[
-              const SizedBox(height: StoreSpacing.lg),
+              const SizedBox(height: StoreSpacing.md),
               _ProductSection(
                 title: 'storeNewArrivals'.tr,
                 products: homeController.newArrivals,
                 controller: homeController,
                 onSelected: _openProduct,
+                onAddToCart: onAddToCart ?? _runtimeAddToCart,
+                onViewAll:
+                    () => homeController.selectDestination(
+                      StoreDestination.categories,
+                    ),
               ),
             ],
           ],
@@ -114,6 +140,12 @@ class HomePage extends StatelessWidget {
     if (!Get.isRegistered<ProductControllerImp>()) return;
     await Get.find<ProductControllerImp>().getCategoryById(itemId: item.id);
   }
+
+  void _runtimeAddToCart(Item item) {
+    if (Get.isRegistered<ShopController>()) {
+      Get.find<ShopController>().addToCart(item);
+    }
+  }
 }
 
 class _HeroSection extends StatelessWidget {
@@ -129,7 +161,7 @@ class _HeroSection extends StatelessWidget {
       final ad = ads.first;
       return SizedBox(
         key: const ValueKey('home-hero'),
-        height: 190,
+        height: StoreCalibration.homeHeroHeight,
         child: PromoCard(
           imageUrl: ad.imgUrl,
           title: ad.title,
@@ -142,7 +174,10 @@ class _HeroSection extends StatelessWidget {
       );
     }
     if (state case StoreLoading<List<Ad>>()) {
-      return const StoreSkeletonBox(height: 190, borderRadius: StoreRadii.pill);
+      return const StoreSkeletonBox(
+        height: StoreCalibration.homeHeroHeight,
+        borderRadius: StoreRadii.lg,
+      );
     }
     // Hero/promotional content is optional and is omitted when its feed is
     // unavailable instead of inventing a local campaign.
@@ -156,12 +191,14 @@ class _CategorySection extends StatelessWidget {
     required this.state,
     required this.compact,
     required this.onSelected,
+    required this.onViewAll,
   });
 
   final String title;
   final StoreViewState<List<Category>> state;
   final bool compact;
   final ValueChanged<Category> onSelected;
+  final VoidCallback onViewAll;
 
   @override
   Widget build(BuildContext context) {
@@ -184,18 +221,26 @@ class _CategorySection extends StatelessWidget {
       ),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SectionHeader(title: title),
-        const SizedBox(height: StoreSpacing.sm),
+        if (!compact) ...[
+          _SectionHeader(title: title, onViewAll: onViewAll),
+          const SizedBox(height: StoreSpacing.xs),
+        ],
         SizedBox(
-          height: compact ? 112 : 156,
+          height:
+              compact
+                  ? StoreCalibration.homeQuickCategoryHeight
+                  : StoreCalibration.homeStoreCategoryHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: visible.length,
-            separatorBuilder: (_, _) => const SizedBox(width: StoreSpacing.sm),
+            separatorBuilder: (_, _) => const SizedBox(width: StoreSpacing.xs),
             itemBuilder: (context, index) {
               final category = visible[index];
               return SizedBox(
-                width: compact ? 96 : 132,
+                width:
+                    compact
+                        ? StoreCalibration.homeQuickCategoryWidth
+                        : StoreCalibration.homeStoreCategoryWidth,
                 child: MainCategorys(
                   image: category.imageUrl,
                   title: _categoryName(
@@ -203,6 +248,7 @@ class _CategorySection extends StatelessWidget {
                     Get.locale?.languageCode ?? 'ar',
                   ),
                   onTap: () => onSelected(category),
+                  compact: compact,
                 ),
               );
             },
@@ -218,6 +264,8 @@ class _ProductSection extends StatelessWidget {
     required this.title,
     required this.controller,
     required this.onSelected,
+    required this.onAddToCart,
+    required this.onViewAll,
     this.state,
     this.products,
   });
@@ -225,6 +273,8 @@ class _ProductSection extends StatelessWidget {
   final String title;
   final HomeControllerImp controller;
   final ValueChanged<Item> onSelected;
+  final ValueChanged<Item> onAddToCart;
+  final VoidCallback onViewAll;
   final StoreViewState<List<Item>>? state;
   final List<Item>? products;
 
@@ -248,25 +298,21 @@ class _ProductSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SectionHeader(title: title),
-        const SizedBox(height: StoreSpacing.sm),
+        _SectionHeader(title: title, onViewAll: onViewAll),
+        const SizedBox(height: StoreSpacing.xs),
         SizedBox(
-          height: 292,
+          height: StoreCalibration.homeProductCardHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: resolvedProducts.length,
-            separatorBuilder: (_, _) => const SizedBox(width: StoreSpacing.sm),
+            separatorBuilder: (_, _) => const SizedBox(width: StoreSpacing.xs),
             itemBuilder: (context, index) {
               final item = resolvedProducts[index];
               return SizedBox(
-                width: 176,
+                width: StoreCalibration.homeProductCardWidth,
                 child: StoreProductCard(
                   name: _itemName(item, Get.locale?.languageCode ?? 'ar'),
-                  price:
-                      controller.token == null || controller.isNormail
-                          ? item.normailPrice
-                          : item.wholesalePrice,
-                  originalPrice: item.discount > 0 ? item.normailPrice : null,
+                  price: controller.displayPriceFor(item),
                   discountPercent: item.discount > 0 ? item.discount : null,
                   rating: item.rate,
                   inStock: item.stock > 0 || item.itemSizes.isNotEmpty,
@@ -279,6 +325,8 @@ class _ProductSection extends StatelessWidget {
                     fit: BoxFit.contain,
                   ),
                   onTap: () => onSelected(item),
+                  onAddToCart: () => onAddToCart(item),
+                  compact: true,
                 ),
               );
             },
@@ -333,16 +381,33 @@ class _SectionState<T> extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
+  const _SectionHeader({required this.title, this.onViewAll});
 
   final String title;
+  final VoidCallback? onViewAll;
 
   @override
-  Widget build(BuildContext context) => Text(
-    title,
-    maxLines: 2,
-    overflow: TextOverflow.ellipsis,
-    style: StoreTypography.title,
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: StoreTypography.title,
+        ),
+      ),
+      if (onViewAll != null)
+        TextButton.icon(
+          onPressed: onViewAll,
+          icon: const Icon(Icons.chevron_left, size: StoreIconSizes.small),
+          label: Text('storeViewAll'.tr),
+          style: TextButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            textStyle: StoreTypography.caption,
+          ),
+        ),
+    ],
   );
 }
 
@@ -354,27 +419,42 @@ class HomeLoadingSkeleton extends StatelessWidget {
     physics: const AlwaysScrollableScrollPhysics(),
     padding: const EdgeInsets.all(StoreSpacing.md),
     children: const [
-      StoreSkeletonBox(height: 190, borderRadius: StoreRadii.pill),
-      SizedBox(height: StoreSpacing.lg),
-      StoreSkeletonBox(width: 140, height: 18),
+      StoreSkeletonBox(
+        height: StoreCalibration.homeHeroHeight,
+        borderRadius: StoreRadii.lg,
+      ),
+      SizedBox(height: StoreSpacing.md),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: StoreSkeletonBox(width: 140, height: 18),
+      ),
       SizedBox(height: StoreSpacing.sm),
       Row(
         children: [
-          Expanded(child: StoreSkeletonBox(height: 104)),
-          SizedBox(width: StoreSpacing.sm),
-          Expanded(child: StoreSkeletonBox(height: 104)),
-          SizedBox(width: StoreSpacing.sm),
-          Expanded(child: StoreSkeletonBox(height: 104)),
+          Expanded(child: StoreSkeletonBox(height: 88)),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: StoreSkeletonBox(height: 88)),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: StoreSkeletonBox(height: 88)),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: StoreSkeletonBox(height: 88)),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: StoreSkeletonBox(height: 88)),
         ],
       ),
-      SizedBox(height: StoreSpacing.lg),
-      StoreSkeletonBox(width: 120, height: 18),
+      SizedBox(height: StoreSpacing.md),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: StoreSkeletonBox(width: 120, height: 18),
+      ),
       SizedBox(height: StoreSpacing.sm),
       Row(
         children: [
-          Expanded(child: StoreSkeletonBox(height: 250)),
-          SizedBox(width: StoreSpacing.sm),
-          Expanded(child: StoreSkeletonBox(height: 250)),
+          Expanded(child: StoreSkeletonBox(height: 220)),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: StoreSkeletonBox(height: 220)),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: StoreSkeletonBox(height: 220)),
         ],
       ),
     ],
