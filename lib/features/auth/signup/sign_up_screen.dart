@@ -1,217 +1,99 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../../controller/auth/signupController.dart';
-import '../../../core/constants/dimensions.dart';
-import '../../../core/constants/images.dart';
-import '../../../core/constants/styles.dart';
-import '../../../core/functions/theme_services.dart';
-import '../../../core/widget/custom_button.dart';
-import '../../../core/widget/custom_text_field.dart';
+import '../../../core/theme/store_tokens.dart';
+import '../../../core/theme/store_typography.dart';
+import '../../../core/widget/store_buttons.dart';
+import '../../../core/widget/store_fields.dart';
+import '../widget/store_auth_scaffold.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<SignUpControllerImp>(
-      builder: (signUpController) {
-        return Scaffold(
-          body: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Form(
-              key: signUpController.formstate,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SizedBox(width: double.infinity, height: 70.h),
-                    Image.asset(
-                      ThemeServices().loadThemeFromBox()
-                          ? Images.logoDark
-                          : Images.logo,
-                      width: 150.w,
-                      height: 100.h,
-                      fit: BoxFit.fitWidth,
-                      filterQuality: FilterQuality.high,
-                    ),
-                    SizedBox(height: 20.h),
-                    Text(
-                      "welcome".tr,
-                      textAlign: TextAlign.center,
-                      style: robotoRegular.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).hoverColor,
-                        fontSize: Dimensions.fontSizeOverLarge,
+      builder:
+          (controller) => Scaffold(
+            backgroundColor: StorePalette.background,
+            body: StoreAuthScaffold(
+              title: 'storeRegisterTitle'.tr,
+              subtitle: 'storeRegisterSubtitle'.tr,
+              showBack: true,
+              onBack: controller.goToSignIn,
+              footer: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'storeAlreadyAccount'.tr,
+                      style: StoreTypography.body.copyWith(
+                        color: StorePalette.textSecondary,
                       ),
                     ),
-                    SizedBox(height: 50.h),
-                    Row(
-                      children: [
-                        Text(
-                          "email".tr,
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).hintColor,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                        Text(
-                          "*",
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                      ],
+                  ),
+                  TextButton(
+                    onPressed: controller.goToSignIn,
+                    child: Text('storeLoginAction'.tr),
+                  ),
+                ],
+              ),
+              child: Form(
+                key: controller.formstate,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AuthStatusBanner(
+                      status: controller.status,
+                      messageKey: controller.messageKey,
                     ),
-                    SizedBox(height: 8.h),
-                    CustomTextField(
-                      hintText: "email".tr,
-                      borderRadius: 11.r,
-                      inputType: TextInputType.emailAddress,
-                      controller: signUpController.EmailController,
+                    StoreTextField(
+                      controller: controller.EmailController,
+                      label: 'storeEmail'.tr,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      prefixIcon: Icons.mail_outline,
                     ),
-                    SizedBox(height: 10.h),
-                    Row(
-                      children: [
-                        Text(
-                          "phoneNumber".tr,
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).hintColor,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                        Text(
-                          "*",
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: StoreSpacing.md),
+                    StoreTextField(
+                      controller: controller.PhoneController,
+                      label: 'storePhone'.tr,
+                      hint: 'storePhoneHint'.tr,
+                      keyboardType: TextInputType.phone,
+                      textDirection: TextDirection.ltr,
+                      textInputAction: TextInputAction.next,
+                      prefixIcon: Icons.phone_outlined,
                     ),
-                    SizedBox(height: 8.h),
-                    CustomTextField(
-                      hintText: "phoneNumber".tr,
-                      borderRadius: 11.r,
-                      inputType: TextInputType.phone,
-                      controller: signUpController.PhoneController,
+                    const SizedBox(height: StoreSpacing.md),
+                    StoreTextField(
+                      controller: controller.PasswordController,
+                      label: 'storePassword'.tr,
+                      obscureText: true,
+                      textInputAction: TextInputAction.next,
+                      prefixIcon: Icons.lock_outline,
+                      helperText: 'storePasswordRequirement'.tr,
                     ),
-                    SizedBox(height: 10.h),
-                    Row(
-                      children: [
-                        Text(
-                          "password".tr,
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Theme.of(context).hintColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                        Text(
-                          "*",
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: StoreSpacing.md),
+                    StoreTextField(
+                      controller: controller.ConfirmPassword,
+                      label: 'storeConfirmPassword'.tr,
+                      obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      prefixIcon: Icons.lock_reset_outlined,
+                      onSubmitted: (_) => controller.signUp(),
                     ),
-                    SizedBox(height: 8.h),
-                    CustomTextField(
-                      hintText: "password".tr,
-                      borderRadius: 11.r,
-                      isPassword: true,
-                      controller: signUpController.PasswordController,
-                    ),
-                    SizedBox(height: 10.h),
-                    Row(
-                      children: [
-                        Text(
-                          "ConfirmPassword".tr,
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Theme.of(context).hintColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                        Text(
-                          "*",
-                          textAlign: TextAlign.center,
-                          style: robotoRegular.copyWith(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: Dimensions.fontSizeLarge,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
-                    CustomTextField(
-                      hintText: "ConfirmPassword".tr,
-                      borderRadius: 11.r,
-                      isPassword: true,
-                      controller: signUpController.ConfirmPassword,
-                    ),
-                    const SizedBox(height: 20),
-                    CustomButton(
-                      fontSize: 20.sp,
-                      buttonText: "SubscribeNow".tr,
-                      color:
-                          !ThemeServices().loadThemeFromBox()
-                              ? Theme.of(context).hoverColor
-                              : Theme.of(context).primaryColor,
-                      radius: 11.r,
-                      textColor: Theme.of(context).scaffoldBackgroundColor,
-                      onPressed: () {
-                        signUpController.signUp();
-                      },
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Already have an account".tr,
-                          style: robotoRegular.copyWith(
-                            color: const Color(0xff4b4b4b),
-                            fontSize: Dimensions.fontSizeExtraLarge,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            signUpController.goToSignIn();
-                          },
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.all(0),
-                          ),
-                          child: Text(
-                            "logIn".tr,
-                            style: robotoRegular.copyWith(
-                              color: const Color(0xff6b65bd),
-                              fontSize: Dimensions.fontSizeExtraLarge,
-                            ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: StoreSpacing.lg),
+                    StoreButton(
+                      label: 'storeCreateAccountAction'.tr,
+                      onPressed: controller.signUp,
+                      isLoading: controller.isSubmitting,
                     ),
                   ],
                 ),
               ),
             ),
           ),
-        );
-      },
     );
   }
 }

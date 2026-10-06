@@ -1,151 +1,185 @@
-// ignore_for_file: deprecated_member_use
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import '../../controller/home/home_controller.dart';
-import '../../core/constants/dimensions.dart';
-import '../../core/constants/images.dart';
-import '../../core/constants/styles.dart';
+import 'package:intl/intl.dart';
 
-class NotificationScreen extends StatelessWidget {
-  NotificationScreen({super.key});
-  final HomeControllerImp homeControllerImp = Get.find<HomeControllerImp>();
+import '../../controller/notification/notification_controller.dart';
+import '../../controller/order/order_controller.dart';
+import '../../controller/product/product_controller.dart';
+import '../../core/classes/store_view_state.dart';
+import '../../core/functions/notification_api.dart';
+import '../../core/helper/route_helper.dart';
+import '../../core/model/notification_model.dart';
+import '../../core/theme/store_tokens.dart';
+import '../../core/theme/store_typography.dart';
+import '../../core/widget/store_chips.dart';
+import '../../core/widget/store_states.dart';
+
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    homeControllerImp.postNotificationsIsRead();
-    return WillPopScope(
-      onWillPop: () async {
-        homeControllerImp.getNotifications();
-        return true;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "Notifications".tr,
-            style: robotoBold.copyWith(
-              fontSize: Dimensions.fontSizeExtraLarge2,
-              color: Theme.of(context).hintColor,
-            ),
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  late final NotificationController controller = Get.find();
+
+  @override
+  void initState() {
+    super.initState();
+    if (controller.inboxState is StoreInitial) controller.load();
+  }
+
+  @override
+  Widget build(BuildContext context) => Directionality(
+    textDirection: ui.TextDirection.rtl,
+    child: Scaffold(
+      backgroundColor: StorePalette.background,
+      appBar: AppBar(
+        title: Text('الإشعارات', style: StoreTypography.title),
+        actions: [
+          IconButton(
+            onPressed: () => controller.load(refresh: true),
+            icon: const Icon(Icons.refresh),
+            tooltip: 'تحديث',
           ),
-          leading: IconButton(
-            onPressed: () => Get.back(),
-            icon: Icon(Icons.arrow_back, color: Theme.of(context).hoverColor),
-          ),
-        ),
-        body: Obx(() {
-          if (homeControllerImp.notifications?.value.rows == null) {
-            return CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(
-                Theme.of(context).primaryColor,
-              ),
-            );
-          }
-          if (homeControllerImp.notifications!.value.rows == []) {
-            return SizedBox();
-          }
-          return homeControllerImp.notifications!.value.rows.isEmpty
-              ? Center(
-                child: Text(
-                  'Empty Notification',
-                  style: robotoRegular.copyWith(
-                    fontSize: Dimensions.fontSizeExtraLarge,
-                    color: Color(0xff7f7f7f),
+        ],
+      ),
+      body: GetBuilder<NotificationController>(
+        builder:
+            (controller) => Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(StoreSpacing.md),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: StoreFilterChip(
+                      label: 'الكل',
+                      selected: true,
+                      onSelected: (_) {},
+                    ),
                   ),
                 ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsetsDirectional.symmetric(
-                  vertical: 12,
-                  horizontal: 20,
+                Expanded(
+                  child: StoreStateView<List<NotificationItem>>(
+                    state: controller.inboxState,
+                    onRetry: controller.load,
+                    loading: const StoreSkeletonList(),
+                    contentBuilder:
+                        (_, rows) => RefreshIndicator(
+                          onRefresh: () => controller.load(refresh: true),
+                          child: ListView.separated(
+                            padding: const EdgeInsets.all(StoreSpacing.md),
+                            itemCount: rows.length,
+                            separatorBuilder:
+                                (_, _) =>
+                                    const SizedBox(height: StoreSpacing.sm),
+                            itemBuilder:
+                                (_, index) => _NotificationCard(
+                                  item: rows[index],
+                                  marking: controller.markingReadIds.contains(
+                                    rows[index].id,
+                                  ),
+                                  onTap: () => _open(rows[index]),
+                                ),
+                          ),
+                        ),
+                  ),
                 ),
-                itemCount: homeControllerImp.notifications!.value.rows.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    margin: EdgeInsets.symmetric(vertical: 5.h),
-                    width: 370.w,
-                    height: 75.h,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(
-                        Dimensions.radiusDefault.r,
-                      ),
-                      border: Border.all(
-                        color: const Color(0xffd9d9d9).withOpacity(0.61),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44.w,
-                          height: 44.h,
-                          padding: const EdgeInsets.all(5),
-                          margin: EdgeInsetsDirectional.only(start: 15.w),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).primaryColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(
-                              Dimensions.radiusDefault.r,
-                            ),
-                          ),
-                          child: SvgPicture.asset(
-                            Images.notification,
-                            fit: BoxFit.fitWidth,
-                            width: 38.w,
-                            height: 40.h,
-                          ),
-                        ),
-                        SizedBox(width: 20.w),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              homeControllerImp
-                                  .notifications!
-                                  .value
-                                  .rows[index]
-                                  .title,
-                              style: robotoBold.copyWith(
-                                fontSize: Dimensions.fontSizeLarge,
-                                color: Theme.of(context).hintColor,
-                              ),
-                            ),
-                            Text(
-                              homeControllerImp
-                                  .notifications!
-                                  .value
-                                  .rows[index]
-                                  .content,
-                              style: robotoRegular.copyWith(
-                                fontSize: Dimensions.fontSizeSmall,
-                                color: Theme.of(context).hintColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              homeControllerImp.formatDate(
-                                homeControllerImp
-                                    .notifications!
-                                    .value
-                                    .rows[index]
-                                    .createdAt,
-                              ),
-                              style: robotoRegular.copyWith(
-                                fontSize: Dimensions.fontSizeSmall,
-                                color: Theme.of(context).hintColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-        }),
+              ],
+            ),
       ),
-    );
+    ),
+  );
+
+  Future<void> _open(NotificationItem item) async {
+    if (!item.isRead) await controller.markRead(item);
+    final destination = item.destination;
+    if (destination == null) return;
+    final target = NotificationRouteResolver.resolve({
+      'destination_type': destination.type.name,
+      'destination_id': destination.id,
+    });
+    if (target is NotificationOrderTarget &&
+        Get.isRegistered<OrderController>()) {
+      final orders = Get.find<OrderController>();
+      await orders.load();
+      final order = orders.orders.firstWhereOrNull(
+        (row) => row.id == target.orderId,
+      );
+      if (order != null) {
+        orders.selectOrder(order);
+        Get.toNamed(RouteHelper.orderDetailsScreen, arguments: order);
+      } else {
+        Get.toNamed(RouteHelper.ordersScreen);
+      }
+    } else if (target is NotificationProductTarget &&
+        Get.isRegistered<ProductControllerImp>()) {
+      await Get.find<ProductControllerImp>().loadProductDetail(
+        productId: target.productId,
+        navigate: true,
+      );
+    }
   }
+}
+
+class _NotificationCard extends StatelessWidget {
+  const _NotificationCard({
+    required this.item,
+    required this.marking,
+    required this.onTap,
+  });
+  final NotificationItem item;
+  final bool marking;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: item.isRead ? StorePalette.surface : StorePalette.lightPurple,
+    borderRadius: BorderRadius.circular(StoreRadii.lg),
+    child: InkWell(
+      onTap: marking ? null : onTap,
+      borderRadius: BorderRadius.circular(StoreRadii.lg),
+      child: Padding(
+        padding: const EdgeInsets.all(StoreSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!item.isRead)
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(top: 6, left: StoreSpacing.sm),
+                decoration: const BoxDecoration(
+                  color: StorePalette.purple,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.title, style: StoreTypography.bodyMedium),
+                  const SizedBox(height: StoreSpacing.xs),
+                  Text(item.content, style: StoreTypography.body),
+                  if (item.createdAt case final date?)
+                    Text(
+                      DateFormat('yyyy/MM/dd HH:mm').format(date),
+                      style: StoreTypography.caption,
+                    ),
+                ],
+              ),
+            ),
+            if (marking)
+              const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

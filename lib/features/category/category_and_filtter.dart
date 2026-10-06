@@ -388,7 +388,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                 ),
               ),
               Text(
-                "₪ ${controller.token == null ? item.normailPrice : (controller.isNormail ? item.normailPrice : item.wholesalePrice)}",
+                "₪ ${item.normailPrice}",
                 style: robotoRegular.copyWith(
                   fontSize: Dimensions.fontSizeSmall,
                   color: Theme.of(context).hoverColor,
@@ -512,7 +512,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                 ),
               ),
               Text(
-                "₪ ${controller.token == null ? item.normailPrice : (controller.isNormail ? item.normailPrice : item.wholesalePrice)}",
+                "₪ ${item.normailPrice}",
                 style: robotoRegular.copyWith(
                   fontSize: Dimensions.fontSizeDefault,
                   color: Theme.of(context).hoverColor,
@@ -542,18 +542,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
   }
 
   String _itemImage(Item item) {
-    if (item.viewImagesItems.isNotEmpty) {
-      final imageUrl = item.viewImagesItems.first.imageUrl;
-      if (imageUrl.trim().isNotEmpty) return imageUrl;
-    }
-
-    final normalImages = item.normalImagesItems;
-    if (normalImages != null && normalImages.isNotEmpty) {
-      final imageUrl = normalImages.first.imageUrl;
-      if (imageUrl.trim().isNotEmpty) return imageUrl;
-    }
-
-    return Images.logo;
+    return item.storefrontMedia.firstWhere((media) => media.isMain).path;
   }
 
   String _itemCategoryName(Item item, bool isAr, bool isEng) {

@@ -1,119 +1,133 @@
-import 'package:flutter/cupertino.dart';
-
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:overlay_kit/overlay_kit.dart';
-
 import '../../core/functions/app_usage_service.dart';
-import '../../core/classes/status_request.dart';
-import '../../core/functions/checkInternet.dart';
 import '../../core/helper/route_helper.dart';
-import '../../core/model/auth_eesponse.dart';
-import '../../core/widget/custom_snackbar.dart';
-import '../../features/auth/forget_password/forget_password_page.dart';
 import '../../repository/auth/auth_repository.dart';
 import '../notification/notification_controller.dart';
 
 abstract class LoginController extends GetxController {
-  login();
-  //signOut();
-  goToSignUp();
-  goToForgetPassword();
-  // signInWithGoogle();
-  // signInWithFacebook();
+  Future<void> login();
+  void goToSignUp();
+  void goToForgetPassword();
+}
+
+abstract interface class AuthSessionStore {
+  Future<void> saveAuthenticatedSession(
+    StoreAuthenticatedSession session, {
+    required bool remember,
+  });
+}
+
+class AppUsageAuthSessionStore implements AuthSessionStore {
+  const AppUsageAuthSessionStore();
+
+  @override
+  Future<void> saveAuthenticatedSession(
+    StoreAuthenticatedSession session, {
+    required bool remember,
+  }) async {
+    await AppUsageService.saveUserId(session.userId);
+    await AppUsageService.saveToken(session.token);
+    await AppUsageService.saveUserName(session.displayName);
+    await AppUsageService.saveUserEmail(session.email);
+    if (session.typeUser case final typeUser?) {
+      await AppUsageService.saveTypeUser(typeUser);
+    }
+    await AppUsageService.saveIsLogin(remember);
+  }
 }
 
 class LoginControllerImp extends LoginController {
-  GlobalKey<FormState> formstate = GlobalKey<FormState>();
-  late TextEditingController email;
-  late TextEditingController password;
-  final AuthRepository authRepository;
-  AuthResponse? userAuth;
-  AuthModel? userAuth2;
+  LoginControllerImp({
+    required this.authRepository,
+    AuthSessionStore sessionStore = const AppUsageAuthSessionStore(),
+    Future<String> Function()? notificationTokenProvider,
+    VoidCallback? onAuthenticated,
+  }) : _sessionStore = sessionStore,
+       _notificationTokenProvider =
+           notificationTokenProvider ?? _defaultNotificationToken,
+       _onAuthenticated =
+           onAuthenticated ?? (() => Get.offAllNamed(RouteHelper.homePage));
+
+  final StoreAuthGateway authRepository;
+  final AuthSessionStore _sessionStore;
+  final Future<String> Function() _notificationTokenProvider;
+  final VoidCallback _onAuthenticated;
+
+  final formstate = GlobalKey<FormState>();
+  late final TextEditingController email;
+  late final TextEditingController password;
+
   bool checkBox = false;
-  bool _isLoggingIn = false;
-  LoginControllerImp({required this.authRepository});
+  AuthUiStatus status = AuthUiStatus.idle;
+  String? messageKey;
 
-  late StatusRequest statusRequest;
-  final NotificationController notificationController = Get.put(
-    NotificationController(),
-  );
+  bool get isSubmitting => status == AuthUiStatus.submitting;
+  bool get supportsSocialProviders => false;
+
+  static Future<String> _defaultNotificationToken() async {
+    if (!Get.isRegistered<NotificationController>()) return '';
+    return Get.find<NotificationController>().fcmToken.value;
+  }
+
   @override
-  login() async {
-    if (_isLoggingIn) return;
-    _isLoggingIn = true;
-    OverlayLoadingProgress.start();
-    if (await CheckInternet.checkInternet()) {
-      try {
-        var formdata = formstate.currentState;
-        if (formdata == null || !formdata.validate()) {
-          showCustomSnackBar(
-            'Please fill in all required fields'.tr,
-            isError: true,
-          );
-          return;
-        }
+  Future<void> login() async {
+    if (isSubmitting) return;
+    final identifier = email.text.trim();
+    final form = formstate.currentState;
+    if ((form != null && !form.validate()) ||
+        identifier.isEmpty ||
+        password.text.isEmpty) {
+      _setStatus(AuthUiStatus.validationError, 'storeValidationRequired');
+      return;
+    }
 
-        statusRequest = StatusRequest.loading;
-
-        var response = await authRepository.login(
-          email.text,
-          password.text,
-          notificationController.fcmToken.value,
-        );
-        if (response.statusCode == 200) {
-          userAuth = AuthResponse.fromJson(response.body);
-          if (userAuth!.user.block == false) {
-            await AppUsageService.saveUserId(userAuth!.user.id);
-            await AppUsageService.saveToken(userAuth!.token);
-            await AppUsageService.saveUserName(userAuth!.user.userName);
-            await AppUsageService.saveUserEmail(userAuth!.user.email);
-            await AppUsageService.saveTypeUser(userAuth!.user.typeUser!);
-            if (checkBox == true) {
-              await AppUsageService.saveIsLogin(true);
-            }
-            showCustomSnackBar("Login successfully".tr, isError: false);
-            Get.offAllNamed(RouteHelper.homePage);
-          } else {
-            Get.snackbar(
-              "Account Blocked",
-              "Your account has been blocked. Please contact support.",
-            );
-          }
-        } else {
-          if (response.body['message'] != null) {
-            showCustomSnackBar(response.body['message'], isError: true);
-            showCustomSnackBar(response.body, isError: true);
-          } else if (response.body['message'] == "ErrorInEmailOrPassword") {
-            showCustomSnackBar("Wrong email or password".tr, isError: true);
-          } else {
-            showCustomSnackBar(
-              'Sign in failed. Please try again.'.tr,
-              isError: true,
-            );
-          }
-        }
-      } catch (e) {
-        debugPrint('[STORE_LOGIN] error=$e');
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        _isLoggingIn = false;
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      _isLoggingIn = false;
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
+    _setStatus(AuthUiStatus.submitting, null);
+    final result = await authRepository.authenticate(
+      identifier: identifier,
+      password: password.text,
+      notificationToken: await _notificationTokenProvider(),
+    );
+    switch (result) {
+      case AuthSuccess<StoreAuthenticatedSession>(:final data):
+        await _sessionStore.saveAuthenticatedSession(data, remember: checkBox);
+        _setStatus(AuthUiStatus.success, 'storeLoginSuccess');
+        _onAuthenticated();
+      case AuthFailure<StoreAuthenticatedSession>(
+        :final kind,
+        :final messageKey,
+      ):
+        _setStatus(_statusForFailure(kind), messageKey);
     }
   }
 
-  @override
-  goToSignUp() {
-    Get.offNamed(RouteHelper.signUp);
+  AuthUiStatus _statusForFailure(AuthFailureKind kind) => switch (kind) {
+    AuthFailureKind.offline => AuthUiStatus.offline,
+    AuthFailureKind.blocked => AuthUiStatus.blocked,
+    AuthFailureKind.upgradeRequired => AuthUiStatus.upgradeRequired,
+    _ => AuthUiStatus.failure,
+  };
+
+  void _setStatus(AuthUiStatus value, String? key) {
+    status = value;
+    messageKey = key;
+    update();
   }
+
+  void setRemember(bool value) {
+    checkBox = value;
+    update();
+  }
+
+  @override
+  void goToSignUp() => Get.toNamed(RouteHelper.signUp);
+
+  @override
+  void goToForgetPassword() => Get.toNamed(
+    RouteHelper.forgotPassword,
+    arguments: {'identifier': email.text.trim()},
+  );
 
   @override
   void onInit() {
@@ -122,23 +136,10 @@ class LoginControllerImp extends LoginController {
     super.onInit();
   }
 
-  // @override
-  // signOut() async {
-  //   GoogleSignIn? googleSignIn = GoogleSignIn();
-  //   googleSignIn.disconnect();
-  //   FacebookAuth.instance.logOut();
-  //   Get.toNamed(AppRoutes.loginScreen);
-  // }
-
   @override
-  void dispose() {
+  void onClose() {
     email.dispose();
     password.dispose();
-    super.dispose();
-  }
-
-  @override
-  goToForgetPassword() {
-    Get.to(() => ForgetPasswordPage(email: email));
+    super.onClose();
   }
 }

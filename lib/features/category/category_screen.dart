@@ -10,8 +10,8 @@ import '../../controller/shop/shop_controller.dart';
 import '../../core/constants/dimensions.dart';
 import '../../core/constants/images.dart';
 import '../../core/constants/styles.dart';
-import '../../core/helper/route_helper.dart';
 import '../../core/model/get_all_item_model.dart';
+import '../../core/classes/store_view_state.dart';
 import '../../core/widget/custom_image_widget.dart';
 import '../../repository/categories/categories_repository.dart';
 import '../../repository/shop/shop_repository.dart';
@@ -208,15 +208,8 @@ class CategoryScreen extends StatelessWidget {
           SizedBox(width: 15.w),
           CircleAvatar(
             backgroundColor: const Color(0xffeeeeee),
-            child: InkWell(
-              radius: 100.r,
-              onTap: () {
-                if (controller.itemList!.rows.isNotEmpty) {
-                  controller.update();
-                  // controller.tabViewController.index = 1;
-                }
-                Get.toNamed(RouteHelper.filterPage);
-              },
+            child: Opacity(
+              opacity: 0.38,
               child: SvgPicture.asset(
                 Images.iconFilter2,
                 width: 18.w,
@@ -228,63 +221,105 @@ class CategoryScreen extends StatelessWidget {
         ],
       ),
       body: Obx(() {
-        if (controller.isLoading.value) {
+        final state = controller.catalogState.value;
+        if (state is StoreLoading<List<Item>>) {
           return Center(child: CircularProgressIndicator());
         }
+        if (state is StoreOffline<List<Item>>) {
+          return _CatalogMessage(
+            message: state.message,
+            icon: Icons.wifi_off,
+            onRetry:
+                () => controller.getProductsByOnlineStoreCategory(
+                  controller.selectedOnlineStoreCategoryId,
+                  navigate: false,
+                ),
+          );
+        }
+        if (state is StoreError<List<Item>>) {
+          return _CatalogMessage(
+            message: state.message,
+            icon: Icons.error_outline,
+            onRetry:
+                () => controller.getProductsByOnlineStoreCategory(
+                  controller.selectedOnlineStoreCategoryId,
+                  navigate: false,
+                ),
+          );
+        }
+        if (state is StoreEmpty<List<Item>>) {
+          return _CatalogMessage(
+            message: state.message,
+            icon: Icons.inventory_2_outlined,
+            onRetry:
+                () => controller.getProductsByOnlineStoreCategory(
+                  controller.selectedOnlineStoreCategoryId,
+                  navigate: false,
+                ),
+          );
+        }
         return controller.itemList?.rows.isNotEmpty ?? false
-            ? Padding(
-              padding: EdgeInsetsDirectional.symmetric(horizontal: 15.w),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.symmetric(
-                        horizontal: 10.w,
-                        vertical: 10.h,
-                      ),
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount:
-                              controller.isGrid == true
-                                  ? 1
-                                  : controller.isThree.value
-                                  ? 3
-                                  : 2,
-                          childAspectRatio:
-                              controller.isThree.value ? 0.51 : 0.69,
-                          mainAxisExtent:
-                              controller.isGrid == true ? 102.h : null,
-                          crossAxisSpacing: 5,
-                          mainAxisSpacing:
-                              controller.isGrid == true
-                                  ? 5
-                                  : controller.isThree.value
-                                  ? 5
-                                  : 10,
+            ? RefreshIndicator(
+              onRefresh:
+                  () => controller.getProductsByOnlineStoreCategory(
+                    controller.selectedOnlineStoreCategoryId,
+                    navigate: false,
+                  ),
+              child: Padding(
+                padding: EdgeInsetsDirectional.symmetric(horizontal: 15.w),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsetsDirectional.symmetric(
+                          horizontal: 10.w,
+                          vertical: 10.h,
                         ),
-                        itemCount: controller.itemList?.rows.length ?? 0,
-                        itemBuilder: (context, index) {
-                          return (controller.isGrid == true
-                              ? BuildListView(
-                                item: controller.itemList!.rows[index],
-                              )
-                              : controller.isThree.value
-                              ? buildThreeItem(
-                                item: controller.itemList!.rows[index],
-                                context: context,
-                                controller: shopController,
-                              )
-                              : buildTwoItem(
-                                item: controller.itemList!.rows[index],
-                                context: context,
-                                controller: shopController,
-                              ));
-                        },
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount:
+                                    controller.isGrid == true
+                                        ? 1
+                                        : controller.isThree.value
+                                        ? 3
+                                        : 2,
+                                childAspectRatio:
+                                    controller.isThree.value ? 0.51 : 0.69,
+                                mainAxisExtent:
+                                    controller.isGrid == true ? 102.h : null,
+                                crossAxisSpacing: 5,
+                                mainAxisSpacing:
+                                    controller.isGrid == true
+                                        ? 5
+                                        : controller.isThree.value
+                                        ? 5
+                                        : 10,
+                              ),
+                          itemCount: controller.itemList?.rows.length ?? 0,
+                          itemBuilder: (context, index) {
+                            return (controller.isGrid == true
+                                ? BuildListView(
+                                  item: controller.itemList!.rows[index],
+                                )
+                                : controller.isThree.value
+                                ? buildThreeItem(
+                                  item: controller.itemList!.rows[index],
+                                  context: context,
+                                  controller: shopController,
+                                )
+                                : buildTwoItem(
+                                  item: controller.itemList!.rows[index],
+                                  context: context,
+                                  controller: shopController,
+                                ));
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             )
             : Center(
@@ -392,7 +427,7 @@ class CategoryScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                "₪ ${productControllerImp.token == null ? item.normailPrice : (productControllerImp.isNormail ? item.normailPrice : item.wholesalePrice)}",
+                "₪ ${item.normailPrice}",
                 style: robotoRegular.copyWith(
                   fontSize: Dimensions.fontSizeSmall,
                   color: Theme.of(context).hoverColor,
@@ -518,7 +553,7 @@ class CategoryScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                "₪ ${controller.token == null ? item.normailPrice : (controller.isNormail ? item.normailPrice : item.wholesalePrice)}",
+                "₪ ${item.normailPrice}",
                 style: robotoRegular.copyWith(
                   fontSize: Dimensions.fontSizeDefault,
                   color: Theme.of(context).hoverColor,
@@ -548,18 +583,7 @@ class CategoryScreen extends StatelessWidget {
   }
 
   String _itemImage(Item item) {
-    if (item.viewImagesItems.isNotEmpty) {
-      final imageUrl = item.viewImagesItems.first.imageUrl;
-      if (imageUrl.trim().isNotEmpty) return imageUrl;
-    }
-
-    final normalImages = item.normalImagesItems;
-    if (normalImages != null && normalImages.isNotEmpty) {
-      final imageUrl = normalImages.first.imageUrl;
-      if (imageUrl.trim().isNotEmpty) return imageUrl;
-    }
-
-    return Images.logo;
+    return item.storefrontMedia.firstWhere((media) => media.isMain).path;
   }
 
   String _itemCategoryName(Item item, bool isAr, bool isEng) {
@@ -580,4 +604,29 @@ class CategoryScreen extends StatelessWidget {
         ? item.nameEng
         : item.nameAbree;
   }
+}
+
+class _CatalogMessage extends StatelessWidget {
+  const _CatalogMessage({
+    required this.message,
+    required this.icon,
+    required this.onRetry,
+  });
+  final String message;
+  final IconData icon;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 48, color: Theme.of(context).hintColor),
+        const SizedBox(height: 12),
+        Text(message, textAlign: TextAlign.center),
+        const SizedBox(height: 12),
+        OutlinedButton(onPressed: onRetry, child: Text('Retry'.tr)),
+      ],
+    ),
+  );
 }

@@ -60,7 +60,7 @@ class _ListItemCarState extends State<ListItemCar> {
                   itemCount: controller.items.length,
                   itemBuilder: (context, index) {
                     return controller.changeList == false
-                        ? ItemShopCar(item: controller.items[index])
+                        ? ItemShopCar(line: controller.cartLines[index])
                         : controller.isThree.value
                         ? BuildThreeItem(item: controller.items[index])
                         : BuildTwoItem(item: controller.items[index]);
