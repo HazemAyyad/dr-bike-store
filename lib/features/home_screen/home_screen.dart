@@ -129,7 +129,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     await Get.toNamed(RouteHelper.intoLog);
                   } else {
                     await Get.toNamed(RouteHelper.notificationScreen);
-                    await controller.getNotifications();
+                    if (Get.isRegistered<NotificationController>()) {
+                      await Get.find<NotificationController>().load(
+                        refresh: true,
+                      );
+                    }
                   }
                 },
                 onCart: () => Get.to(() => const ShopCarScreen()),

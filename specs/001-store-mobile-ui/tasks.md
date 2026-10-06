@@ -277,12 +277,12 @@ address/payment capabilities, switch supported locale, open support links, logou
 **Independent Test**: Drive every applicable async surface through each reachable state at normal and large
 text sizes, RTL and LTR, small screens, keyboard-open layouts, and offline-to-online recovery.
 
-- [ ] T115 [P] [US11] Add shared-state semantics, retry, refresh, and state-distinction widget tests in `test/widgets/store_states_test.dart`
-- [ ] T116 [US11] Audit all 44 contracts for loading, empty, offline, error, success, refresh, and placeholder applicability in `specs/001-store-mobile-ui/evidence/state-coverage.md`
-- [ ] T117 [US11] Centralize generic response-to-view-state mapping without converting failures to empty content in `lib/core/api_checker.dart` and `lib/core/functions/handingData.dart`
-- [ ] T118 [US11] Complete shell-level offline, error, retry, refresh, and overlay integration in `lib/features/home_screen/home_screen.dart`
-- [ ] T119 [US11] Add Arabic/English mixed-text, semantic label, focus order, keyboard, safe-area, and text-scale coverage in `test/widgets/accessibility_layout_test.dart`
-- [ ] T120 [US11] Compare SCR-44 and every applicable screen state with boards 02, 07, and 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-13-us11-visual.md`
+- [x] T115 [P] [US11] Add shared-state semantics, retry, refresh, and state-distinction widget tests in `test/widgets/store_states_test.dart`
+- [x] T116 [US11] Audit all 44 contracts for loading, empty, offline, error, success, refresh, and placeholder applicability in `specs/001-store-mobile-ui/evidence/state-coverage.md`
+- [x] T117 [US11] Centralize generic response-to-view-state mapping without converting failures to empty content in `lib/core/api_checker.dart` and `lib/core/functions/handingData.dart`
+- [x] T118 [US11] Complete shell-level offline, error, retry, refresh, and overlay integration in `lib/features/home_screen/home_screen.dart`
+- [x] T119 [US11] Add Arabic/English mixed-text, semantic label, focus order, keyboard, safe-area, and text-scale coverage in `test/widgets/accessibility_layout_test.dart`
+- [x] T120 [US11] Compare SCR-44 and every applicable screen state with boards 02, 07, and 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-13-us11-visual.md`
 
 **Checkpoint**: US11 is independently reviewable and no failure is mislabeled as empty or success.
 
