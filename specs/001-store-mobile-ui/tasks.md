@@ -254,17 +254,17 @@ links, and add/edit a review only when eligible while preserving server visibili
 **Independent Test**: Use guest and authenticated profile hubs, edit supported fields, exercise resolved
 address/payment capabilities, switch supported locale, open support links, logout, and test deletion failure/success.
 
-- [ ] T104 [P] [US10] Add profile capability, supported-field, locale, logout, and deletion-boundary tests in `test/controllers/profile_settings_test.dart`
-- [ ] T105 [US10] Refactor profile/account orchestration into typed guest, loading, content, mutation, and failure states in `lib/controller/account/account_controller.dart`
-- [ ] T106 [US10] Rebuild the profile hub hierarchy and consistent protected-destination gates in `lib/features/acount/profile_screen.dart`
-- [ ] T107 [US10] Restrict account editing to supported personal fields and authoritative save results in `lib/features/acount/personal_screen.dart`
-- [ ] T108 [P] [US10] Build capability-gated address book or documented single-profile-address fallback in `lib/features/acount/addresses_screen.dart`
-- [ ] T109 [P] [US10] Build payment-method capability view that never stores raw card details in `lib/features/acount/payment_methods_screen.dart`
-- [ ] T110 [US10] Reconcile Arabic, English, Hebrew, and reference Turkish availability before rebuilding locale selection in `lib/features/lang/lang_screen.dart`
-- [ ] T111 [US10] Build supported local/remote settings with truthful persistence behavior in `lib/features/acount/settings_screen.dart`
-- [ ] T112 [P] [US10] Consolidate configured FAQ, contact, terms, privacy, about, and version destinations in `lib/features/acount/help_support_screen.dart`
-- [ ] T113 [US10] Implement confirmed logout and server-confirmed deletion without clearing account data on failure in `lib/features/acount/account_actions_screen.dart`
-- [ ] T114 [US10] Compare SCR-36 through SCR-43 with board 02 and design tokens in board 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-12-us10-visual.md`
+- [x] T104 [P] [US10] Add profile capability, supported-field, locale, logout, and deletion-boundary tests in `test/controllers/profile_settings_test.dart`
+- [x] T105 [US10] Refactor profile/account orchestration into typed guest, loading, content, mutation, and failure states in `lib/controller/account/account_controller.dart`
+- [x] T106 [US10] Rebuild the profile hub hierarchy and consistent protected-destination gates in `lib/features/acount/profile_screen.dart`
+- [x] T107 [US10] Restrict account editing to supported personal fields and authoritative save results in `lib/features/acount/personal_screen.dart`
+- [x] T108 [P] [US10] Build capability-gated address book or documented single-profile-address fallback in `lib/features/acount/addresses_screen.dart`
+- [x] T109 [P] [US10] Build payment-method capability view that never stores raw card details in `lib/features/acount/payment_methods_screen.dart`
+- [x] T110 [US10] Reconcile Arabic, English, Hebrew, and reference Turkish availability before rebuilding locale selection in `lib/features/lang/lang_screen.dart`
+- [x] T111 [US10] Build supported local/remote settings with truthful persistence behavior in `lib/features/acount/settings_screen.dart`
+- [x] T112 [P] [US10] Consolidate configured FAQ, contact, terms, privacy, about, and version destinations in `lib/features/acount/help_support_screen.dart`
+- [x] T113 [US10] Implement confirmed logout and server-confirmed deletion without clearing account data on failure in `lib/features/acount/account_actions_screen.dart`
+- [x] T114 [US10] Compare SCR-36 through SCR-43 with board 02 and design tokens in board 08 and record annotated results in `specs/001-store-mobile-ui/evidence/phase-12-us10-visual.md`
 
 **Checkpoint**: US10 works within resolved backend capabilities and never represents a local-only value as server truth.
 

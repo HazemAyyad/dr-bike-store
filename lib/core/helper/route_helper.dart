@@ -6,6 +6,11 @@ import '../../features/acount/contact_us_screen.dart';
 import '../../features/acount/personal_screen.dart';
 import '../../features/acount/profile_screen.dart';
 import '../../features/acount/terms_and_condotions.dart';
+import '../../features/acount/addresses_screen.dart';
+import '../../features/acount/payment_methods_screen.dart';
+import '../../features/acount/settings_screen.dart';
+import '../../features/acount/help_support_screen.dart';
+import '../../features/acount/account_actions_screen.dart';
 import '../../features/auth/signin/sign_in_screen.dart';
 import '../../features/auth/forget_password/forget_password_page.dart';
 import '../../features/auth/signup/sign_up_screen.dart';
@@ -55,6 +60,11 @@ class RouteHelper {
   static const String searchScreen = '/searchScreen';
   static const String supcategoryScreen = '/SupcategoryScreen';
   static const String productDetailsScreen = '/ProductDetailsScreen';
+  static const String addresses = '/AddressesScreen';
+  static const String paymentMethods = '/PaymentMethodsScreen';
+  static const String settings = '/SettingsScreen';
+  static const String helpSupport = '/HelpSupportScreen';
+  static const String accountActions = '/AccountActionsScreen';
 
   static List<GetPage> routes = [
     GetPage(name: initial, page: () => const SplashScreen()),
@@ -114,5 +124,10 @@ class RouteHelper {
     GetPage(name: orderDetailsScreen, page: () => const OrderDetailsScreen()),
     GetPage(name: supcategoryScreen, page: () => const SupcategoryScreen()),
     GetPage(name: productDetailsScreen, page: () => ProductDetailsScreen()),
+    GetPage(name: addresses, page: () => const AddressesScreen()),
+    GetPage(name: paymentMethods, page: () => const PaymentMethodsScreen()),
+    GetPage(name: settings, page: () => const SettingsScreen()),
+    GetPage(name: helpSupport, page: () => const HelpSupportScreen()),
+    GetPage(name: accountActions, page: () => const AccountActionsScreen()),
   ];
 }

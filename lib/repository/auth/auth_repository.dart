@@ -341,29 +341,21 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
   }
 
   Future<Response> userEdit({
-    required email,
-    required phoneNumber,
-    required address,
-    required block,
-    required fullName,
-    required phoneNumber2,
-    required typeUser,
-    required cityId,
-    required userUpdate,
+    required String email,
+    required String phoneNumber,
+    required String address,
+    required String fullName,
+    required String phoneNumber2,
+    required String cityId,
   }) async {
     return await apiClient.postData(
       "/Users/Edit",
       body: {
-        "id": await AppUsageService.getUserId(),
         "email": email,
         "phoneNumber": phoneNumber,
         "address": address,
-        "block": block,
         "fullName": fullName,
         "phoneNumber2": phoneNumber2,
-        "typeUser": typeUser,
-        "userUpdate": await AppUsageService.getUserId(),
-        "dateUpdate": userUpdate,
         "cityId": cityId,
       },
       headers: {
