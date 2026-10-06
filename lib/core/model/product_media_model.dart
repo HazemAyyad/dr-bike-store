@@ -104,7 +104,7 @@ class ProductMedia {
       path: path.trim(),
       sourceType: sourceType.trim(),
       sourceId: sourceId as int?,
-      type: _resolveType(mediaType, mimeType, is360 == true),
+      type: _resolveType(sourceType.trim(), mediaType, mimeType, is360 == true),
       isMain: isMain,
       isVisible: isVisible,
       sortOrder: sortOrder,
@@ -127,6 +127,7 @@ class ProductMedia {
   };
 
   static ProductMediaType _resolveType(
+    String sourceType,
     String? mediaType,
     String? mimeType,
     bool explicitly360,
@@ -141,6 +142,12 @@ class ProductMedia {
       return ProductMediaType.video;
     }
     if (mediaType == 'image' || mimeType?.startsWith('image/') == true) {
+      return ProductMediaType.image;
+    }
+    if (sourceType == 'normal_image' ||
+        sourceType == 'view_image' ||
+        sourceType == 'variant' ||
+        sourceType == 'image3d') {
       return ProductMediaType.image;
     }
     return ProductMediaType.unsupported;
