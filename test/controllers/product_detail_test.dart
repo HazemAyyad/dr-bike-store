@@ -76,10 +76,20 @@ void main() {
       final item = Item.fromJson(
         _detail()
           ..['available'] = true
-          ..['purchasable'] = false,
+          ..['purchasable'] = false
+          ..['availability'] = {
+            'available_qty': 3,
+            'inventory_available_qty': 25,
+            'online_stock_limit': 3,
+            'uses_full_inventory': false,
+          },
       );
       expect(item.available, isTrue);
       expect(item.purchasable, isFalse);
+      expect(item.stock, 3);
+      expect(item.inventoryAvailableQty, 25);
+      expect(item.onlineStockLimit, 3);
+      expect(item.usesFullInventory, isFalse);
     });
 
     test('out-of-stock remains visible but non-purchasable', () {
