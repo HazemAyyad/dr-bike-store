@@ -9,6 +9,8 @@ import '../../core/classes/store_view_state.dart';
 import '../../core/model/ads_response.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
+import '../../core/model/online_store_home_model.dart';
+import '../../core/helper/route_helper.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_bottom_navigation.dart';
@@ -31,6 +33,18 @@ class HomePage extends StatelessWidget {
       final categories = homeController.categoriesState.value;
       final hero = homeController.heroState.value;
       final products = homeController.productsState.value;
+      final configuredSections = switch (homeController
+          .homeSectionsState
+          .value) {
+        StoreContent<List<OnlineStoreHomeSection>>(data: final data) => data,
+        StoreLoading<List<OnlineStoreHomeSection>>(previousData: final data?) =>
+          data,
+        StoreOffline<List<OnlineStoreHomeSection>>(previousData: final data?) =>
+          data,
+        StoreError<List<OnlineStoreHomeSection>>(previousData: final data?) =>
+          data,
+        _ => const <OnlineStoreHomeSection>[],
+      };
       final isInitial =
           categories is StoreInitial &&
           hero is StoreInitial &&
@@ -55,74 +69,133 @@ class HomePage extends StatelessWidget {
             StoreSpacing.md,
             StoreSpacing.xl,
           ),
-          children: [
-            _HeroSection(state: hero, controller: homeController),
-            const SizedBox(height: StoreSpacing.md),
-            _CategorySection(
-              title: 'storeQuickCategories'.tr,
-              state: categories,
-              compact: true,
-              onSelected: (category) => _openCategory(category),
-              onViewAll:
-                  () => homeController.selectDestination(
-                    StoreDestination.categories,
-                  ),
-            ),
-            const SizedBox(height: StoreSpacing.md),
-            _ProductSection(
-              title: 'storeBestSellers'.tr,
-              state: products,
-              controller: homeController,
-              onSelected: _openProduct,
-              onAddToCart: onAddToCart ?? _runtimeAddToCart,
-              onViewAll:
-                  () => homeController.selectDestination(
-                    StoreDestination.categories,
-                  ),
-            ),
-            const SizedBox(height: StoreSpacing.md),
-            _CategorySection(
-              title: 'storeStoreCategories'.tr,
-              state: categories,
-              compact: false,
-              onSelected: (category) => _openCategory(category),
-              onViewAll:
-                  () => homeController.selectDestination(
-                    StoreDestination.categories,
-                  ),
-            ),
-            if (homeController.specialOffers.isNotEmpty) ...[
-              const SizedBox(height: StoreSpacing.md),
-              _ProductSection(
-                title: 'storeSpecialOffers'.tr,
-                products: homeController.specialOffers,
-                controller: homeController,
-                onSelected: _openProduct,
-                onAddToCart: onAddToCart ?? _runtimeAddToCart,
-                onViewAll:
-                    () => homeController.selectDestination(
-                      StoreDestination.categories,
+          children:
+              configuredSections.isNotEmpty
+                  ? _configuredSections(homeController, configuredSections)
+                  : [
+                    _HeroSection(state: hero, controller: homeController),
+                    const SizedBox(height: StoreSpacing.md),
+                    _CategorySection(
+                      title: 'storeQuickCategories'.tr,
+                      state: categories,
+                      compact: true,
+                      onSelected: (category) => _openCategory(category),
+                      onViewAll:
+                          () => homeController.selectDestination(
+                            StoreDestination.categories,
+                          ),
                     ),
-              ),
-            ],
-            if (homeController.newArrivals.isNotEmpty) ...[
-              const SizedBox(height: StoreSpacing.md),
-              _ProductSection(
-                title: 'storeNewArrivals'.tr,
-                products: homeController.newArrivals,
-                controller: homeController,
-                onSelected: _openProduct,
-                onAddToCart: onAddToCart ?? _runtimeAddToCart,
-                onViewAll:
-                    () => homeController.selectDestination(
-                      StoreDestination.categories,
+                    const SizedBox(height: StoreSpacing.md),
+                    _ProductSection(
+                      title: 'storeBestSellers'.tr,
+                      state: products,
+                      controller: homeController,
+                      onSelected: _openProduct,
+                      onAddToCart: onAddToCart ?? _runtimeAddToCart,
+                      onViewAll:
+                          () => homeController.selectDestination(
+                            StoreDestination.categories,
+                          ),
                     ),
-              ),
-            ],
-          ],
+                    const SizedBox(height: StoreSpacing.md),
+                    _CategorySection(
+                      title: 'storeStoreCategories'.tr,
+                      state: categories,
+                      compact: false,
+                      onSelected: (category) => _openCategory(category),
+                      onViewAll:
+                          () => homeController.selectDestination(
+                            StoreDestination.categories,
+                          ),
+                    ),
+                    if (homeController.specialOffers.isNotEmpty) ...[
+                      const SizedBox(height: StoreSpacing.md),
+                      _ProductSection(
+                        title: 'storeSpecialOffers'.tr,
+                        products: homeController.specialOffers,
+                        controller: homeController,
+                        onSelected: _openProduct,
+                        onAddToCart: onAddToCart ?? _runtimeAddToCart,
+                        onViewAll:
+                            () => homeController.selectDestination(
+                              StoreDestination.categories,
+                            ),
+                      ),
+                    ],
+                    if (homeController.newArrivals.isNotEmpty) ...[
+                      const SizedBox(height: StoreSpacing.md),
+                      _ProductSection(
+                        title: 'storeNewArrivals'.tr,
+                        products: homeController.newArrivals,
+                        controller: homeController,
+                        onSelected: _openProduct,
+                        onAddToCart: onAddToCart ?? _runtimeAddToCart,
+                        onViewAll:
+                            () => homeController.selectDestination(
+                              StoreDestination.categories,
+                            ),
+                      ),
+                    ],
+                  ],
         ),
       );
     });
+  }
+
+  List<Widget> _configuredSections(
+    HomeControllerImp homeController,
+    List<OnlineStoreHomeSection> sections,
+  ) {
+    final language = Get.locale?.languageCode ?? 'ar';
+    final widgets = <Widget>[];
+    for (final section in sections) {
+      final title = section.title(language);
+      final configuredCategories =
+          section.categories.isNotEmpty
+              ? section.categories
+              : homeController.mainCategoresModel
+                  .where(
+                    (category) =>
+                        section.categoryTargetIds.contains(category.id),
+                  )
+                  .toList(growable: false);
+      final Widget? widget = switch (section.type) {
+        'hero' => _ConfiguredHeroSection(
+          banners: section.banners,
+          controller: homeController,
+        ),
+        'categories' => _CategorySection(
+          title: title,
+          categories: configuredCategories,
+          compact: false,
+          onSelected: _openCategory,
+          onViewAll:
+              () =>
+                  homeController.selectDestination(StoreDestination.categories),
+        ),
+        'maintenance' => _MaintenanceSection(
+          title: title,
+          onPressed: () => Get.toNamed(RouteHelper.contactUsPage),
+        ),
+        _ when section.products.isNotEmpty => _ProductSection(
+          title: title,
+          products: section.products,
+          controller: homeController,
+          onSelected: _openProduct,
+          onAddToCart: onAddToCart ?? _runtimeAddToCart,
+          onViewAll:
+              () =>
+                  homeController.selectDestination(StoreDestination.categories),
+        ),
+        _ => null,
+      };
+      if (widget == null) continue;
+      if (widgets.isNotEmpty) {
+        widgets.add(const SizedBox(height: StoreSpacing.md));
+      }
+      widgets.add(widget);
+    }
+    return widgets;
   }
 
   Future<void> _openCategory(Category category) async {
@@ -146,6 +219,81 @@ class HomePage extends StatelessWidget {
       Get.find<ShopController>().addToCart(item);
     }
   }
+}
+
+class _ConfiguredHeroSection extends StatelessWidget {
+  const _ConfiguredHeroSection({
+    required this.banners,
+    required this.controller,
+  });
+
+  final List<OnlineStoreHomeBanner> banners;
+  final HomeControllerImp controller;
+
+  @override
+  Widget build(BuildContext context) {
+    if (banners.isEmpty) return const SizedBox.shrink();
+    final language = Get.locale?.languageCode ?? 'ar';
+    return SizedBox(
+      key: const ValueKey('home-configured-hero'),
+      height: StoreCalibration.homeHeroHeight,
+      child: PageView.builder(
+        itemCount: banners.length,
+        itemBuilder: (context, index) {
+          final banner = banners[index];
+          return Padding(
+            padding: EdgeInsetsDirectional.only(
+              end: index == banners.length - 1 ? 0 : StoreSpacing.xs,
+            ),
+            child: PromoCard(
+              imageUrl: banner.imagePath,
+              title: banner.title(language),
+              description: banner.content(language),
+              buttonText: 'storeShopNow'.tr,
+              onPressed: () {
+                if (banner.actionType == 'url' &&
+                    banner.actionUrl?.trim().isNotEmpty == true) {
+                  controller.openWeb(banner.actionUrl!);
+                }
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MaintenanceSection extends StatelessWidget {
+  const _MaintenanceSection({required this.title, required this.onPressed});
+
+  final String title;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: StorePalette.surface,
+    borderRadius: BorderRadius.circular(StoreRadii.lg),
+    child: InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(StoreRadii.lg),
+      child: Container(
+        padding: const EdgeInsets.all(StoreSpacing.md),
+        decoration: BoxDecoration(
+          border: Border.all(color: StorePalette.border),
+          borderRadius: BorderRadius.circular(StoreRadii.lg),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.electric_bike_outlined, size: 36),
+            const SizedBox(width: StoreSpacing.sm),
+            Expanded(child: Text(title, style: StoreTypography.title)),
+            Icon(Icons.chevron_left, color: StorePalette.textSecondary),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _HeroSection extends StatelessWidget {
@@ -188,33 +336,41 @@ class _HeroSection extends StatelessWidget {
 class _CategorySection extends StatelessWidget {
   const _CategorySection({
     required this.title,
-    required this.state,
     required this.compact,
     required this.onSelected,
     required this.onViewAll,
+    this.state,
+    this.categories,
   });
 
   final String title;
-  final StoreViewState<List<Category>> state;
+  final StoreViewState<List<Category>>? state;
+  final List<Category>? categories;
   final bool compact;
   final ValueChanged<Category> onSelected;
   final VoidCallback onViewAll;
 
   @override
   Widget build(BuildContext context) {
-    final categories = switch (state) {
-      StoreContent<List<Category>>(data: final data) => data,
-      StoreLoading<List<Category>>(previousData: final data?) => data,
-      StoreOffline<List<Category>>(previousData: final data?) => data,
-      StoreError<List<Category>>(previousData: final data?) => data,
-      _ => const <Category>[],
-    };
-    if (categories.isEmpty) {
-      return _SectionState(title: title, state: state);
+    final resolvedCategories =
+        categories ??
+        switch (state) {
+          StoreContent<List<Category>>(data: final data) => data,
+          StoreLoading<List<Category>>(previousData: final data?) => data,
+          StoreOffline<List<Category>>(previousData: final data?) => data,
+          StoreError<List<Category>>(previousData: final data?) => data,
+          _ => const <Category>[],
+        };
+    if (resolvedCategories.isEmpty) {
+      return state == null
+          ? const SizedBox.shrink()
+          : _SectionState(title: title, state: state!);
     }
 
     final visible =
-        compact ? categories.take(5).toList() : categories.take(8).toList();
+        compact
+            ? resolvedCategories.take(5).toList()
+            : resolvedCategories.take(8).toList();
     return Column(
       key: ValueKey(
         compact ? 'home-quick-categories' : 'home-store-categories',

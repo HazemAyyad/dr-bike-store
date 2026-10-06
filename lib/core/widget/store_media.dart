@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
+import '../constants/app_constants.dart';
 
 enum StoreMediaType { image, video, model3d, spin360 }
 
@@ -132,6 +133,7 @@ class StoreNetworkMedia extends StatelessWidget {
     if (url == null || url!.trim().isEmpty) {
       return StoreMediaPlaceholder(onRetry: onRetry);
     }
+    final resolvedUrl = _resolveStoreMediaUrl(url!);
     return Semantics(
       image: true,
       label: semanticLabel,
@@ -139,7 +141,7 @@ class StoreNetworkMedia extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.network(
-            url!,
+            resolvedUrl,
             fit: fit,
             excludeFromSemantics: true,
             frameBuilder: (context, child, frame, synchronous) {
@@ -160,4 +162,14 @@ class StoreNetworkMedia extends StatelessWidget {
       ),
     );
   }
+}
+
+String _resolveStoreMediaUrl(String value) {
+  final path = value.trim();
+  final uri = Uri.tryParse(path);
+  if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+    return path;
+  }
+  final base = AppConstants.appBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+  return '$base/${path.replaceFirst(RegExp(r'^/+'), '')}';
 }
