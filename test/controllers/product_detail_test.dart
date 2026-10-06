@@ -165,7 +165,13 @@ void main() {
 
     test('invalid video metadata is unsupported', () {
       final media = ProductMedia.fromJson(
-        _media(id: 1, main: true, order: 0, metadata: {'media_type': 'movie'}),
+        _media(
+          id: 1,
+          main: true,
+          order: 0,
+          sourceType: 'store_specific',
+          metadata: {'media_type': 'movie'},
+        ),
       );
       expect(media.type, ProductMediaType.unsupported);
     });
@@ -190,9 +196,65 @@ void main() {
       expect(media.isInteractive360, isFalse);
     });
 
+    test('legacy static image sources remain images without metadata', () {
+      for (final sourceType in ['normal_image', 'view_image', 'variant']) {
+        final media = ProductMedia.fromJson(
+          _media(id: 1, main: true, order: 0, sourceType: sourceType),
+        );
+        expect(media.type, ProductMediaType.image, reason: sourceType);
+      }
+    });
+
+    test('image3d without metadata is a static image, never implicit 360', () {
+      final media = ProductMedia.fromJson(
+        _media(id: 1, main: true, order: 0, sourceType: 'image3d'),
+      );
+      expect(media.type, ProductMediaType.image);
+      expect(media.isInteractive360, isFalse);
+    });
+
+    test('image3d with explicit is_360 is interactive', () {
+      final media = ProductMedia.fromJson(
+        _media(
+          id: 1,
+          main: true,
+          order: 0,
+          sourceType: 'image3d',
+          metadata: {'is_360': true},
+        ),
+      );
+      expect(media.type, ProductMediaType.interactive360);
+    });
+
+    test('store_specific without metadata remains unsupported', () {
+      final media = ProductMedia.fromJson(
+        _media(id: 1, main: true, order: 0, sourceType: 'store_specific'),
+      );
+      expect(media.type, ProductMediaType.unsupported);
+    });
+
+    test('store_specific honors explicit video metadata', () {
+      final media = ProductMedia.fromJson(
+        _media(
+          id: 1,
+          main: true,
+          order: 0,
+          sourceType: 'store_specific',
+          metadata: {'media_type': 'video'},
+        ),
+      );
+      expect(media.type, ProductMediaType.video);
+    });
+
     test('unsupported media type', () {
       final media = ProductMedia.fromJson(
-        _media(id: 1, main: true, order: 0, metadata: {'media_type': 'model'}),
+        _media(
+          id: 1,
+          main: true,
+          order: 0,
+          sourceType: 'unknown',
+          metadata: {'media_type': 'model'},
+        ),
       );
       expect(media.type, ProductMediaType.unsupported);
     });
@@ -396,8 +458,7 @@ Map<String, dynamic> _media({
   'source_type': sourceType,
   'source_id': id + 100,
   'path': '/media/$id',
-  'media_metadata':
-      metadata ?? {'media_type': 'image', 'mime_type': 'image/jpeg'},
+  'media_metadata': metadata,
   'is_main': main,
   'is_visible': true,
   'sort_order': order,
