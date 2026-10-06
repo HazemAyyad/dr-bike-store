@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'dart:ui' show Tangent;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../controller/check_account/account_service.dart';
-import '../../core/constants/images.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
@@ -176,24 +176,10 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: StorePalette.navy,
+      backgroundColor: StorePalette.surface,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.75, -0.6),
-                radius: 1.35,
-                colors: [StorePalette.derivedNavyGlow, StorePalette.navy],
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(painter: _SplashLightTrailPainter()),
-            ),
-          ),
           SafeArea(
             child:
                 _error == null
@@ -238,7 +224,7 @@ class _AnimatedBrand extends StatelessWidget {
     );
     final wordmarkReveal = CurvedAnimation(
       parent: animation,
-      curve: const Interval(0.58, 0.9, curve: Curves.easeOut),
+      curve: const Interval(0.72, 0.94, curve: Curves.easeOut),
     );
 
     return Semantics(
@@ -251,24 +237,16 @@ class _AnimatedBrand extends StatelessWidget {
             const Spacer(flex: 3),
             AnimatedBuilder(
               animation: animation,
-              builder:
-                  (context, child) => Opacity(
-                    opacity: logoReveal.value,
-                    child: ClipRect(
-                      child: Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        widthFactor: logoReveal.value.clamp(0.05, 1),
-                        child: child,
-                      ),
-                    ),
+              builder: (context, _) {
+                final progress = logoReveal.value;
+                return SizedBox(
+                  width: StoreCalibration.splashLogoWidth,
+                  height: StoreCalibration.splashLogoHeight,
+                  child: CustomPaint(
+                    painter: _SplashLogoPainter(progress: progress),
                   ),
-              child: Image.asset(
-                Images.logoDark,
-                width: StoreCalibration.splashLogoWidth,
-                height: StoreCalibration.splashLogoHeight,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
-              ),
+                );
+              },
             ),
             FadeTransition(
               opacity: wordmarkReveal,
@@ -278,7 +256,7 @@ class _AnimatedBrand extends StatelessWidget {
                     'storeBrandName'.tr,
                     textDirection: TextDirection.ltr,
                     style: StoreTypography.display.copyWith(
-                      color: StorePalette.surface,
+                      color: StorePalette.navy,
                       fontSize: StoreCalibration.splashWordmarkFontSize,
                     ),
                   ),
@@ -286,7 +264,7 @@ class _AnimatedBrand extends StatelessWidget {
                     'storeBrandTagline'.tr,
                     textDirection: TextDirection.ltr,
                     style: StoreTypography.label.copyWith(
-                      color: StorePalette.lightPurple,
+                      color: StorePalette.textSecondary,
                     ),
                   ),
                 ],
@@ -302,9 +280,7 @@ class _AnimatedBrand extends StatelessWidget {
                       value: animation.value.clamp(0.08, 0.96),
                       minHeight: 4,
                       borderRadius: BorderRadius.circular(StoreRadii.round),
-                      backgroundColor: StorePalette.surface.withValues(
-                        alpha: 0.24,
-                      ),
+                      backgroundColor: StorePalette.lightPurple,
                       valueColor: const AlwaysStoppedAnimation(
                         StorePalette.purple,
                       ),
@@ -315,7 +291,7 @@ class _AnimatedBrand extends StatelessWidget {
             Text(
               'storeSplashLoading'.tr,
               style: StoreTypography.caption.copyWith(
-                color: StorePalette.surface.withValues(alpha: 0.70),
+                color: StorePalette.textSecondary,
               ),
             ),
             const SizedBox(height: StoreSpacing.lg),
@@ -326,38 +302,101 @@ class _AnimatedBrand extends StatelessWidget {
   }
 }
 
-class _SplashLightTrailPainter extends CustomPainter {
+class _SplashLogoPainter extends CustomPainter {
+  const _SplashLogoPainter({required this.progress});
+
+  final double progress;
+
   @override
   void paint(Canvas canvas, Size size) {
+    final scale = Size(size.width / 191, size.height / 130);
+    canvas.save();
+    canvas.scale(scale.width, scale.height);
+
+    final paint =
+        Paint()
+          ..color = StorePalette.navy
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = 8;
+
+    final paths = <Path>[
+      Path()
+        ..addOval(Rect.fromCircle(center: const Offset(31, 101), radius: 24)),
+      Path()
+        ..addOval(Rect.fromCircle(center: const Offset(158, 101), radius: 24)),
+      Path()
+        ..moveTo(31, 101)
+        ..lineTo(91, 94)
+        ..lineTo(67, 111)
+        ..lineTo(158, 101),
+      Path()
+        ..moveTo(91, 94)
+        ..lineTo(119, 48)
+        ..lineTo(151, 62),
+      Path()
+        ..moveTo(119, 48)
+        ..lineTo(106, 18)
+        ..lineTo(97, 42),
+    ];
+
+    final segment = 1 / paths.length;
+    Tangent? drawingHead;
+    for (var index = 0; index < paths.length; index++) {
+      final localProgress = ((progress - (segment * index)) / segment).clamp(
+        0.0,
+        1.0,
+      );
+      if (localProgress == 0) continue;
+      for (final metric in paths[index].computeMetrics()) {
+        final distance = metric.length * localProgress;
+        canvas.drawPath(metric.extractPath(0, distance), paint);
+        if (localProgress < 1) {
+          drawingHead = metric.getTangentForOffset(distance);
+        }
+      }
+    }
+    if (drawingHead != null && progress < 0.995) {
+      _paintMagicHead(canvas, drawingHead, progress);
+    }
+    canvas.restore();
+  }
+
+  void _paintMagicHead(Canvas canvas, Tangent head, double animationValue) {
+    final pulse = 0.75 + (0.25 * ((animationValue * 40) % 1));
     final glow =
         Paint()
-          ..color = StorePalette.purple.withValues(alpha: 0.18)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = StoreCalibration.splashTrailGlowWidth
-          ..maskFilter = const MaskFilter.blur(
-            BlurStyle.normal,
-            StoreCalibration.splashTrailGlowWidth,
-          );
-    final line =
-        Paint()
-          ..color = StorePalette.purple.withValues(alpha: 0.75)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = StoreCalibration.splashTrailLineWidth;
-    final path =
+          ..color = StorePalette.purple.withValues(alpha: 0.24 * pulse)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
+    canvas.drawCircle(head.position, 12 * pulse, glow);
+
+    canvas.save();
+    canvas.translate(head.position.dx, head.position.dy);
+    canvas.rotate(head.angle);
+    final bolt =
         Path()
-          ..moveTo(-20, size.height * 0.74)
-          ..cubicTo(
-            size.width * 0.25,
-            size.height * 0.68,
-            size.width * 0.55,
-            size.height * 0.8,
-            size.width + 20,
-            size.height * 0.7,
-          );
-    canvas.drawPath(path, glow);
-    canvas.drawPath(path, line);
+          ..moveTo(-11, -3)
+          ..lineTo(-3, -1)
+          ..lineTo(-6, 5)
+          ..lineTo(12, -4)
+          ..lineTo(3, -3)
+          ..lineTo(6, -9)
+          ..close();
+    canvas.drawPath(bolt, Paint()..color = StorePalette.purple);
+
+    final sparkPaint =
+        Paint()
+          ..color = StorePalette.purple.withValues(alpha: 0.72)
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = 2;
+    canvas.drawLine(const Offset(2, -14), const Offset(2, -19), sparkPaint);
+    canvas.drawLine(const Offset(13, -9), const Offset(17, -13), sparkPaint);
+    canvas.drawLine(const Offset(14, 3), const Offset(20, 4), sparkPaint);
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SplashLogoPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
