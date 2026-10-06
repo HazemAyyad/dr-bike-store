@@ -47,6 +47,9 @@ class Item {
   final double normailPrice;
   final double wholesalePrice;
   final int stock;
+  final int inventoryAvailableQty;
+  final int? onlineStockLimit;
+  final bool usesFullInventory;
   final String model;
   final bool isNewItem;
   final bool isMoreSales;
@@ -92,6 +95,9 @@ class Item {
     required this.normailPrice,
     required this.wholesalePrice,
     required this.stock,
+    this.inventoryAvailableQty = 0,
+    this.onlineStockLimit,
+    this.usesFullInventory = true,
     required this.model,
     required this.isNewItem,
     required this.isMoreSales,
@@ -119,6 +125,10 @@ class Item {
   }) : productId = productId ?? id;
 
   factory Item.fromJson(Map<String, dynamic> json) {
+    final availability =
+        json['availability'] is Map
+            ? Map<String, dynamic>.from(json['availability'] as Map)
+            : const <String, dynamic>{};
     final id = _requiredPositiveInt(json, 'id');
     final storefront = json.containsKey('listingStatus');
     final productId = storefront ? _requiredPositiveInt(json, 'productId') : id;
@@ -166,6 +176,16 @@ class Item {
               : (json['normailPrice'] ?? 0).toDouble(),
       wholesalePrice: (json['wholesalePrice'] ?? 0).toDouble(),
       stock: storefront ? _requiredInt(json, 'stock') : json['stock'] ?? 0,
+      inventoryAvailableQty:
+          int.tryParse(
+            '${availability['inventory_available_qty'] ?? json['stock'] ?? 0}',
+          ) ??
+          0,
+      onlineStockLimit:
+          availability['online_stock_limit'] == null
+              ? null
+              : int.tryParse('${availability['online_stock_limit']}'),
+      usesFullInventory: availability['uses_full_inventory'] != false,
       model: json['model'] ?? "",
       isNewItem:
           storefront
@@ -226,6 +246,16 @@ class Item {
       normailPrice: (json['normailPrice'] ?? 0).toDouble(),
       wholesalePrice: (json['wholesalePrice'] ?? 0).toDouble(),
       stock: json['stock'] ?? 0,
+      inventoryAvailableQty:
+          int.tryParse(
+            '${(json['availability'] as Map?)?['inventory_available_qty'] ?? json['stock'] ?? 0}',
+          ) ??
+          0,
+      onlineStockLimit: int.tryParse(
+        '${(json['availability'] as Map?)?['online_stock_limit'] ?? ''}',
+      ),
+      usesFullInventory:
+          (json['availability'] as Map?)?['uses_full_inventory'] != false,
       model: json['model'] ?? "",
       isNewItem: json['isNewItem'],
       isMoreSales: json['isMoreSales'],
@@ -287,6 +317,12 @@ class Item {
     'normailPrice': normailPrice,
     'wholesalePrice': wholesalePrice,
     'stock': stock,
+    'availability': {
+      'available_qty': stock,
+      'inventory_available_qty': inventoryAvailableQty,
+      'online_stock_limit': onlineStockLimit,
+      'uses_full_inventory': usesFullInventory,
+    },
     'model': model,
     'isNewItem': isNewItem,
     'isMoreSales': isMoreSales,
