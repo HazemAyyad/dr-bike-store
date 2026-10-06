@@ -705,27 +705,39 @@ class ShopController extends GetxController {
     checkoutState = checkoutState.copyWith(stage: CheckoutStage.submitting);
     update();
     try {
-      final online = await CheckInternet.checkInternet();
-      if (!online) {
+      final coupon = activeCode == true ? couponModel?.code : null;
+      final transport = await runCheckoutTransport(
+        connectivityCheck:
+            () async => await CheckInternet.checkInternet() == true,
+        submit:
+            () => shopRepository.submitNativeCheckout(
+              _checkoutAttempt.attachTo(
+                buildNativeCheckoutPayload(
+                  items: items,
+                  accountRole: role,
+                  customerAddress: addressController.text,
+                  shiplyCityId: int.parse(selectedCityId!),
+                  shiplyVillageId: int.parse(selectedVillageId!),
+                  couponCode: coupon,
+                ),
+              ),
+            ),
+      );
+      if (transport.kind == CheckoutTransportKind.offline) {
         checkoutState = checkoutState.copyWith(
-          stage: CheckoutStage.uncertain,
-          message: 'تعذر تأكيد وصول الطلب. أعد المحاولة بنفس رقم المحاولة.',
+          stage: CheckoutStage.offline,
+          message: 'لا يوجد اتصال بالإنترنت. تحقق من الاتصال ثم أعد المحاولة.',
         );
         return;
       }
-      final coupon = activeCode == true ? couponModel?.code : null;
-      final response = await shopRepository.submitNativeCheckout(
-        _checkoutAttempt.attachTo(
-          buildNativeCheckoutPayload(
-            items: items,
-            accountRole: role,
-            customerAddress: addressController.text,
-            shiplyCityId: int.parse(selectedCityId!),
-            shiplyVillageId: int.parse(selectedVillageId!),
-            couponCode: coupon,
-          ),
-        ),
-      );
+      if (transport.kind == CheckoutTransportKind.uncertain) {
+        checkoutState = checkoutState.copyWith(
+          stage: CheckoutStage.uncertain,
+          message: 'قد يكون الطلب وصل إلى الخادم. أعد المحاولة للتحقق.',
+        );
+        return;
+      }
+      final response = transport.response!;
       final success = completeCheckoutAttempt(
         _checkoutAttempt,
         response.statusCode,
