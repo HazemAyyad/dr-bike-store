@@ -58,16 +58,19 @@ void main() {
     );
   });
 
-  test('authenticated favorites remain capability gated', () async {
-    final controller = _controller(preferences, authenticated: true);
-    await controller.initializeShell();
+  test(
+    'authenticated users can open the server-backed favorites tab',
+    () async {
+      final controller = _controller(preferences, authenticated: true);
+      await controller.initializeShell();
 
-    expect(
-      await controller.selectDestination(StoreDestination.favorites),
-      ShellNavigationOutcome.capabilityUnavailable,
-    );
-    expect(controller.selectedDestination.value, StoreDestination.favorites);
-  });
+      expect(
+        await controller.selectDestination(StoreDestination.favorites),
+        ShellNavigationOutcome.selected,
+      );
+      expect(controller.selectedDestination.value, StoreDestination.favorites);
+    },
+  );
 
   test(
     'back closes search then returns to home before leaving shell',
@@ -181,6 +184,33 @@ void main() {
   );
 
   test(
+    'typing one character triggers debounced suggestions without saving history',
+    () async {
+      final dataSource = _FakeHomeDataSource(
+        searchResponses: <Response>[
+          const Response(
+            statusCode: 200,
+            body: <String, Object>{'rows': <Object>[]},
+          ),
+        ],
+      );
+      final controller = HomeControllerImp(
+        homeRepository: dataSource,
+        searchHistoryStore: SearchHistoryStore(preferences: preferences),
+        connectivityCheck: () async => true,
+        tokenLoader: () async => null,
+      );
+
+      controller.searchAsYouType('ب');
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+
+      expect(dataSource.searchQueries, <String>['ب']);
+      expect(controller.searchState.value, isA<StoreEmpty<List<Item>>>());
+      expect(await controller.searchHistoryStore.load(), isEmpty);
+    },
+  );
+
+  test(
     'pull refresh exposes progress and preserves retained Home content on failure',
     () async {
       final connectivity = Completer<bool>();
@@ -269,6 +299,7 @@ class _FakeHomeDataSource implements HomeDataSource {
     : _searchResponses = searchResponses ?? <Response>[];
 
   final List<Response> _searchResponses;
+  final List<String> searchQueries = <String>[];
 
   @override
   Future<Response> getAllItemIsMoreSales() async => const Response(
@@ -299,6 +330,8 @@ class _FakeHomeDataSource implements HomeDataSource {
       const Response(statusCode: 200, body: true);
 
   @override
-  Future<Response> search(dynamic name, dynamic lang) async =>
-      _searchResponses.removeAt(0);
+  Future<Response> search(dynamic name, dynamic lang) async {
+    searchQueries.add(name.toString());
+    return _searchResponses.removeAt(0);
+  }
 }

@@ -15,6 +15,7 @@ class StoreTopBar extends StatefulWidget {
     this.cartCount,
     this.onNotifications,
     this.onCart,
+    this.onProfile,
     this.onSearch,
     this.onSearchChanged,
     this.searchHint,
@@ -33,6 +34,7 @@ class StoreTopBar extends StatefulWidget {
   final int? cartCount;
   final VoidCallback? onNotifications;
   final VoidCallback? onCart;
+  final VoidCallback? onProfile;
   final ValueChanged<String>? onSearch;
   final ValueChanged<String>? onSearchChanged;
   final String? searchHint;
@@ -106,15 +108,27 @@ class _StoreTopBarState extends State<StoreTopBar> {
                       borderRadius: StoreRadii.round,
                     )
                   else
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: StorePalette.lightPurple,
-                      child:
-                          widget.avatar ??
-                          const Icon(
-                            Icons.person_outline,
-                            color: StorePalette.purple,
+                    Semantics(
+                      button: true,
+                      label: 'فتح الملف الشخصي',
+                      child: Tooltip(
+                        message: 'فتح الملف الشخصي',
+                        excludeFromSemantics: true,
+                        child: InkResponse(
+                          onTap: widget.onProfile,
+                          radius: 25,
+                          child: CircleAvatar(
+                            radius: 22,
+                            backgroundColor: StorePalette.lightPurple,
+                            child:
+                                widget.avatar ??
+                                const Icon(
+                                  Icons.person_outline,
+                                  color: StorePalette.purple,
+                                ),
                           ),
+                        ),
+                      ),
                     ),
                   const SizedBox(width: StoreSpacing.sm),
                   Expanded(

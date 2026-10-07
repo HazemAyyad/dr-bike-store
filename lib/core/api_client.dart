@@ -62,6 +62,30 @@ class ApiClient {
     }
   }
 
+  Future<Response> postMultipart(
+    String uri, {
+    required String filePath,
+    String fieldName = 'image',
+    Map<String, String>? headers,
+  }) async {
+    final url = AppConstants.appBaseUrl + uri;
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(url));
+      request.headers.addAll(headers ?? const {});
+      request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+      _logRequest('POST', url, headers: request.headers);
+      final streamed = await request.send().timeout(
+        Duration(seconds: timeoutInSeconds),
+      );
+      final response = await http.Response.fromStream(streamed);
+      _logRawResponse(response);
+      return handleResponse(response, uri);
+    } catch (e) {
+      _logError('POST', url, e);
+      return Response(statusCode: 1, statusText: noInternetMessage);
+    }
+  }
+
   Response handleResponse(http.Response response, String uri) {
     dynamic body;
     try {

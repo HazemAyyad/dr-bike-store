@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../../controller/home/home_controller.dart';
 import '../../controller/product/product_controller.dart';
@@ -11,12 +10,14 @@ import '../../core/model/main_categores_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
+import '../../core/widget/store_cards.dart';
 import '../../core/widget/store_chips.dart';
 import '../../core/widget/store_fields.dart';
 import '../../core/widget/store_media.dart';
+import '../../core/widget/store_product_layout_toggle.dart';
 import '../../core/widget/store_states.dart';
 
-class SearchScreen extends StatelessWidget {
+class SearchScreen extends StatefulWidget {
   const SearchScreen({
     this.controller,
     this.showSearchField = true,
@@ -29,12 +30,19 @@ class SearchScreen extends StatelessWidget {
   final ValueChanged<Item>? onAddToCart;
 
   @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  bool _isGrid = false;
+
+  @override
   Widget build(BuildContext context) {
-    final searchController = controller ?? Get.find<HomeControllerImp>();
+    final searchController = widget.controller ?? Get.find<HomeControllerImp>();
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showSearchField)
+        if (widget.showSearchField)
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(
               StoreSpacing.md,
@@ -56,11 +64,7 @@ class SearchScreen extends StatelessWidget {
                 icon: const Icon(Icons.close),
               ),
               textInputAction: TextInputAction.search,
-              onChanged: (value) {
-                if (value.trim().isEmpty) {
-                  searchController.submitSearch('');
-                }
-              },
+              onChanged: searchController.searchAsYouType,
               onSubmitted: searchController.submitSearch,
             ),
           ),
@@ -71,14 +75,16 @@ class SearchScreen extends StatelessWidget {
               state: searchController.searchState.value,
               recentSearches: searchController.recentSearches.toList(),
               categories: searchController.mainCategoresModel.toList(),
-              onAddToCart: onAddToCart,
+              onAddToCart: widget.onAddToCart,
+              isGrid: _isGrid,
+              onLayoutChanged: (value) => setState(() => _isGrid = value),
             ),
           ),
         ),
       ],
     );
 
-    if (!showSearchField) return content;
+    if (!widget.showSearchField) return content;
     return Scaffold(
       appBar: AppBar(title: Text('storeSearchTitle'.tr)),
       body: SafeArea(top: false, child: content),
@@ -92,6 +98,8 @@ class _SearchBody extends StatelessWidget {
     required this.state,
     required this.recentSearches,
     required this.categories,
+    required this.isGrid,
+    required this.onLayoutChanged,
     this.onAddToCart,
   });
 
@@ -99,6 +107,8 @@ class _SearchBody extends StatelessWidget {
   final StoreViewState<List<Item>> state;
   final List<String> recentSearches;
   final List<Category> categories;
+  final bool isGrid;
+  final ValueChanged<bool> onLayoutChanged;
   final ValueChanged<Item>? onAddToCart;
 
   @override
@@ -119,6 +129,8 @@ class _SearchBody extends StatelessWidget {
         controller: controller,
         products: current.data,
         onAddToCart: onAddToCart,
+        isGrid: isGrid,
+        onLayoutChanged: onLayoutChanged,
       );
     }
     if (current is StoreEmpty<List<Item>>) {
@@ -145,6 +157,8 @@ class _SearchBody extends StatelessWidget {
             controller: controller,
             products: products,
             onAddToCart: onAddToCart,
+            isGrid: isGrid,
+            onLayoutChanged: onLayoutChanged,
           ),
       onRetry: controller.retrySearch,
     );
@@ -261,11 +275,15 @@ class _SearchResults extends StatelessWidget {
   const _SearchResults({
     required this.controller,
     required this.products,
+    required this.isGrid,
+    required this.onLayoutChanged,
     this.onAddToCart,
   });
 
   final HomeControllerImp controller;
   final List<Item> products;
+  final bool isGrid;
+  final ValueChanged<bool> onLayoutChanged;
   final ValueChanged<Item>? onAddToCart;
 
   @override
@@ -290,161 +308,135 @@ class _SearchResults extends StatelessWidget {
                 style: StoreTypography.title,
               ),
             ),
-            Semantics(
-              label: 'storeSortUnavailable'.tr,
-              button: true,
-              enabled: false,
-              child: OutlinedButton.icon(
-                onPressed: null,
-                icon: const Icon(Icons.sort),
-                label: Text('storeSort'.tr),
-              ),
-            ),
-            const SizedBox(width: StoreSpacing.xs),
-            Semantics(
-              label: 'storeFilterUnavailable'.tr,
-              button: true,
-              enabled: false,
-              child: OutlinedButton.icon(
-                onPressed: null,
-                icon: const Icon(Icons.tune),
-                label: Text('storeFilter'.tr),
-              ),
+            StoreProductLayoutToggle(
+              isGrid: isGrid,
+              onChanged: onLayoutChanged,
             ),
           ],
+        ),
+      ),
+      SizedBox(
+        height: 38,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.md),
+          scrollDirection: Axis.horizontal,
+          itemCount: products.take(6).length,
+          separatorBuilder: (_, _) => const SizedBox(width: StoreSpacing.xs),
+          itemBuilder: (_, index) {
+            final item = products[index];
+            return ActionChip(
+              avatar: const Icon(Icons.north_west_rounded, size: 15),
+              label: Text(
+                _itemName(item),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              onPressed: () => _openProduct(item),
+            );
+          },
         ),
       ),
       Expanded(
         child: RefreshIndicator(
           onRefresh: controller.retrySearch,
           color: StorePalette.purple,
-          child: ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(StoreSpacing.md),
-            itemCount: products.length,
-            separatorBuilder: (_, _) => const SizedBox(height: StoreSpacing.sm),
-            itemBuilder: (context, index) {
-              final item = products[index];
-              return _SearchResultCard(
-                item: item,
-                price: controller.displayPriceFor(item),
-                onTap: () => _openProduct(item),
-                onAddToCart:
-                    () => (onAddToCart ?? _runtimeAddToCart).call(item),
-              );
-            },
-          ),
+          child:
+              isGrid
+                  ? GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(StoreSpacing.md),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisExtent: 260,
+                          crossAxisSpacing: StoreSpacing.sm,
+                          mainAxisSpacing: StoreSpacing.sm,
+                        ),
+                    itemCount: products.length,
+                    itemBuilder:
+                        (_, index) => _SearchProductCard(
+                          item: products[index],
+                          price: controller.displayPriceFor(products[index]),
+                          grid: true,
+                          onAddToCart: onAddToCart,
+                        ),
+                  )
+                  : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(StoreSpacing.md),
+                    itemCount: products.length,
+                    separatorBuilder:
+                        (_, _) => const SizedBox(height: StoreSpacing.sm),
+                    itemBuilder:
+                        (_, index) => _SearchProductCard(
+                          item: products[index],
+                          price: controller.displayPriceFor(products[index]),
+                          grid: false,
+                          onAddToCart: onAddToCart,
+                        ),
+                  ),
         ),
       ),
     ],
   );
 }
 
-class _SearchResultCard extends StatelessWidget {
-  const _SearchResultCard({
+class _SearchProductCard extends StatelessWidget {
+  const _SearchProductCard({
     required this.item,
     required this.price,
-    required this.onTap,
-    required this.onAddToCart,
+    required this.grid,
+    this.onAddToCart,
   });
 
   final Item item;
   final num price;
-  final VoidCallback onTap;
-  final VoidCallback onAddToCart;
+  final bool grid;
+  final ValueChanged<Item>? onAddToCart;
 
   @override
   Widget build(BuildContext context) {
-    final inStock = item.available && item.purchasable;
-    return SizedBox(
-      height: StoreCalibration.searchResultCardHeight,
-      child: Material(
-        color: StorePalette.surface,
-        borderRadius: BorderRadius.circular(StoreRadii.md),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: StorePalette.border),
-              borderRadius: BorderRadius.circular(StoreRadii.md),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(StoreSpacing.sm),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            if (item.discount > 0)
-                              StoreDiscountChip(percent: item.discount)
-                            else
-                              StoreAvailabilityChip(inStock: inStock),
-                            if (item.rate > 0) ...[
-                              const Spacer(),
-                              StoreRating(value: item.rate),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: StoreSpacing.xxs),
-                        Text(
-                          _itemName(item),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: StoreTypography.label,
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${NumberFormat('#,##0.##', 'en_US').format(price)} ₪',
-                                style: StoreTypography.title.copyWith(
-                                  color: StorePalette.navy,
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              height: StoreCalibration.compactControlHeight,
-                              child: FilledButton(
-                                onPressed: inStock ? onAddToCart : null,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: StorePalette.purple,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: StoreSpacing.sm,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      StoreRadii.sm,
-                                    ),
-                                  ),
-                                ),
-                                child: Text('storeAddToCart'.tr),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 116,
-                  child: StoreNetworkMedia(
-                    url: _itemImage(item),
-                    semanticLabel: _itemName(item),
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    final shop =
+        Get.isRegistered<ShopController>() ? Get.find<ShopController>() : null;
+    Widget card() {
+      final inCart = shop?.containsItem(item) ?? false;
+      final media = StoreNetworkMedia(
+        url: _itemImage(item),
+        semanticLabel: _itemName(item),
+        fit: BoxFit.contain,
+      );
+      void add() => (onAddToCart ?? _runtimeAddToCart).call(item);
+      if (!grid) {
+        return StoreProductListCard(
+          name: _itemName(item),
+          price: price,
+          originalPrice: item.oldPrice,
+          inStock: item.available && item.purchasable,
+          isInCart: inCart,
+          media: media,
+          onTap: () => _openProduct(item),
+          onAddToCart: add,
+        );
+      }
+      return StoreProductCard(
+        name: _itemName(item),
+        price: price,
+        originalPrice: item.oldPrice,
+        discountPercent: item.discount > 0 ? item.discount : null,
+        inStock: item.available && item.purchasable,
+        isInCart: inCart,
+        media: media,
+        onTap: () => _openProduct(item),
+        onAddToCart: add,
+        compact: true,
+      );
+    }
+
+    if (shop == null) return card();
+    return Obx(() {
+      shop.cartLines.length;
+      return card();
+    });
   }
 }
 

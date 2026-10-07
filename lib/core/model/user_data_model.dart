@@ -15,6 +15,7 @@ class UserModel {
   bool lockoutEnabled;
   int accessFailedCount;
   String? address;
+  String? profileImageUrl;
   bool block;
   String? fullName;
   String? phoneNumber2;
@@ -44,6 +45,7 @@ class UserModel {
     required this.lockoutEnabled,
     required this.accessFailedCount,
     this.address,
+    this.profileImageUrl,
     required this.block,
     this.fullName,
     this.phoneNumber2,
@@ -75,6 +77,7 @@ class UserModel {
     accessFailedCount:
         int.tryParse(json["accessFailedCount"]?.toString() ?? '') ?? 0,
     address: json["address"]?.toString(),
+    profileImageUrl: json["profileImageUrl"]?.toString(),
     block: json["block"] == true,
     fullName: json["fullName"]?.toString(),
     phoneNumber2: json["phoneNumber2"]?.toString(),
@@ -111,6 +114,7 @@ class UserModel {
     "lockoutEnabled": lockoutEnabled,
     "accessFailedCount": accessFailedCount,
     "address": address,
+    "profileImageUrl": profileImageUrl,
     "block": block,
     "fullName": fullName,
     "phoneNumber2": phoneNumber2,

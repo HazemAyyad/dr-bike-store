@@ -5,6 +5,7 @@ import '../../controller/account/account_controller.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/widget/store_buttons.dart';
 import '../../core/widget/store_fields.dart';
+import '../../core/widget/store_media.dart';
 import '../../core/widget/store_states.dart';
 
 class PersonalDetailsPage extends StatelessWidget {
@@ -39,25 +40,81 @@ class PersonalDetailsPage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(StoreSpacing.md),
         children: [
+          Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipOval(
+                  child: SizedBox.square(
+                    dimension: 104,
+                    child:
+                        controller.profile?.profileImageUrl
+                                    ?.trim()
+                                    .isNotEmpty ==
+                                true
+                            ? StoreNetworkMedia(
+                              url: controller.profile?.profileImageUrl,
+                              semanticLabel: 'الصورة الشخصية',
+                              fit: BoxFit.cover,
+                            )
+                            : const ColoredBox(
+                              color: StorePalette.lightPurple,
+                              child: Icon(
+                                Icons.person_outline_rounded,
+                                size: 46,
+                                color: StorePalette.purple,
+                              ),
+                            ),
+                  ),
+                ),
+                PositionedDirectional(
+                  end: -4,
+                  bottom: -4,
+                  child: IconButton.filled(
+                    tooltip: 'تغيير الصورة الشخصية',
+                    onPressed:
+                        controller.uploadingProfileImage
+                            ? null
+                            : controller.pickAndUploadProfileImage,
+                    icon:
+                        controller.uploadingProfileImage
+                            ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                            : const Icon(Icons.photo_camera_outlined),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: StoreSpacing.lg),
           StoreTextField(
             label: 'name'.tr,
             controller: controller.nameController,
           ),
+          const SizedBox(height: StoreSpacing.sm),
           StoreTextField(
             label: 'email'.tr,
             controller: controller.emailController,
             keyboardType: TextInputType.emailAddress,
           ),
+          const SizedBox(height: StoreSpacing.sm),
           StoreTextField(
             label: 'Mobile number'.tr,
             controller: controller.phoneNumberController,
             keyboardType: TextInputType.phone,
           ),
+          const SizedBox(height: StoreSpacing.sm),
           StoreTextField(
             label: 'Alternative mobile number'.tr,
             controller: controller.phoneNumber2Controller,
             keyboardType: TextInputType.phone,
           ),
+          const SizedBox(height: StoreSpacing.sm),
           DropdownButtonFormField<String>(
             value: controller.selectedCityId,
             decoration: InputDecoration(labelText: 'City'.tr),

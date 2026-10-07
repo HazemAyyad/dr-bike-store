@@ -1,4 +1,5 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -99,6 +100,8 @@ class HomeControllerImp extends HomeController {
   bool isGrid = false;
   bool showFilter = false;
   bool _initialized = false;
+  Timer? _searchDebounce;
+  int _searchRequest = 0;
 
   bool get isAuthenticated => token != null && token!.trim().isNotEmpty;
   int? get notificationBadgeCount =>
@@ -386,9 +389,35 @@ class HomeControllerImp extends HomeController {
   @override
   Future<void> getSearch(String name) => submitSearch(name);
 
-  Future<void> submitSearch(String query) async {
+  void searchAsYouType(String query) {
+    _searchDebounce?.cancel();
+    if (query.trim().isEmpty) {
+      submitSearch('');
+      return;
+    }
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 280),
+      () => _performSearch(query, saveToHistory: false),
+    );
+  }
+
+  Future<void> submitSearch(String query) {
+    _searchDebounce?.cancel();
+    return _performSearch(query, saveToHistory: query.trim().isNotEmpty);
+  }
+
+  Future<void> _performSearch(
+    String query, {
+    required bool saveToHistory,
+  }) async {
     final normalized = query.trim();
-    search.text = normalized;
+    if (search.text != normalized) {
+      search.value = search.value.copyWith(
+        text: normalized,
+        selection: TextSelection.collapsed(offset: normalized.length),
+      );
+    }
+    final request = ++_searchRequest;
     if (normalized.isEmpty) {
       itemListSearch.clear();
       searchState.value = const StoreInitial();
@@ -396,8 +425,12 @@ class HomeControllerImp extends HomeController {
       return;
     }
 
-    recentSearches.assignAll(await searchHistoryStore.add(normalized));
+    if (saveToHistory) {
+      recentSearches.assignAll(await searchHistoryStore.add(normalized));
+      if (request != _searchRequest) return;
+    }
     if (!await connectivityCheck()) {
+      if (request != _searchRequest) return;
       isLoadingSearch.value = false;
       searchState.value = StoreOffline(message: 'storeOfflineMessage'.tr);
       update();
@@ -420,6 +453,7 @@ class HomeControllerImp extends HomeController {
       final products = _rows(
         response.body,
       ).map(Item.fromJson).where((item) => item.isShow).toList(growable: false);
+      if (request != _searchRequest) return;
       itemListSearch.assignAll(products);
       searchState.value =
           products.isEmpty
@@ -431,10 +465,13 @@ class HomeControllerImp extends HomeController {
               )
               : StoreContent(products);
     } catch (_) {
+      if (request != _searchRequest) return;
       searchState.value = StoreError(message: 'storeSearchFailureMessage'.tr);
     } finally {
-      isLoadingSearch.value = false;
-      update();
+      if (request == _searchRequest) {
+        isLoadingSearch.value = false;
+        update();
+      }
     }
   }
 
@@ -526,6 +563,7 @@ class HomeControllerImp extends HomeController {
 
   @override
   void onClose() {
+    _searchDebounce?.cancel();
     search.dispose();
     super.onClose();
   }

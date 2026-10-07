@@ -35,6 +35,8 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نحتاج الوصول إلى الصور لاختيار صورة ملفك الشخصي.</string>
 
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>

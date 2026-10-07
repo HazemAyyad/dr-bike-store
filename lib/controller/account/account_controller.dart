@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 // import 'package:flutter_sms/flutter_sms.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:overlay_kit/overlay_kit.dart';
 import 'package:doctor_bike/repository/auth/auth_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -97,6 +98,7 @@ class AccountControllerImp extends AccountController {
   AccountViewStatus profileStatus = AccountViewStatus.initial;
   AccountMutationStatus mutationStatus = AccountMutationStatus.idle;
   String? message;
+  bool uploadingProfileImage = false;
   List<StoreAddress> addresses = const [];
   bool addressesLoading = false;
   String? addressesMessage;
@@ -273,6 +275,39 @@ class AccountControllerImp extends AccountController {
     phoneNumber2Controller.text = value.phoneNumber2 ?? '';
     addressController.text = value.address ?? '';
     selectedCityId = value.cityId?.toString();
+  }
+
+  Future<void> pickAndUploadProfileImage() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1440,
+      imageQuality: 86,
+    );
+    if (picked == null) return;
+    if (!await connectivityChecker()) {
+      showCustomSnackBar('Check the internet connection'.tr, isError: true);
+      return;
+    }
+
+    uploadingProfileImage = true;
+    update();
+    try {
+      final response = await authRepository.uploadProfileImage(picked.path);
+      if (response.statusCode != 200 ||
+          response.body is! Map<String, dynamic>) {
+        throw const FormatException('profile-image');
+      }
+      final authoritative = UserModel.fromJson(response.body);
+      if (authoritative.id.isEmpty) throw const FormatException('profile');
+      userModel = authoritative;
+      _populateProfile(authoritative);
+      showCustomSnackBar('تم تحديث الصورة الشخصية', isError: false);
+    } catch (_) {
+      showCustomSnackBar('تعذر تحديث الصورة الشخصية', isError: true);
+    } finally {
+      uploadingProfileImage = false;
+      update();
+    }
   }
 
   Future<void> logout({required bool confirmed}) async {
