@@ -72,6 +72,37 @@ void main() {
       expect(item.wholesalePrice, 72);
     });
 
+    test('store-only detail presentation and authoritative price evidence', () {
+      final item = Item.fromJson(
+        _detail()
+          ..['oldPrice'] = 150
+          ..['discount'] = 20
+          ..['rate'] = 4.5
+          ..['reviewCount'] = 12
+          ..['storePresentation'] = {
+            'brand_translations': {'ar': 'Doctor Bike'},
+            'quick_specs': [
+              {
+                'icon': 'speed',
+                'label_translations': {'ar': 'السرعة'},
+                'value_translations': {'ar': '25 كم/ساعة'},
+              },
+            ],
+            'shipping_warranty_translations': {'ar': 'ضمان سنة'},
+            'return_policy_translations': {'ar': 'إرجاع خلال 14 يوماً'},
+          },
+      );
+
+      expect(item.oldPrice, 150);
+      expect(item.discount, 20);
+      expect(item.rate, 4.5);
+      expect(item.reviewCount, 12);
+      expect(
+        (item.storePresentation['quick_specs'] as List).single['icon'],
+        'speed',
+      );
+    });
+
     test('availability parsing', () {
       final item = Item.fromJson(
         _detail()
@@ -337,6 +368,54 @@ void main() {
       expect(controller.quantity.value, 3);
       controller.setQuantity(-1);
       expect(controller.quantity.value, 1);
+    });
+
+    test(
+      'mixed media selection keeps media and image indices aligned',
+      () async {
+        final detail =
+            _detail()
+              ..['storefrontMedia'] = [
+                _media(id: 1, main: true, order: 0),
+                _media(
+                  id: 2,
+                  main: false,
+                  order: 1,
+                  sourceType: 'store_specific',
+                  metadata: {'media_type': 'video', 'mime_type': 'video/mp4'},
+                ),
+                _media(id: 3, main: false, order: 2),
+              ];
+        final controller = _controller(
+          repository,
+          Response(body: detail, statusCode: 200),
+        );
+        await controller.loadProductDetail(productId: 101);
+
+        controller.selectMedia(1);
+        expect(controller.selectedMedia?.type, ProductMediaType.video);
+        expect(controller.selectedMediaIndex, 1);
+        expect(controller.selectedImageIndex, 0);
+
+        controller.selectMedia(2);
+        expect(controller.selectedMedia?.type, ProductMediaType.image);
+        expect(controller.selectedMediaIndex, 2);
+        expect(controller.selectedImageIndex, 1);
+      },
+    );
+
+    test('out-of-range media selection is ignored safely', () async {
+      final controller = _controller(
+        repository,
+        Response(body: _detail(), statusCode: 200),
+      );
+      await controller.loadProductDetail(productId: 101);
+
+      controller.selectMedia(-1);
+      controller.selectMedia(99);
+
+      expect(controller.selectedMediaIndex, 0);
+      expect(controller.selectedMedia?.id, 1);
     });
 
     test('option state exists only when backend provides options', () async {
