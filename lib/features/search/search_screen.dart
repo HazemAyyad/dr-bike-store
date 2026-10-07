@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../controller/home/home_controller.dart';
 import '../../controller/product/product_controller.dart';
@@ -163,15 +164,18 @@ class _SearchDiscovery extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visibleCategories = categories.take(5).toList();
+    final visibleCategories = categories.take(4).toList();
     return ListView(
       key: const ValueKey('search-discovery'),
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(StoreSpacing.md),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        StoreSpacing.md,
+        StoreSpacing.xs,
+        StoreSpacing.md,
+        StoreSpacing.md,
+      ),
       children: [
         if (visibleCategories.isNotEmpty) ...[
-          Text('storeSearchCategories'.tr, style: StoreTypography.title),
-          const SizedBox(height: StoreSpacing.sm),
           SizedBox(
             height: StoreCalibration.compactControlHeight,
             child: ListView.separated(
@@ -185,6 +189,7 @@ class _SearchDiscovery extends StatelessWidget {
                     label: 'all'.tr,
                     selected: true,
                     compact: true,
+                    solidSelected: true,
                     onSelected: (_) {},
                   );
                 }
@@ -201,7 +206,7 @@ class _SearchDiscovery extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: StoreSpacing.lg),
+          const SizedBox(height: StoreSpacing.sm),
         ],
         if (recentSearches.isNotEmpty) ...[
           Row(
@@ -224,17 +229,17 @@ class _SearchDiscovery extends StatelessWidget {
               onTap: () => controller.selectRecentSearch(query),
               borderRadius: BorderRadius.circular(StoreRadii.sm),
               child: SizedBox(
-                height: StoreCalibration.compactControlHeight,
+                height: 36,
                 child: Row(
                   children: [
+                    Expanded(
+                      child: Text(query, style: StoreTypography.bodyMedium),
+                    ),
+                    const SizedBox(width: StoreSpacing.sm),
                     const Icon(
                       Icons.radio_button_unchecked,
                       size: StoreIconSizes.small,
                       color: StorePalette.textSecondary,
-                    ),
-                    const SizedBox(width: StoreSpacing.sm),
-                    Expanded(
-                      child: Text(query, style: StoreTypography.bodyMedium),
                     ),
                   ],
                 ),
@@ -350,7 +355,7 @@ class _SearchResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inStock = item.stock > 0 || item.itemSizes.isNotEmpty;
+    final inStock = item.available && item.purchasable;
     return SizedBox(
       height: StoreCalibration.searchResultCardHeight,
       child: Material(
@@ -378,8 +383,10 @@ class _SearchResultCard extends StatelessWidget {
                               StoreDiscountChip(percent: item.discount)
                             else
                               StoreAvailabilityChip(inStock: inStock),
-                            const Spacer(),
-                            StoreRating(value: item.rate),
+                            if (item.rate > 0) ...[
+                              const Spacer(),
+                              StoreRating(value: item.rate),
+                            ],
                           ],
                         ),
                         const SizedBox(height: StoreSpacing.xxs),
@@ -394,7 +401,7 @@ class _SearchResultCard extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                '$price ₪',
+                                '${NumberFormat('#,##0.##', 'en_US').format(price)} ₪',
                                 style: StoreTypography.title.copyWith(
                                   color: StorePalette.navy,
                                 ),

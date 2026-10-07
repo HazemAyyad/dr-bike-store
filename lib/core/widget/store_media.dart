@@ -174,10 +174,16 @@ class StoreNetworkMedia extends StatelessWidget {
 }
 
 String _resolveStoreMediaUrl(String value) {
-  final path = value.trim();
+  var path = value.trim().replaceAll('\\', '/');
   final uri = Uri.tryParse(path);
   if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
     return path;
+  }
+  while (path.toLowerCase().startsWith('public/')) {
+    path = path.substring('public/'.length);
+  }
+  while (path.toLowerCase().startsWith('/public/')) {
+    path = path.substring('/public/'.length);
   }
   final base = AppConstants.appBaseUrl.replaceFirst(RegExp(r'/+$'), '');
   return '$base/${path.replaceFirst(RegExp(r'^/+'), '')}';

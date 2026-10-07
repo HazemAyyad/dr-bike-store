@@ -5,6 +5,7 @@ import 'package:doctor_bike/core/locale/locale.dart';
 import 'package:doctor_bike/core/model/ads_response.dart';
 import 'package:doctor_bike/core/model/get_all_item_model.dart';
 import 'package:doctor_bike/core/model/main_categores_model.dart';
+import 'package:doctor_bike/core/model/online_store_home_model.dart';
 import 'package:doctor_bike/core/theme/light.dart';
 import 'package:doctor_bike/core/theme/store_typography.dart';
 import 'package:doctor_bike/core/widget/store_bottom_navigation.dart';
@@ -70,7 +71,7 @@ void main() {
       'حالة محفوظة',
     );
 
-    await tester.tap(find.bySemanticsLabel('حسابي'));
+    await tester.tap(find.bySemanticsLabel('الملف الشخصي'));
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('الأقسام'));
     await tester.pumpAndSettle();
@@ -85,10 +86,10 @@ void main() {
     expect(find.text('حالة محفوظة'), findsOneWidget);
   });
 
-  testWidgets('shell remains usable on a smaller viewport at 1.3 text scale', (
+  testWidgets('shell remains usable at 320x568 with 1.3 text scale', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(320, 700));
+    await tester.binding.setSurfaceSize(const Size(320, 568));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final controller = await _controller(authenticated: true);
 
@@ -109,8 +110,31 @@ void main() {
 
     expect(find.byType(StoreBottomNavigation), findsOneWidget);
     expect(find.bySemanticsLabel('فتح البحث'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('فتح البحث'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('store-search-expanded')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  for (final size in const <Size>[Size(360, 800), Size(390, 844)]) {
+    testWidgets(
+      'Home/Search stays overflow-free at ${size.width.toInt()}x${size.height.toInt()}',
+      (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final controller = await _loadedController();
+
+        await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.bySemanticsLabel('فتح البحث'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('search-discovery')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets('loaded Home renders the approved repository-backed sections', (
     tester,
@@ -145,6 +169,93 @@ void main() {
 
     expect(find.byKey(const ValueKey('home-skeleton')), findsOneWidget);
     expect(find.byKey(const ValueKey('home-hero')), findsNothing);
+  });
+
+  testWidgets('refresh feedback keeps retained Home content visible', (
+    tester,
+  ) async {
+    final controller = await _loadedController();
+    controller.isRefreshingHome.value = true;
+
+    await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byKey(const ValueKey('home-refresh-panel')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-hero')), findsOneWidget);
+    expect(find.text('جاري تحديث البيانات...'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Home follows admin section order, titles, and custom sections', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = await _loadedController();
+    final category = controller.mainCategoresModel.first;
+    final product = controller.itemList.first;
+    final sections = <OnlineStoreHomeSection>[
+      const OnlineStoreHomeSection(
+        id: 7,
+        key: 'maintenance',
+        type: 'maintenance',
+        titles: {'ar': 'صيانة مرتبة من الأدمن'},
+        items: <OnlineStoreHomeItem>[],
+        config: {'destination': 'maintenance.request'},
+      ),
+      OnlineStoreHomeSection(
+        id: 2,
+        key: 'categories',
+        type: 'categories',
+        titles: const {'ar': 'تصنيفات يحددها الأدمن'},
+        items: <OnlineStoreHomeItem>[
+          OnlineStoreHomeItem(
+            targetType: 'category',
+            targetId: category.id,
+            category: category,
+          ),
+        ],
+        config: const {'selector': 'active_categories', 'limit': 10},
+      ),
+      OnlineStoreHomeSection(
+        id: 3,
+        key: 'featured',
+        type: 'custom',
+        titles: const {'ar': 'مختارات الأدمن'},
+        items: <OnlineStoreHomeItem>[
+          OnlineStoreHomeItem(
+            targetType: 'listing',
+            targetId: product.listingId,
+            product: product,
+          ),
+        ],
+        config: const {'selector': 'featured', 'limit': 10},
+      ),
+    ];
+    controller.homeSections.assignAll(sections);
+    controller.homeSectionsState.value = StoreContent(sections);
+
+    await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final maintenance = find.byKey(const ValueKey('home-admin-section-7'));
+    final categories = find.byKey(const ValueKey('home-admin-section-2'));
+    final custom = find.byKey(const ValueKey('home-admin-section-3'));
+    expect(maintenance, findsOneWidget);
+    expect(categories, findsOneWidget);
+    expect(custom, findsOneWidget);
+    expect(
+      tester.getTopLeft(maintenance).dy,
+      lessThan(tester.getTopLeft(categories).dy),
+    );
+    expect(
+      tester.getTopLeft(categories).dy,
+      lessThan(tester.getTopLeft(custom).dy),
+    );
+    expect(find.text('صيانة مرتبة من الأدمن'), findsOneWidget);
+    expect(find.text('تصنيفات يحددها الأدمن'), findsOneWidget);
+    expect(find.text('مختارات الأدمن'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('search no-results and offline states stay visually distinct', (

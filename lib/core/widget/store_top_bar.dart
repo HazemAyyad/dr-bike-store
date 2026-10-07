@@ -22,6 +22,7 @@ class StoreTopBar extends StatefulWidget {
     this.searchExpanded,
     this.onSearchExpandedChanged,
     this.searchController,
+    this.loading = false,
     super.key,
   });
 
@@ -39,6 +40,7 @@ class StoreTopBar extends StatefulWidget {
   final bool? searchExpanded;
   final ValueChanged<bool>? onSearchExpandedChanged;
   final TextEditingController? searchController;
+  final bool loading;
 
   @override
   State<StoreTopBar> createState() => _StoreTopBarState();
@@ -97,34 +99,52 @@ class _StoreTopBarState extends State<StoreTopBar> {
                   (MediaQuery.textScalerOf(context).scale(1) > 1 ? 4 : 0),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: StorePalette.lightPurple,
-                    child:
-                        widget.avatar ??
-                        const Icon(
-                          Icons.person_outline,
-                          color: StorePalette.purple,
-                        ),
-                  ),
+                  if (widget.loading)
+                    const _TopBarSkeletonBox(
+                      width: 44,
+                      height: 44,
+                      borderRadius: StoreRadii.round,
+                    )
+                  else
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: StorePalette.lightPurple,
+                      child:
+                          widget.avatar ??
+                          const Icon(
+                            Icons.person_outline,
+                            color: StorePalette.purple,
+                          ),
+                    ),
                   const SizedBox(width: StoreSpacing.sm),
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.greeting ?? 'storeGreeting'.tr,
-                          style: StoreTypography.caption,
-                        ),
-                        Text(
-                          widget.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: StoreTypography.title,
-                        ),
-                      ],
-                    ),
+                    child:
+                        widget.loading
+                            ? const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _TopBarSkeletonBox(width: 44, height: 9),
+                                SizedBox(height: StoreSpacing.xxs),
+                                _TopBarSkeletonBox(width: 86, height: 16),
+                              ],
+                            )
+                            : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.greeting ?? 'storeGreeting'.tr,
+                                  style: StoreTypography.caption,
+                                ),
+                                Text(
+                                  widget.displayName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: StoreTypography.title,
+                                ),
+                              ],
+                            ),
                   ),
                   StoreIconButton(
                     icon: Icons.search,
@@ -133,11 +153,13 @@ class _StoreTopBarState extends State<StoreTopBar> {
                             ? 'storeCloseSearch'.tr
                             : 'storeOpenSearch'.tr,
                     onPressed: _toggleSearch,
+                    tonal: true,
                   ),
                   StoreIconButton(
                     icon: Icons.shopping_cart_outlined,
                     semanticLabel: 'storeCart'.tr,
                     badgeCount: widget.cartCount,
+                    badgeColor: StorePalette.purple,
                     onPressed: widget.onCart,
                   ),
                   StoreIconButton(
@@ -155,6 +177,7 @@ class _StoreTopBarState extends State<StoreTopBar> {
               child:
                   _effectiveSearchExpanded
                       ? Padding(
+                        key: const ValueKey('store-search-expanded'),
                         padding: const EdgeInsets.only(top: StoreSpacing.xs),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,6 +208,32 @@ class _StoreTopBarState extends State<StoreTopBar> {
                       : const SizedBox.shrink(),
             ),
           ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _TopBarSkeletonBox extends StatelessWidget {
+  const _TopBarSkeletonBox({
+    required this.width,
+    required this.height,
+    this.borderRadius = StoreRadii.sm,
+  });
+
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: SizedBox(
+      width: width,
+      height: height,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: StorePalette.border,
+          borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
     ),

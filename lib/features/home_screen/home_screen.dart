@@ -10,7 +10,9 @@ import '../../core/helper/route_helper.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
 import '../../core/theme/store_tokens.dart';
+import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_bottom_navigation.dart';
+import '../../core/widget/store_media.dart';
 import '../../core/widget/store_states.dart';
 import '../../core/widget/store_top_bar.dart';
 import '../acount/profile_screen.dart';
@@ -65,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
     StoreDestination.categories => _CategoriesDestination(
       controller: controller,
+      onBack: () => _selectDestination(StoreDestination.home),
     ),
     StoreDestination.orders => const OrderScreen(embedded: true),
     StoreDestination.favorites => const FavoritesScreen(),
@@ -107,37 +110,45 @@ class _HomeScreenState extends State<HomeScreen> {
           bottom: false,
           child: Column(
             children: [
-              StoreTopBar(
-                displayName:
-                    controller.displayName.value.isEmpty
-                        ? 'storeGuest'.tr
-                        : controller.displayName.value,
-                notificationCount:
-                    Get.isRegistered<NotificationController>()
-                        ? _notificationCount(Get.find<NotificationController>())
-                        : controller.notificationBadgeCount,
-                cartCount: cartCount == 0 ? null : cartCount,
-                searchExpanded: controller.isSearchExpanded.value,
-                searchController: controller.search,
-                onSearchExpandedChanged: controller.setSearchExpanded,
-                onSearchChanged: (value) {
-                  if (value.trim().isEmpty) controller.submitSearch('');
-                },
-                onSearch: controller.submitSearch,
-                onNotifications: () async {
-                  if (!controller.isAuthenticated) {
-                    await Get.toNamed(RouteHelper.intoLog);
-                  } else {
-                    await Get.toNamed(RouteHelper.notificationScreen);
-                    if (Get.isRegistered<NotificationController>()) {
-                      await Get.find<NotificationController>().load(
-                        refresh: true,
-                      );
+              if (current != StoreDestination.categories ||
+                  widget.destinationPages?[StoreDestination.categories] != null)
+                StoreTopBar(
+                  loading:
+                      current == StoreDestination.home &&
+                      !controller.isSearchExpanded.value &&
+                      controller.isHomeColdLoading,
+                  displayName:
+                      controller.displayName.value.isEmpty
+                          ? 'storeGuest'.tr
+                          : controller.displayName.value,
+                  notificationCount:
+                      Get.isRegistered<NotificationController>()
+                          ? _notificationCount(
+                            Get.find<NotificationController>(),
+                          )
+                          : controller.notificationBadgeCount,
+                  cartCount: cartCount == 0 ? null : cartCount,
+                  searchExpanded: controller.isSearchExpanded.value,
+                  searchController: controller.search,
+                  onSearchExpandedChanged: controller.setSearchExpanded,
+                  onSearchChanged: (value) {
+                    if (value.trim().isEmpty) controller.submitSearch('');
+                  },
+                  onSearch: controller.submitSearch,
+                  onNotifications: () async {
+                    if (!controller.isAuthenticated) {
+                      await Get.toNamed(RouteHelper.intoLog);
+                    } else {
+                      await Get.toNamed(RouteHelper.notificationScreen);
+                      if (Get.isRegistered<NotificationController>()) {
+                        await Get.find<NotificationController>().load(
+                          refresh: true,
+                        );
+                      }
                     }
-                  }
-                },
-                onCart: () => Get.to(() => const ShopCarScreen()),
-              ),
+                  },
+                  onCart: () => Get.to(() => const ShopCarScreen()),
+                ),
               Expanded(
                 child: Stack(
                   children: [
@@ -174,49 +185,227 @@ class _HomeScreenState extends State<HomeScreen> {
   });
 }
 
-class _CategoriesDestination extends StatelessWidget {
-  const _CategoriesDestination({required this.controller});
+class _CategoriesDestination extends StatefulWidget {
+  const _CategoriesDestination({
+    required this.controller,
+    required this.onBack,
+  });
 
   final HomeControllerImp controller;
+  final VoidCallback onBack;
+
+  @override
+  State<_CategoriesDestination> createState() => _CategoriesDestinationState();
+}
+
+class _CategoriesDestinationState extends State<_CategoriesDestination> {
+  final _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Obx(() {
-    final state = controller.categoriesState.value;
+    final state = widget.controller.categoriesState.value;
     return StoreStateView<List<Category>>(
       state: state,
       loading: const HomeLoadingSkeleton(),
-      onRetry: controller.getMainCategores,
+      onRetry: widget.controller.getMainCategores,
       contentBuilder: (context, categories) {
-        final hierarchy = _flattenCategories(categories);
+        final roots = categories
+            .where((category) => _matchesCategory(category, _query))
+            .toList(growable: false);
+        final descendants = _flattenDescendants(categories)
+            .where((category) => _matchesCategory(category, _query))
+            .toList(growable: false);
         return RefreshIndicator(
-          onRefresh: controller.getMainCategores,
+          onRefresh: widget.controller.getMainCategores,
           color: StorePalette.purple,
-          child: GridView.builder(
+          child: CustomScrollView(
             key: const PageStorageKey<String>('store-categories-scroll'),
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(StoreSpacing.md),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: StoreSpacing.sm,
-              mainAxisSpacing: StoreSpacing.sm,
-              mainAxisExtent: 164,
-            ),
-            itemCount: hierarchy.length,
-            itemBuilder: (context, index) {
-              final entry = hierarchy[index];
-              final category = entry.category;
-              return MainCategorys(
-                image: category.imageUrl,
-                title:
-                    '${entry.depth == 0 ? '' : '↳ '}${_categoryName(category)}',
-                onTap: () => _openCategory(category),
-              );
-            },
+            slivers: [
+              SliverToBoxAdapter(child: _header(context)),
+              if (roots.isEmpty && descendants.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(
+                      'لا توجد أقسام مطابقة',
+                      style: StoreTypography.body.copyWith(
+                        color: StorePalette.textSecondary,
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                SliverPadding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 12),
+                  sliver: SliverGrid.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: StoreSpacing.xs,
+                          mainAxisSpacing: StoreSpacing.xs,
+                          mainAxisExtent: 92,
+                        ),
+                    itemCount: roots.length,
+                    itemBuilder: (context, index) {
+                      final category = roots[index];
+                      return MainCategorys(
+                        image: category.imageUrl,
+                        title: _categoryName(category),
+                        compact: true,
+                        onTap: () => _openCategory(category),
+                      );
+                    },
+                  ),
+                ),
+                if (descendants.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        16,
+                        4,
+                        16,
+                        8,
+                      ),
+                      child: Text(
+                        'أقسام فرعية',
+                        style: StoreTypography.title.copyWith(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      0,
+                      16,
+                      20,
+                    ),
+                    sliver: SliverList.separated(
+                      itemCount: descendants.length,
+                      separatorBuilder:
+                          (_, _) => const Divider(
+                            height: 1,
+                            color: StorePalette.border,
+                          ),
+                      itemBuilder:
+                          (context, index) =>
+                              _subcategoryRow(descendants[index]),
+                    ),
+                  ),
+                ],
+              ],
+            ],
           ),
         );
       },
     );
   });
+
+  Widget _header(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 8, 12),
+    child: Column(
+      children: [
+        SizedBox(
+          height: 44,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Text('الأقسام', style: StoreTypography.title),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: IconButton(
+                  tooltip: 'الرجوع',
+                  onPressed: widget.onBack,
+                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 19),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.xs),
+          child: SizedBox(
+            height: StoreCalibration.compactControlHeight,
+            child: TextField(
+              controller: _search,
+              onChanged: (value) => setState(() => _query = value.trim()),
+              textInputAction: TextInputAction.search,
+              style: StoreTypography.body,
+              decoration: InputDecoration(
+                hintText: 'ابحث عن قسم...',
+                hintStyle: StoreTypography.caption,
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon:
+                    _query.isEmpty
+                        ? null
+                        : IconButton(
+                          tooltip: 'مسح البحث',
+                          onPressed: () {
+                            _search.clear();
+                            setState(() => _query = '');
+                          },
+                          icon: const Icon(Icons.close, size: 18),
+                        ),
+                filled: true,
+                fillColor: StorePalette.surface,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(StoreRadii.md),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _subcategoryRow(Category category) => Material(
+    color: StorePalette.surface,
+    child: InkWell(
+      onTap: () => _openCategory(category),
+      child: SizedBox(
+        height: 52,
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 42,
+              child: Padding(
+                padding: const EdgeInsets.all(5),
+                child: StoreNetworkMedia(
+                  url: category.imageUrl,
+                  semanticLabel: _categoryName(category),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(width: StoreSpacing.xs),
+            Expanded(
+              child: Text(
+                _categoryName(category),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: StoreTypography.bodyMedium,
+              ),
+            ),
+            const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 16,
+              color: StorePalette.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   Future<void> _openCategory(Category category) async {
     if (!Get.isRegistered<CategoresControllerImp>()) return;
@@ -230,25 +419,31 @@ class _CategoriesDestination extends StatelessWidget {
 int? _notificationCount(NotificationController controller) =>
     controller.unreadCount == 0 ? null : controller.unreadCount;
 
-class _CategoryHierarchyEntry {
-  const _CategoryHierarchyEntry(this.category, this.depth);
-  final Category category;
-  final int depth;
-}
-
-List<_CategoryHierarchyEntry> _flattenCategories(List<Category> roots) {
-  final result = <_CategoryHierarchyEntry>[];
-  void append(Category category, int depth) {
-    result.add(_CategoryHierarchyEntry(category, depth));
+List<Category> _flattenDescendants(List<Category> roots) {
+  final result = <Category>[];
+  void append(Category category) {
+    result.add(category);
     for (final child in category.children) {
-      append(child, depth + 1);
+      append(child);
     }
   }
 
   for (final root in roots) {
-    append(root, 0);
+    for (final child in root.children) {
+      append(child);
+    }
   }
   return result;
+}
+
+bool _matchesCategory(Category category, String query) {
+  if (query.isEmpty) return true;
+  final normalized = query.toLowerCase();
+  return <String>[
+    category.nameAr,
+    category.nameEng,
+    category.nameAbree,
+  ].any((value) => value.toLowerCase().contains(normalized));
 }
 
 String _categoryName(Category category) {

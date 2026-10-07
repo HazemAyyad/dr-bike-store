@@ -67,6 +67,7 @@ class HomeControllerImp extends HomeController {
   final currentPage = 0.obs;
   final selectedDestination = StoreDestination.home.obs;
   final isSearchExpanded = false.obs;
+  final isRefreshingHome = false.obs;
   final recentSearches = <String>[].obs;
   final displayName = ''.obs;
   final searchState = Rx<StoreViewState<List<Item>>>(const StoreInitial());
@@ -102,6 +103,22 @@ class HomeControllerImp extends HomeController {
   bool get isAuthenticated => token != null && token!.trim().isNotEmpty;
   int? get notificationBadgeCount =>
       notificationIsNotRead.isEmpty ? null : notificationIsNotRead.length;
+
+  bool get hasRetainedHomeContent =>
+      homeSections.isNotEmpty ||
+      mainCategoresModel.isNotEmpty ||
+      adsResponse.isNotEmpty ||
+      itemList.isNotEmpty;
+
+  bool get isHomeColdLoading {
+    if (hasRetainedHomeContent) return false;
+    bool isPending<T>(StoreViewState<T> state) =>
+        state is StoreInitial<T> || state is StoreLoading<T>;
+    return isPending(categoriesState.value) &&
+        isPending(heroState.value) &&
+        isPending(productsState.value) &&
+        isPending(homeSectionsState.value);
+  }
 
   List<Item> get specialOffers =>
       itemList.where((item) => item.discount > 0).toList(growable: false);
@@ -193,17 +210,28 @@ class HomeControllerImp extends HomeController {
   }
 
   Future<void> loadHome({bool refresh = false}) async {
-    if (!await connectivityCheck()) {
-      _setHomeOffline();
-      return;
+    if (refresh) {
+      isRefreshingHome.value = true;
+      update();
     }
-    await Future.wait<void>([
-      getStoreHome(),
-      getOnlineAds(),
-      getAllItemIsMoreSales(),
-      getMainCategores(),
-      if (isAuthenticated) getNotifications(),
-    ]);
+    try {
+      if (!await connectivityCheck()) {
+        _setHomeOffline();
+        return;
+      }
+      await Future.wait<void>([
+        getStoreHome(),
+        getOnlineAds(),
+        getAllItemIsMoreSales(),
+        getMainCategores(),
+        if (isAuthenticated) getNotifications(),
+      ]);
+    } finally {
+      if (refresh) {
+        isRefreshingHome.value = false;
+        update();
+      }
+    }
   }
 
   Future<void> getStoreHome() async {

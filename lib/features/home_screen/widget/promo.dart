@@ -34,21 +34,33 @@ class PromoCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            PositionedDirectional(
-              end: 0,
-              top: 0,
-              bottom: 0,
-              width: 170,
+            Positioned.fill(
               child: StoreNetworkMedia(
                 url: imageUrl,
                 semanticLabel: title,
-                fit: BoxFit.contain,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: AlignmentDirectional.centerStart,
+                    end: AlignmentDirectional.centerEnd,
+                    colors: [
+                      StorePalette.lightPurple.withValues(alpha: 0.96),
+                      StorePalette.lightPurple.withValues(alpha: 0.76),
+                      StorePalette.lightPurple.withValues(alpha: 0.12),
+                    ],
+                    stops: const [0, 0.58, 1],
+                  ),
+                ),
               ),
             ),
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: FractionallySizedBox(
-                widthFactor: 0.58,
+                widthFactor: 0.62,
                 child: Padding(
                   padding: const EdgeInsets.all(StoreSpacing.md),
                   child: LayoutBuilder(
