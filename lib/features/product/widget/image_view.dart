@@ -85,7 +85,6 @@ class _ProductMediaViewerState extends State<ProductMediaViewer> {
                   PageView.builder(
                     key: const Key('fullscreen-media-pages'),
                     controller: _pageController,
-                    reverse: Directionality.of(context) == TextDirection.rtl,
                     itemCount: widget.media.length,
                     onPageChanged: _select,
                     itemBuilder:
@@ -257,8 +256,8 @@ class _ViewerHeader extends StatelessWidget {
           textDirection: TextDirection.ltr,
           style: StoreTypography.label.copyWith(color: Colors.white),
         ),
-        Positioned(
-          left: StoreSpacing.xs,
+        PositionedDirectional(
+          start: StoreSpacing.xs,
           child: IconButton.filled(
             key: const Key('fullscreen-media-close'),
             tooltip:
@@ -276,8 +275,8 @@ class _ViewerHeader extends StatelessWidget {
             icon: const Icon(Icons.close_rounded, size: 24),
           ),
         ),
-        Positioned(
-          right: StoreSpacing.xs,
+        PositionedDirectional(
+          end: StoreSpacing.xs,
           child: IconButton(
             key: const Key('fullscreen-media-toggle'),
             tooltip:

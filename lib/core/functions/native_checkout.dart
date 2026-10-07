@@ -91,18 +91,30 @@ Map<String, dynamic> buildNativeCheckoutPayload({
 }
 
 class NativeCheckoutSuccess {
-  const NativeCheckoutSuccess({required this.orderId, required this.replayed});
+  const NativeCheckoutSuccess({
+    required this.orderId,
+    required this.orderNumber,
+    required this.replayed,
+  });
 
   final String orderId;
+  final String orderNumber;
   final bool replayed;
 
   static NativeCheckoutSuccess? tryParse(int? statusCode, dynamic body) {
     if (statusCode != 200 && statusCode != 201) return null;
     if (body is! Map || body['data'] is! Map) return null;
-    final id = (body['data'] as Map)['id'];
+    final data = body['data'] as Map;
+    final id = data['id'];
     if (id == null || id.toString().isEmpty) return null;
+    final number =
+        data['orderNumber'] ?? data['serialNumber'] ?? data['serial_number'];
     return NativeCheckoutSuccess(
       orderId: id.toString(),
+      orderNumber:
+          number?.toString().trim().isNotEmpty == true
+              ? number.toString().trim()
+              : id.toString(),
       replayed: body['replayed'] == true,
     );
   }

@@ -87,6 +87,20 @@ class Order {
   final OrderShiplyTracking? shiplyTracking;
   final List<OrderDetail> details;
 
+  int get itemCount =>
+      details.fold<int>(0, (total, line) => total + line.quantity);
+  double get payableBeforeDelivery =>
+      totalPriceWithDiscoundCode ?? totalPriceWithDiscound;
+  double get discountTotal =>
+      (totalPriceWithOutDiscound - payableBeforeDelivery)
+          .clamp(0, double.infinity)
+          .toDouble();
+  double get grandTotal => payableBeforeDelivery + priceDelivery;
+  bool get hasTracking =>
+      shiplyTracking != null ||
+      latestHandover?.trackingNumber.isNotEmpty == true ||
+      latestHandover?.shiplyParcelCode.isNotEmpty == true;
+
   Order({
     required this.id,
     required this.serialNumber,
@@ -415,8 +429,16 @@ class Item {
   final String dateAdd;
   final String? userIdUpdate;
   final String dateUpdate;
+  final List<ItemImage> normalImagesItems;
   final List<ItemImage> viewImagesItems;
   final List<ItemSize> itemSizes;
+
+  String? get primaryImageUrl =>
+      normalImagesItems.isNotEmpty
+          ? normalImagesItems.first.imageUrl
+          : viewImagesItems.isNotEmpty
+          ? viewImagesItems.first.imageUrl
+          : null;
 
   Item({
     required this.id,
@@ -441,6 +463,7 @@ class Item {
     required this.dateAdd,
     this.userIdUpdate,
     required this.dateUpdate,
+    required this.normalImagesItems,
     required this.viewImagesItems,
     required this.itemSizes,
   });
@@ -466,6 +489,7 @@ class Item {
       discount: 0,
       dateAdd: '',
       dateUpdate: '',
+      normalImagesItems: const <ItemImage>[],
       viewImagesItems: const <ItemImage>[],
       itemSizes: const <ItemSize>[],
     );
@@ -495,6 +519,12 @@ class Item {
       dateAdd: _asString(json['dateAdd']),
       userIdUpdate: _asNullableString(json['userIdUpdate']),
       dateUpdate: _asString(json['dateUpdate']),
+      normalImagesItems:
+          json['normalImagesItems'] is List
+              ? List<ItemImage>.from(
+                json['normalImagesItems'].map((x) => ItemImage.fromJson(x)),
+              )
+              : <ItemImage>[],
       viewImagesItems:
           json['viewImagesItems'] is List
               ? List<ItemImage>.from(

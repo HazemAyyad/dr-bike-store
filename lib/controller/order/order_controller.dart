@@ -74,6 +74,16 @@ class OrderController extends GetxController {
   bool canRequestCancellation(Order order) =>
       order.statusKind == StoreOrderStatusKind.current;
 
+  bool canTrack(Order order) => order.hasTracking;
+
+  bool canEditAddress(Order order) => false;
+
+  bool canAddNote(Order order) => false;
+
+  bool canReorder(Order order) => false;
+
+  bool canShare(Order order) => false;
+
   Future<bool> requestCancellation(
     Order order, {
     required bool confirmed,

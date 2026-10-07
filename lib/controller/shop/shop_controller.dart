@@ -1,4 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first, non_constant_identifier_names
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -20,6 +22,7 @@ import '../../core/model/discount_code_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../../repository/shop/shop_repository.dart';
 import '../LocalizationController.dart';
+import '../order/order_controller.dart';
 
 class ShopController extends GetxController {
   static const cartStorageKey = 'store_cart_v2';
@@ -821,11 +824,17 @@ class ShopController extends GetxController {
         checkoutState = CheckoutFlowState(
           stage: CheckoutStage.success,
           orderId: success.orderId,
+          orderNumber: success.orderNumber,
           replayed: success.replayed,
           selectedRole: role,
           availableRoles: checkoutState.availableRoles,
         );
         clearCart();
+        if (Get.isRegistered<OrderController>()) {
+          unawaited(
+            Get.find<OrderController>().load(filter: OrderListFilter.current),
+          );
+        }
         Get.offNamed(RouteHelper.checkOutDone);
         return;
       }

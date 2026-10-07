@@ -4,6 +4,7 @@ import 'package:doctor_bike/core/constants/app_constants.dart';
 import 'package:doctor_bike/core/api_client.dart';
 import 'package:doctor_bike/core/functions/app_usage_service.dart';
 import 'package:doctor_bike/core/model/conact_us_model.dart';
+import 'package:doctor_bike/core/model/store_address_model.dart';
 import 'package:doctor_bike/core/model/user_data_model.dart';
 import 'package:doctor_bike/repository/auth/auth_repository.dart';
 import 'package:flutter/material.dart';
@@ -108,11 +109,25 @@ void main() {
     expect(response.toJson(), isNot(contains('facebook')));
   });
 
-  test('single address and COD are the only represented capabilities', () {
-    const capabilities = <String>{'single_profile_address', 'cash_on_delivery'};
-    expect(capabilities, isNot(contains('saved_address_book')));
+  test('saved address book and COD are represented capabilities', () {
+    const capabilities = <String>{'saved_address_book', 'cash_on_delivery'};
+    expect(capabilities, contains('saved_address_book'));
     expect(capabilities, isNot(contains('saved_cards')));
     expect(capabilities, isNot(contains('raw_card_storage')));
+  });
+
+  test('store address parses default and delivery location', () {
+    final address = StoreAddress.fromJson({
+      'id': 8,
+      'label': 'العمل',
+      'street_address': 'الشارع الرئيسي',
+      'shiply_city_name': 'رام الله',
+      'shiply_village_name': 'البيرة',
+      'is_default': true,
+    });
+    expect(address.id, 8);
+    expect(address.isDefault, isTrue);
+    expect(address.locationLabel, 'البيرة، رام الله');
   });
 
   test('logout and deletion require confirmation', () {

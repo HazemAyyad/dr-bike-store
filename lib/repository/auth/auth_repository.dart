@@ -382,6 +382,37 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
     );
   }
 
+  Future<Map<String, String>> _storeHeaders() async => {
+    'Content-Type': 'application/json',
+    'authorization': 'Bearer ${await AppUsageService.getToken()}',
+  };
+
+  Future<Response> getStoreAddresses() async => apiClient.getData(
+    '/OnlineStore/Addresses',
+    headers: await _storeHeaders(),
+  );
+
+  Future<Response> createStoreAddress(Map<String, dynamic> body) async =>
+      apiClient.postData(
+        '/OnlineStore/Addresses',
+        headers: await _storeHeaders(),
+        body: body,
+      );
+
+  Future<Response> updateStoreAddress(Map<String, dynamic> body) async =>
+      apiClient.postData(
+        '/OnlineStore/Addresses/Update',
+        headers: await _storeHeaders(),
+        body: body,
+      );
+
+  Future<Response> deleteStoreAddress(int addressId) async =>
+      apiClient.postData(
+        '/OnlineStore/Addresses/Delete',
+        headers: await _storeHeaders(),
+        body: {'address_id': addressId},
+      );
+
   Future<Response> getCity() async {
     return await apiClient.postData(
       '/Cities/GetAllCities',

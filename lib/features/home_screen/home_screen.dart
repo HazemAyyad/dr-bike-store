@@ -13,6 +13,7 @@ import '../../core/model/main_categores_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_bottom_navigation.dart';
+import '../../core/widget/store_navigation_icons.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_states.dart';
 import '../../core/widget/store_top_bar.dart';
@@ -333,7 +334,7 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                 child: IconButton(
                   tooltip: 'الرجوع',
                   onPressed: widget.onBack,
-                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 19),
+                  icon: Icon(storeBackIcon(context), size: 19),
                 ),
               ),
             ],
@@ -406,8 +407,8 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                 style: StoreTypography.bodyMedium,
               ),
             ),
-            const Icon(
-              Icons.arrow_back_ios_new_rounded,
+            Icon(
+              storeForwardIcon(context),
               size: 16,
               color: StorePalette.textSecondary,
             ),

@@ -130,6 +130,17 @@ void main() {
       find.byKey(const ValueKey('fullscreen-media-thumbnail-1')),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('fullscreen-media-close')), findsOneWidget);
+    expect(find.byKey(const Key('gallery-previous')), findsOneWidget);
+    expect(find.byKey(const Key('gallery-next')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('gallery-next')));
+    await tester.pumpAndSettle(const Duration(milliseconds: 50));
+    expect(find.text('3/3'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('gallery-previous')));
+    await tester.pumpAndSettle(const Duration(milliseconds: 50));
+    expect(find.text('2/3'), findsOneWidget);
 
     await tester.tap(
       find.byKey(const ValueKey('fullscreen-media-thumbnail-2')),

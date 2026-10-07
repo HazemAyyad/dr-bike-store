@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/constants/images.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
+import '../../../core/widget/store_navigation_icons.dart';
 import '../../../repository/auth/auth_repository.dart';
 
 class StoreAuthScaffold extends StatelessWidget {
@@ -119,8 +120,8 @@ class StoreAuthScaffold extends StatelessWidget {
                       key: const ValueKey('auth-back-button'),
                       onPressed: onBack ?? Get.back,
                       tooltip: 'storeBack'.tr,
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
+                      icon: Icon(
+                        storeBackIcon(context),
                         color: StorePalette.navy,
                         size: 30,
                       ),

@@ -8,6 +8,12 @@ import '../../repository/product/review_repository.dart';
 
 enum ReviewMutationState { idle, submitting, success, syncRequired, failure }
 
+class ReviewSubmissionException implements Exception {
+  const ReviewSubmissionException(this.message);
+
+  final String message;
+}
+
 class ReviewController extends GetxController {
   ReviewController({
     required this.repository,
@@ -144,6 +150,12 @@ class ReviewController extends GetxController {
               : 'تم حفظ التقييم.';
       update();
       return true;
+    } on ReviewSubmissionException catch (error) {
+      ownReview = original;
+      mutationState = ReviewMutationState.failure;
+      message = error.message;
+      update();
+      return false;
     } catch (_) {
       ownReview = original;
       mutationState = ReviewMutationState.failure;
@@ -215,11 +227,27 @@ class ReviewController extends GetxController {
   }
 
   Review _parseMutation(Response response, {required int expectedStatus}) {
-    if (response.statusCode != expectedStatus || response.body is! Map) {
-      throw const FormatException('review mutation');
+    if ((response.statusCode != expectedStatus && response.statusCode != 200) ||
+        response.body is! Map) {
+      final body = response.body;
+      final serverMessage =
+          body is Map ? (body['message'] ?? body['error'])?.toString() : null;
+      throw ReviewSubmissionException(switch (response.statusCode) {
+        401 => 'انتهت الجلسة. سجّل الدخول ثم حاول مجددًا.',
+        403 => 'يلزم حساب عميل نشط لإرسال التقييم.',
+        422 =>
+          serverMessage?.trim().isNotEmpty == true
+              ? serverMessage!
+              : 'راجع التقييم والتعليق ثم حاول مجددًا.',
+        _ => 'تعذر إرسال التقييم. حاول مجددًا.',
+      });
     }
     final data = (response.body as Map)['data'];
-    if (data is! Map) throw const FormatException('review mutation data');
+    if (data is! Map) {
+      throw const ReviewSubmissionException(
+        'تم استلام رد غير مكتمل من الخادم. حاول مجددًا.',
+      );
+    }
     return Review.fromOwnJson(Map<String, dynamic>.from(data));
   }
 
