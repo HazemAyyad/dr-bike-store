@@ -13,6 +13,7 @@ class SignUpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<SignUpControllerImp>(
+      autoRemove: false,
       builder:
           (controller) => Scaffold(
             backgroundColor: StorePalette.background,

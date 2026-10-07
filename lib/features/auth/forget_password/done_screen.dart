@@ -12,6 +12,7 @@ class DoneScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<ForgetPasswordControllerImp>(
+      autoRemove: false,
       builder:
           (controller) => StoreAuthScaffold(
             title: 'storeRecoveryCompleteTitle'.tr,

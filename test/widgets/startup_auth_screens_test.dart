@@ -266,6 +266,34 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'removing an auth screen does not dispose its shared field controllers',
+    (tester) async {
+      Get.lazyPut(
+        () => LoginControllerImp(
+          authRepository: _NoopAuthGateway(),
+          sessionStore: _NoopSessionStore(),
+          notificationTokenProvider: () async => '',
+          onAuthenticated: () {},
+        ),
+        fenix: true,
+      );
+      await tester.pumpWidget(const _ArabicTestApp(child: SignInScreen()));
+      await tester.pump();
+
+      final controller = Get.find<LoginControllerImp>();
+      final pendingTap = await tester.startGesture(
+        tester.getCenter(find.byType(EditableText).first),
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      expect(controller.isClosed, isFalse);
+      await pendingTap.up();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('registration exposes only backend-supported identity fields', (
     tester,
   ) async {
