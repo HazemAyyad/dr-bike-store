@@ -86,6 +86,30 @@ void main() {
     expect(find.text('حالة محفوظة'), findsOneWidget);
   });
 
+  testWidgets('top bar avatar opens the profile destination', (tester) async {
+    final controller = await _controller(authenticated: true);
+    controller.categoriesState.value = const StoreContent(<Category>[]);
+    await tester.pumpWidget(
+      _TestApp(
+        child: HomeScreen(
+          controller: controller,
+          destinationPages: {
+            for (final destination in StoreDestination.values)
+              destination: Center(child: Text('page-${destination.name}')),
+          },
+          loadOnStart: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('فتح الملف الشخصي'));
+    await tester.pumpAndSettle();
+
+    expect(controller.selectedDestination.value, StoreDestination.profile);
+    expect(find.text('page-profile'), findsOneWidget);
+  });
+
   testWidgets('shell remains usable at 320x568 with 1.3 text scale', (
     tester,
   ) async {

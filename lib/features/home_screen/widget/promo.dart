@@ -41,22 +41,6 @@ class PromoCard extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: AlignmentDirectional.centerStart,
-                    end: AlignmentDirectional.centerEnd,
-                    colors: [
-                      StorePalette.lightPurple.withValues(alpha: 0.96),
-                      StorePalette.lightPurple.withValues(alpha: 0.76),
-                      StorePalette.lightPurple.withValues(alpha: 0.12),
-                    ],
-                    stops: const [0, 0.58, 1],
-                  ),
-                ),
-              ),
-            ),
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: FractionallySizedBox(

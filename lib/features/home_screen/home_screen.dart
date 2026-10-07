@@ -138,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   searchController: controller.search,
                   onSearchExpandedChanged: controller.setSearchExpanded,
                   onSearchChanged: (value) {
-                    if (value.trim().isEmpty) controller.submitSearch('');
+                    controller.searchAsYouType(value);
                   },
                   onSearch: controller.submitSearch,
                   onNotifications: () async {
@@ -154,6 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   },
                   onCart: () => Get.to(() => const ShopCarScreen()),
+                  onProfile: () => _selectDestination(StoreDestination.profile),
                 ),
               Expanded(
                 child: Stack(

@@ -382,6 +382,15 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
     );
   }
 
+  Future<Response> uploadProfileImage(String filePath) async =>
+      apiClient.postMultipart(
+        '/Users/ProfileImage',
+        filePath: filePath,
+        headers: {
+          'authorization': 'Bearer ${await AppUsageService.getToken()}',
+        },
+      );
+
   Future<Map<String, String>> _storeHeaders() async => {
     'Content-Type': 'application/json',
     'authorization': 'Bearer ${await AppUsageService.getToken()}',

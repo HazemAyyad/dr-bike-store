@@ -9,8 +9,10 @@ import '../../core/classes/store_view_state.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
+import '../../core/widget/store_cards.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_navigation_icons.dart';
+import '../../core/widget/store_product_layout_toggle.dart';
 import '../../repository/categories/categories_repository.dart';
 import '../../repository/shop/shop_repository.dart';
 import 'filter_screen.dart';
@@ -62,6 +64,15 @@ class CategoryScreen extends StatelessWidget {
         ),
         title: const Text('قائمة المنتجات'),
         titleTextStyle: StoreTypography.label.copyWith(fontSize: 14),
+        actions: [
+          Obx(
+            () => StoreProductLayoutToggle(
+              isGrid: controller.isGrid.value,
+              onChanged: (value) => controller.isGrid.value = value,
+            ),
+          ),
+          const SizedBox(width: StoreSpacing.xs),
+        ],
       ),
       body: Obx(() => _body(context, controller.catalogState.value)),
     ),
@@ -108,33 +119,66 @@ class CategoryScreen extends StatelessWidget {
           SliverToBoxAdapter(child: _catalogHeader(context, products.length)),
           SliverPadding(
             padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 20),
-            sliver: SliverList.separated(
-              itemCount: products.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder:
-                  (context, index) => Obx(
-                    () => _ProductListCard(
-                      item: products[index],
-                      isInCart: shopController.containsItem(products[index]),
-                      requiresOptions: products[index].itemSizes.isNotEmpty,
-                      onOpen:
-                          () => productController.getCategoryById(
-                            itemId: products[index].productId,
+            sliver:
+                controller.isGrid.value
+                    ? SliverGrid.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisExtent: 270,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
                           ),
-                      onAdd:
-                          products[index].itemSizes.isNotEmpty
-                              ? () => productController.getCategoryById(
-                                itemId: products[index].productId,
-                              )
-                              : () => shopController.addToCart(products[index]),
+                      itemCount: products.length,
+                      itemBuilder:
+                          (context, index) => _gridProduct(products[index]),
+                    )
+                    : SliverList.separated(
+                      itemCount: products.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder:
+                          (context, index) => _listProduct(products[index]),
                     ),
-                  ),
-            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _listProduct(Item item) => Obx(
+    () => _ProductListCard(
+      item: item,
+      isInCart: shopController.containsItem(item),
+      requiresOptions: item.itemSizes.isNotEmpty,
+      onOpen: () => productController.getCategoryById(itemId: item.productId),
+      onAdd:
+          item.itemSizes.isNotEmpty
+              ? () => productController.getCategoryById(itemId: item.productId)
+              : () => shopController.addToCart(item),
+    ),
+  );
+
+  Widget _gridProduct(Item item) => Obx(
+    () => StoreProductCard(
+      name: _name(item),
+      price: item.normailPrice,
+      originalPrice: item.oldPrice,
+      discountPercent: item.discount > 0 ? item.discount : null,
+      inStock: item.available && item.purchasable,
+      isInCart: shopController.containsItem(item),
+      media: StoreNetworkMedia(
+        url: _mainMedia(item),
+        semanticLabel: _name(item),
+        fit: BoxFit.contain,
+      ),
+      onTap: () => productController.getCategoryById(itemId: item.productId),
+      onAddToCart:
+          item.itemSizes.isNotEmpty
+              ? () => productController.getCategoryById(itemId: item.productId)
+              : () => shopController.addToCart(item),
+      compact: true,
+    ),
+  );
 
   Widget _catalogHeader(BuildContext context, int count) => Padding(
     padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 10),
@@ -404,29 +448,35 @@ class _ProductListCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 34,
-                        child: FilledButton(
-                          onPressed: item.purchasable ? onAdd : null,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: StorePalette.purple,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                StoreRadii.sm,
-                              ),
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Tooltip(
+                          message:
+                              requiresOptions
+                                  ? 'اختر الخيارات'
+                                  : isInCart
+                                  ? 'تمت الإضافة للسلة'
+                                  : 'أضف للسلة',
+                          child: IconButton.filled(
+                            onPressed: item.purchasable ? onAdd : null,
+                            style: IconButton.styleFrom(
+                              backgroundColor:
+                                  isInCart
+                                      ? StorePalette.success
+                                      : StorePalette.purple,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: StorePalette.border,
+                              minimumSize: const Size.square(36),
+                              padding: EdgeInsets.zero,
                             ),
-                            textStyle: StoreTypography.label.copyWith(
-                              fontSize: 11,
+                            icon: Icon(
+                              requiresOptions
+                                  ? Icons.tune_rounded
+                                  : isInCart
+                                  ? Icons.shopping_cart_rounded
+                                  : Icons.add_shopping_cart_rounded,
+                              size: 19,
                             ),
-                          ),
-                          child: Text(
-                            requiresOptions
-                                ? 'اختر الخيارات'
-                                : isInCart
-                                ? 'تمت الإضافة للسلة'
-                                : 'أضف للسلة',
                           ),
                         ),
                       ),

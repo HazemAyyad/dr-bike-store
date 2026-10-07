@@ -203,60 +203,36 @@ class StoreProductCard extends StatelessWidget {
                         SizedBox(
                           height: compact ? StoreSpacing.xxs : StoreSpacing.xs,
                         ),
-                        SizedBox(
-                          width: double.infinity,
-                          height:
-                              compact
-                                  ? StoreCalibration.compactControlHeight
-                                  : StoreCalibration.controlHeight,
-                          child:
-                              compact
-                                  ? FilledButton.icon(
-                                    onPressed: inStock ? onAddToCart : null,
-                                    style: FilledButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: StoreSpacing.xxs,
-                                      ),
-                                      backgroundColor: StorePalette.purple,
-                                      textStyle: StoreTypography.caption
-                                          .copyWith(
-                                            fontSize: 10.5,
-                                            fontWeight:
-                                                StoreTypography.semiBold,
-                                          ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          StoreRadii.sm,
-                                        ),
-                                      ),
-                                    ),
-                                    icon: Icon(
-                                      isInCart
-                                          ? Icons.check_circle_rounded
-                                          : Icons.add_shopping_cart_outlined,
-                                      size: StoreIconSizes.small,
-                                    ),
-                                    label: Text(
-                                      isInCart
-                                          ? 'تمت الإضافة للسلة'
-                                          : 'storeAddToCart'.tr,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  )
-                                  : OutlinedButton.icon(
-                                    onPressed: inStock ? onAddToCart : null,
-                                    icon: Icon(
-                                      isInCart
-                                          ? Icons.check_circle_rounded
-                                          : Icons.add_shopping_cart_outlined,
-                                    ),
-                                    label: Text(
-                                      isInCart
-                                          ? 'تمت الإضافة للسلة'
-                                          : 'storeAddToCart'.tr,
-                                    ),
-                                  ),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: Tooltip(
+                            message:
+                                isInCart
+                                    ? 'تمت الإضافة للسلة'
+                                    : 'storeAddToCart'.tr,
+                            child: IconButton.filled(
+                              onPressed: inStock ? onAddToCart : null,
+                              style: IconButton.styleFrom(
+                                backgroundColor:
+                                    isInCart
+                                        ? StorePalette.success
+                                        : StorePalette.purple,
+                                disabledBackgroundColor: StorePalette.border,
+                                foregroundColor: Colors.white,
+                                minimumSize: Size.square(compact ? 36 : 42),
+                                padding: EdgeInsets.zero,
+                              ),
+                              icon: Icon(
+                                isInCart
+                                    ? Icons.shopping_cart_rounded
+                                    : Icons.add_shopping_cart_rounded,
+                                size:
+                                    compact
+                                        ? StoreIconSizes.small
+                                        : StoreIconSizes.medium,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ],
@@ -273,6 +249,149 @@ class StoreProductCard extends StatelessWidget {
 
 String _formatStorePrice(num value) =>
     NumberFormat('#,##0.##', 'en_US').format(value);
+
+class StoreProductListCard extends StatelessWidget {
+  const StoreProductListCard({
+    required this.name,
+    required this.price,
+    required this.media,
+    required this.onTap,
+    this.originalPrice,
+    this.inStock = true,
+    this.isFavorite = false,
+    this.isInCart = false,
+    this.onFavorite,
+    this.onAddToCart,
+    super.key,
+  });
+
+  final String name;
+  final num price;
+  final num? originalPrice;
+  final Widget media;
+  final VoidCallback onTap;
+  final bool inStock;
+  final bool isFavorite;
+  final bool isInCart;
+  final VoidCallback? onFavorite;
+  final VoidCallback? onAddToCart;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 132,
+    child: Material(
+      color: StorePalette.surface,
+      borderRadius: BorderRadius.circular(StoreRadii.md),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: StorePalette.border),
+            borderRadius: BorderRadius.circular(StoreRadii.md),
+          ),
+          child: Row(
+            children: [
+              SizedBox(width: 120, child: media),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(StoreSpacing.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: StoreTypography.bodyMedium,
+                            ),
+                          ),
+                          if (onFavorite != null)
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints.tightFor(
+                                width: 34,
+                                height: 34,
+                              ),
+                              onPressed: onFavorite,
+                              icon: Icon(
+                                isFavorite
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                color:
+                                    isFavorite
+                                        ? StorePalette.error
+                                        : StorePalette.textSecondary,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Wrap(
+                              spacing: StoreSpacing.xs,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  '${_formatStorePrice(price)} ₪',
+                                  style: StoreTypography.title.copyWith(
+                                    color: StorePalette.navy,
+                                  ),
+                                ),
+                                if (originalPrice != null)
+                                  Text(
+                                    '${_formatStorePrice(originalPrice!)} ₪',
+                                    style: StoreTypography.caption.copyWith(
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (onAddToCart != null)
+                            Tooltip(
+                              message:
+                                  isInCart
+                                      ? 'تمت الإضافة للسلة'
+                                      : 'storeAddToCart'.tr,
+                              child: IconButton.filled(
+                                onPressed: inStock ? onAddToCart : null,
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      isInCart
+                                          ? StorePalette.success
+                                          : StorePalette.purple,
+                                  disabledBackgroundColor: StorePalette.border,
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: Icon(
+                                  isInCart
+                                      ? Icons.shopping_cart_rounded
+                                      : Icons.add_shopping_cart_rounded,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
 
 class StoreCategoryCard extends StatelessWidget {
   const StoreCategoryCard({

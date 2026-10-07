@@ -37,28 +37,67 @@ class _NotificationScreenState extends State<NotificationScreen> {
     textDirection: ui.TextDirection.rtl,
     child: Scaffold(
       backgroundColor: StorePalette.background,
-      appBar: AppBar(
-        title: Text('الإشعارات', style: StoreTypography.title),
-        actions: [
-          IconButton(
-            onPressed: () => controller.load(refresh: true),
-            icon: const Icon(Icons.refresh),
-            tooltip: 'تحديث',
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('الإشعارات', style: StoreTypography.title)),
       body: GetBuilder<NotificationController>(
         builder:
             (controller) => Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(StoreSpacing.md),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: StoreFilterChip(
-                      label: 'الكل',
-                      selected: true,
-                      onSelected: (_) {},
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    StoreSpacing.md,
+                    StoreSpacing.sm,
+                    StoreSpacing.md,
+                    StoreSpacing.xs,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(StoreSpacing.md),
+                    decoration: BoxDecoration(
+                      color: StorePalette.navy,
+                      borderRadius: BorderRadius.circular(StoreRadii.lg),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .14),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.notifications_active_outlined,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: StoreSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'كل جديد في مكان واحد',
+                                style: StoreTypography.title.copyWith(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                controller.unreadCount == 0
+                                    ? 'لا توجد إشعارات غير مقروءة'
+                                    : '${controller.unreadCount} إشعار غير مقروء',
+                                style: StoreTypography.caption.copyWith(
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        StoreFilterChip(
+                          label: 'الكل',
+                          selected: true,
+                          compact: true,
+                          onSelected: (_) {},
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -137,37 +176,71 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: item.isRead ? StorePalette.surface : StorePalette.lightPurple,
+    color: StorePalette.surface,
     borderRadius: BorderRadius.circular(StoreRadii.lg),
     child: InkWell(
       onTap: marking ? null : onTap,
       borderRadius: BorderRadius.circular(StoreRadii.lg),
-      child: Padding(
+      child: Container(
         padding: const EdgeInsets.all(StoreSpacing.md),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(StoreRadii.lg),
+          border: Border.all(
+            color:
+                item.isRead
+                    ? StorePalette.border
+                    : StorePalette.purple.withValues(alpha: .45),
+          ),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!item.isRead)
-              Container(
-                width: 8,
-                height: 8,
-                margin: const EdgeInsets.only(top: 6, left: StoreSpacing.sm),
-                decoration: const BoxDecoration(
-                  color: StorePalette.purple,
-                  shape: BoxShape.circle,
-                ),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: _categoryColor.withValues(alpha: .12),
+                shape: BoxShape.circle,
               ),
+              child: Icon(_categoryIcon, color: _categoryColor, size: 22),
+            ),
+            const SizedBox(width: StoreSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.title, style: StoreTypography.bodyMedium),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: StoreTypography.bodyMedium.copyWith(
+                            fontWeight:
+                                item.isRead
+                                    ? StoreTypography.medium
+                                    : StoreTypography.bold,
+                          ),
+                        ),
+                      ),
+                      if (!item.isRead)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: StorePalette.purple,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: StoreSpacing.xs),
                   Text(item.content, style: StoreTypography.body),
                   if (item.createdAt case final date?)
                     Text(
                       DateFormat('yyyy/MM/dd HH:mm').format(date),
-                      style: StoreTypography.caption,
+                      style: StoreTypography.caption.copyWith(
+                        color: StorePalette.textSecondary,
+                      ),
                     ),
                 ],
               ),
@@ -176,10 +249,30 @@ class _NotificationCard extends StatelessWidget {
               const SizedBox.square(
                 dimension: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else if (item.destination != null)
+              const Padding(
+                padding: EdgeInsets.only(top: 10),
+                child: Icon(
+                  Icons.chevron_left_rounded,
+                  color: StorePalette.textSecondary,
+                ),
               ),
           ],
         ),
       ),
     ),
   );
+
+  IconData get _categoryIcon => switch (item.category) {
+    NotificationCategory.order => Icons.receipt_long_outlined,
+    NotificationCategory.promotion => Icons.local_offer_outlined,
+    NotificationCategory.unknown => Icons.notifications_none_rounded,
+  };
+
+  Color get _categoryColor => switch (item.category) {
+    NotificationCategory.order => StorePalette.purple,
+    NotificationCategory.promotion => StorePalette.success,
+    NotificationCategory.unknown => StorePalette.navy,
+  };
 }
