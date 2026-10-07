@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:doctor_bike/controller/home/home_controller.dart';
 import 'package:doctor_bike/core/classes/store_view_state.dart';
 import 'package:doctor_bike/core/helper/search_history_store.dart';
@@ -175,6 +177,39 @@ void main() {
       online = false;
       await controller.submitSearch('إطار');
       expect(controller.searchState.value, isA<StoreOffline<List<dynamic>>>());
+    },
+  );
+
+  test(
+    'pull refresh exposes progress and preserves retained Home content on failure',
+    () async {
+      final connectivity = Completer<bool>();
+      final controller = HomeControllerImp(
+        homeRepository: _FakeHomeDataSource(),
+        searchHistoryStore: SearchHistoryStore(preferences: preferences),
+        connectivityCheck: () => connectivity.future,
+        tokenLoader: () async => null,
+      );
+      final retained = _item(retailPrice: 125, wholesalePrice: 80);
+      controller.itemList.assignAll(<Item>[retained]);
+      controller.productsState.value = StoreContent<List<Item>>([retained]);
+
+      final refresh = controller.loadHome(refresh: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.isRefreshingHome.value, isTrue);
+      expect(controller.itemList, contains(retained));
+
+      connectivity.complete(false);
+      await refresh;
+
+      expect(controller.isRefreshingHome.value, isFalse);
+      expect(controller.itemList, contains(retained));
+      final state = controller.productsState.value;
+      expect(state, isA<StoreOffline<List<Item>>>());
+      expect(
+        (state as StoreOffline<List<Item>>).previousData,
+        contains(retained),
+      );
     },
   );
 }

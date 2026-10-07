@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../controller/categores/categores_controller.dart';
+import '../../controller/favorites/favorites_controller.dart';
 import '../../controller/home/home_controller.dart';
 import '../../controller/product/product_controller.dart';
 import '../../controller/shop/shop_controller.dart';
@@ -45,16 +46,7 @@ class HomePage extends StatelessWidget {
           data,
         _ => const <OnlineStoreHomeSection>[],
       };
-      final isInitial =
-          categories is StoreInitial &&
-          hero is StoreInitial &&
-          products is StoreInitial;
-      final isLoading =
-          categories is StoreLoading &&
-          hero is StoreLoading &&
-          products is StoreLoading;
-
-      if (isInitial || isLoading) {
+      if (homeController.isHomeColdLoading) {
         return const HomeLoadingSkeleton(key: ValueKey('home-skeleton'));
       }
 
@@ -67,79 +59,111 @@ class HomePage extends StatelessWidget {
             StoreSpacing.md,
             StoreSpacing.xs,
             StoreSpacing.md,
-            StoreSpacing.xl,
+            StoreSpacing.md,
           ),
-          children:
-              configuredSections.isNotEmpty
-                  ? _configuredSections(homeController, configuredSections)
-                  : [
-                    _HeroSection(state: hero, controller: homeController),
-                    const SizedBox(height: StoreSpacing.md),
-                    _CategorySection(
-                      title: 'storeQuickCategories'.tr,
-                      state: categories,
-                      compact: true,
-                      onSelected: (category) => _openCategory(category),
-                      onViewAll:
-                          () => homeController.selectDestination(
-                            StoreDestination.categories,
-                          ),
-                    ),
-                    const SizedBox(height: StoreSpacing.md),
-                    _ProductSection(
-                      title: 'storeBestSellers'.tr,
-                      state: products,
-                      controller: homeController,
-                      onSelected: _openProduct,
-                      onAddToCart: onAddToCart ?? _runtimeAddToCart,
-                      onViewAll:
-                          () => homeController.selectDestination(
-                            StoreDestination.categories,
-                          ),
-                    ),
-                    const SizedBox(height: StoreSpacing.md),
-                    _CategorySection(
-                      title: 'storeStoreCategories'.tr,
-                      state: categories,
-                      compact: false,
-                      onSelected: (category) => _openCategory(category),
-                      onViewAll:
-                          () => homeController.selectDestination(
-                            StoreDestination.categories,
-                          ),
-                    ),
-                    if (homeController.specialOffers.isNotEmpty) ...[
-                      const SizedBox(height: StoreSpacing.md),
-                      _ProductSection(
-                        title: 'storeSpecialOffers'.tr,
-                        products: homeController.specialOffers,
-                        controller: homeController,
-                        onSelected: _openProduct,
-                        onAddToCart: onAddToCart ?? _runtimeAddToCart,
-                        onViewAll:
-                            () => homeController.selectDestination(
-                              StoreDestination.categories,
-                            ),
-                      ),
-                    ],
-                    if (homeController.newArrivals.isNotEmpty) ...[
-                      const SizedBox(height: StoreSpacing.md),
-                      _ProductSection(
-                        title: 'storeNewArrivals'.tr,
-                        products: homeController.newArrivals,
-                        controller: homeController,
-                        onSelected: _openProduct,
-                        onAddToCart: onAddToCart ?? _runtimeAddToCart,
-                        onViewAll:
-                            () => homeController.selectDestination(
-                              StoreDestination.categories,
-                            ),
-                      ),
-                    ],
-                  ],
+          children: [
+            if (homeController.isRefreshingHome.value) ...[
+              const _HomeRefreshPanel(),
+              const SizedBox(height: StoreSpacing.sm),
+            ],
+            ..._homeSections(
+              homeController,
+              configuredSections,
+              hero: hero,
+              categories: categories,
+              products: products,
+            ),
+          ],
         ),
       );
     });
+  }
+
+  List<Widget> _homeSections(
+    HomeControllerImp homeController,
+    List<OnlineStoreHomeSection> sections, {
+    required StoreViewState<List<Ad>> hero,
+    required StoreViewState<List<Category>> categories,
+    required StoreViewState<List<Item>> products,
+  }) {
+    if (sections.isNotEmpty) {
+      return _configuredSections(homeController, sections);
+    }
+
+    final widgets = <Widget>[];
+    void add(Widget widget) {
+      if (widgets.isNotEmpty) {
+        widgets.add(const SizedBox(height: StoreSpacing.sm));
+      }
+      widgets.add(widget);
+    }
+
+    add(_HeroSection(state: hero, controller: homeController));
+    add(
+      _CategorySection(
+        title: 'storeQuickCategories'.tr,
+        state: categories,
+        compact: true,
+        onSelected: _openCategory,
+        onViewAll:
+            () => homeController.selectDestination(StoreDestination.categories),
+      ),
+    );
+    add(
+      _ProductSection(
+        title: 'storeBestSellers'.tr,
+        state: products,
+        controller: homeController,
+        onSelected: _openProduct,
+        onAddToCart: onAddToCart ?? _runtimeAddToCart,
+        onViewAll:
+            () => homeController.selectDestination(StoreDestination.categories),
+      ),
+    );
+    add(
+      _MaintenanceSection(
+        title: 'storeMaintenancePromoTitle'.tr,
+        onPressed: () => Get.toNamed(RouteHelper.contactUsPage),
+      ),
+    );
+    add(
+      _CategorySection(
+        title: 'storeStoreCategories'.tr,
+        state: categories,
+        compact: false,
+        onSelected: _openCategory,
+        onViewAll:
+            () => homeController.selectDestination(StoreDestination.categories),
+      ),
+    );
+    if (homeController.specialOffers.isNotEmpty) {
+      add(
+        _OfferSection(
+          title: 'storeSpecialOffers'.tr,
+          products: homeController.specialOffers,
+          controller: homeController,
+          onSelected: _openProduct,
+          onViewAll:
+              () =>
+                  homeController.selectDestination(StoreDestination.categories),
+        ),
+      );
+    }
+    if (homeController.newArrivals.isNotEmpty) {
+      add(
+        _ProductSection(
+          title: 'storeNewArrivals'.tr,
+          products: homeController.newArrivals,
+          controller: homeController,
+          onSelected: _openProduct,
+          onAddToCart: onAddToCart ?? _runtimeAddToCart,
+          onViewAll:
+              () =>
+                  homeController.selectDestination(StoreDestination.categories),
+        ),
+      );
+    }
+    return widgets;
   }
 
   List<Widget> _configuredSections(
@@ -148,52 +172,94 @@ class HomePage extends StatelessWidget {
   ) {
     final language = Get.locale?.languageCode ?? 'ar';
     final widgets = <Widget>[];
-    for (final section in sections) {
-      final title = section.title(language);
-      final configuredCategories =
-          section.categories.isNotEmpty
-              ? section.categories
-              : homeController.mainCategoresModel
-                  .where(
-                    (category) =>
-                        section.categoryTargetIds.contains(category.id),
-                  )
-                  .toList(growable: false);
-      final Widget? widget = switch (section.type) {
-        'hero' => _ConfiguredHeroSection(
-          banners: section.banners,
-          controller: homeController,
-        ),
-        'categories' => _CategorySection(
-          title: title,
-          categories: configuredCategories,
-          compact: false,
-          onSelected: _openCategory,
-          onViewAll:
-              () =>
-                  homeController.selectDestination(StoreDestination.categories),
-        ),
-        'maintenance' => _MaintenanceSection(
-          title: title,
-          onPressed: () => Get.toNamed(RouteHelper.contactUsPage),
-        ),
-        _ when section.products.isNotEmpty => _ProductSection(
-          title: title,
-          products: section.products,
-          controller: homeController,
-          onSelected: _openProduct,
-          onAddToCart: onAddToCart ?? _runtimeAddToCart,
-          onViewAll:
-              () =>
-                  homeController.selectDestination(StoreDestination.categories),
-        ),
-        _ => null,
-      };
-      if (widget == null) continue;
+    var categorySectionIndex = 0;
+
+    void add(OnlineStoreHomeSection section, Widget widget) {
       if (widgets.isNotEmpty) {
-        widgets.add(const SizedBox(height: StoreSpacing.md));
+        widgets.add(const SizedBox(height: StoreSpacing.sm));
       }
-      widgets.add(widget);
+      widgets.add(
+        KeyedSubtree(
+          key: ValueKey('home-admin-section-${section.id}'),
+          child: widget,
+        ),
+      );
+    }
+
+    for (final section in sections) {
+      switch (section.type) {
+        case 'hero':
+          if (section.banners.isNotEmpty) {
+            add(
+              section,
+              _ConfiguredHeroSection(
+                banners: section.banners,
+                controller: homeController,
+              ),
+            );
+          }
+        case 'categories':
+          if (section.categories.isNotEmpty) {
+            final compact = categorySectionIndex++ == 0;
+            add(
+              section,
+              _CategorySection(
+                title: section.title(language),
+                categories: section.categories,
+                compact: compact,
+                showHeader: true,
+                onSelected: _openCategory,
+                onViewAll:
+                    () => homeController.selectDestination(
+                      StoreDestination.categories,
+                    ),
+              ),
+            );
+          }
+        case 'best_sellers':
+        case 'recent':
+        case 'custom':
+          if (section.products.isNotEmpty) {
+            add(
+              section,
+              _ProductSection(
+                title: section.title(language),
+                products: section.products,
+                controller: homeController,
+                onSelected: _openProduct,
+                onAddToCart: onAddToCart ?? _runtimeAddToCart,
+                onViewAll:
+                    () => homeController.selectDestination(
+                      StoreDestination.categories,
+                    ),
+              ),
+            );
+          }
+        case 'offers':
+          if (section.products.isNotEmpty) {
+            add(
+              section,
+              _OfferSection(
+                title: section.title(language),
+                products: section.products,
+                controller: homeController,
+                onSelected: _openProduct,
+                onViewAll:
+                    () => homeController.selectDestination(
+                      StoreDestination.categories,
+                    ),
+              ),
+            );
+          }
+        case 'maintenance':
+          add(
+            section,
+            _MaintenanceSection(
+              title: section.title(language),
+              onPressed: () => Get.toNamed(RouteHelper.contactUsPage),
+            ),
+          );
+      }
     }
     return widgets;
   }
@@ -237,28 +303,55 @@ class _ConfiguredHeroSection extends StatelessWidget {
     return SizedBox(
       key: const ValueKey('home-configured-hero'),
       height: StoreCalibration.homeHeroHeight,
-      child: PageView.builder(
-        itemCount: banners.length,
-        itemBuilder: (context, index) {
-          final banner = banners[index];
-          return Padding(
-            padding: EdgeInsetsDirectional.only(
-              end: index == banners.length - 1 ? 0 : StoreSpacing.xs,
+      child: Stack(
+        children: [
+          PageView.builder(
+            itemCount: banners.length,
+            onPageChanged: (index) => controller.currentPage.value = index,
+            itemBuilder: (context, index) {
+              final banner = banners[index];
+              return PromoCard(
+                imageUrl: banner.imagePath,
+                title: banner.title(language),
+                description: banner.content(language),
+                buttonText: 'storeShopNow'.tr,
+                onPressed: () {
+                  if (banner.actionType == 'url' &&
+                      banner.actionUrl?.trim().isNotEmpty == true) {
+                    controller.openWeb(banner.actionUrl!);
+                  }
+                },
+              );
+            },
+          ),
+          if (banners.length > 1)
+            PositionedDirectional(
+              bottom: StoreSpacing.xs,
+              start: 0,
+              end: 0,
+              child: Obx(
+                () => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    banners.length,
+                    (index) => AnimatedContainer(
+                      duration: StoreMotion.fast,
+                      width: controller.currentPage.value == index ? 16 : 6,
+                      height: 6,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color:
+                            controller.currentPage.value == index
+                                ? StorePalette.purple
+                                : StorePalette.surface.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(StoreRadii.round),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-            child: PromoCard(
-              imageUrl: banner.imagePath,
-              title: banner.title(language),
-              description: banner.content(language),
-              buttonText: 'storeShopNow'.tr,
-              onPressed: () {
-                if (banner.actionType == 'url' &&
-                    banner.actionUrl?.trim().isNotEmpty == true) {
-                  controller.openWeb(banner.actionUrl!);
-                }
-              },
-            ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -271,24 +364,71 @@ class _MaintenanceSection extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: StorePalette.surface,
-    borderRadius: BorderRadius.circular(StoreRadii.lg),
-    child: InkWell(
-      onTap: onPressed,
+  Widget build(BuildContext context) => SizedBox(
+    key: const ValueKey('home-maintenance-banner'),
+    height: 112,
+    child: Material(
+      color: const Color(0xFFFFF0CF),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
-      child: Container(
-        padding: const EdgeInsets.all(StoreSpacing.md),
-        decoration: BoxDecoration(
-          border: Border.all(color: StorePalette.border),
-          borderRadius: BorderRadius.circular(StoreRadii.lg),
-        ),
-        child: Row(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            const Icon(Icons.electric_bike_outlined, size: 36),
-            const SizedBox(width: StoreSpacing.sm),
-            Expanded(child: Text(title, style: StoreTypography.title)),
-            Icon(Icons.chevron_left, color: StorePalette.textSecondary),
+            PositionedDirectional(
+              end: 0,
+              top: 0,
+              bottom: 0,
+              width: 132,
+              child: Image.asset(
+                'assets/images/splash3.png',
+                fit: BoxFit.contain,
+                alignment: Alignment.center,
+                cacheWidth: 264,
+              ),
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: FractionallySizedBox(
+                widthFactor: 0.68,
+                child: Padding(
+                  padding: const EdgeInsets.all(StoreSpacing.sm),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: StoreTypography.title.copyWith(fontSize: 16),
+                      ),
+                      Text(
+                        'storeMaintenancePromoBody'.tr,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: StoreTypography.caption,
+                      ),
+                      const SizedBox(height: StoreSpacing.xs),
+                      FilledButton.tonalIcon(
+                        onPressed: onPressed,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: StorePalette.surface,
+                          foregroundColor: StorePalette.purple,
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: StoreSpacing.sm,
+                          ),
+                        ),
+                        icon: const Icon(Icons.chevron_left, size: 18),
+                        label: Text('storeBookNow'.tr),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -339,6 +479,7 @@ class _CategorySection extends StatelessWidget {
     required this.compact,
     required this.onSelected,
     required this.onViewAll,
+    this.showHeader = false,
     this.state,
     this.categories,
   });
@@ -347,6 +488,7 @@ class _CategorySection extends StatelessWidget {
   final StoreViewState<List<Category>>? state;
   final List<Category>? categories;
   final bool compact;
+  final bool showHeader;
   final ValueChanged<Category> onSelected;
   final VoidCallback onViewAll;
 
@@ -377,7 +519,7 @@ class _CategorySection extends StatelessWidget {
       ),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!compact) ...[
+        if (showHeader || !compact) ...[
           _SectionHeader(title: title, onViewAll: onViewAll),
           const SizedBox(height: StoreSpacing.xs),
         ],
@@ -470,8 +612,8 @@ class _ProductSection extends StatelessWidget {
                   name: _itemName(item, Get.locale?.languageCode ?? 'ar'),
                   price: controller.displayPriceFor(item),
                   discountPercent: item.discount > 0 ? item.discount : null,
-                  rating: item.rate,
-                  inStock: item.stock > 0 || item.itemSizes.isNotEmpty,
+                  rating: item.rate > 0 ? item.rate : null,
+                  inStock: item.available && item.purchasable,
                   media: StoreNetworkMedia(
                     url: _itemImage(item),
                     semanticLabel: _itemName(
@@ -481,8 +623,12 @@ class _ProductSection extends StatelessWidget {
                     fit: BoxFit.contain,
                   ),
                   onTap: () => onSelected(item),
+                  onFavorite: () {
+                    _requestFavorite(item);
+                  },
                   onAddToCart: () => onAddToCart(item),
                   compact: true,
+                  homePresentation: true,
                 ),
               );
             },
@@ -491,6 +637,157 @@ class _ProductSection extends StatelessWidget {
       ],
     );
   }
+}
+
+class _OfferSection extends StatelessWidget {
+  const _OfferSection({
+    required this.title,
+    required this.products,
+    required this.controller,
+    required this.onSelected,
+    required this.onViewAll,
+  });
+
+  final String title;
+  final List<Item> products;
+  final HomeControllerImp controller;
+  final ValueChanged<Item> onSelected;
+  final VoidCallback onViewAll;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    key: const ValueKey('home-special-offers'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _SectionHeader(title: title, onViewAll: onViewAll),
+      const SizedBox(height: StoreSpacing.xs),
+      SizedBox(
+        height: 92,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: products.length,
+          separatorBuilder: (_, _) => const SizedBox(width: StoreSpacing.xs),
+          itemBuilder: (context, index) {
+            final item = products[index];
+            return SizedBox(
+              width: 208,
+              child: Material(
+                color:
+                    index.isEven
+                        ? StorePalette.purple
+                        : const Color(0xFF39C7A3),
+                borderRadius: BorderRadius.circular(StoreRadii.md),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => onSelected(item),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      PositionedDirectional(
+                        end: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 92,
+                        child: StoreNetworkMedia(
+                          url: _itemImage(item),
+                          semanticLabel: _itemName(
+                            item,
+                            Get.locale?.languageCode ?? 'ar',
+                          ),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: SizedBox(
+                          width: 120,
+                          child: Padding(
+                            padding: const EdgeInsets.all(StoreSpacing.sm),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (item.discount > 0)
+                                  Text(
+                                    '${item.discount.toStringAsFixed(item.discount % 1 == 0 ? 0 : 1)}% ${'storeDiscount'.tr}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: StoreTypography.title.copyWith(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                Text(
+                                  _itemName(
+                                    item,
+                                    Get.locale?.languageCode ?? 'ar',
+                                  ),
+                                  maxLines: item.discount > 0 ? 1 : 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: StoreTypography.caption.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: StoreTypography.medium,
+                                  ),
+                                ),
+                                if (item.discount <= 0)
+                                  Text(
+                                    '${controller.displayPriceFor(item)} ₪',
+                                    style: StoreTypography.label.copyWith(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ],
+  );
+}
+
+class _HomeRefreshPanel extends StatelessWidget {
+  const _HomeRefreshPanel();
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    label: 'storeRefreshingHome'.tr,
+    child: Container(
+      key: const ValueKey('home-refresh-panel'),
+      height: 88,
+      decoration: BoxDecoration(
+        color: StorePalette.lightPurple.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(StoreRadii.lg),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox.square(
+            dimension: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: StorePalette.purple,
+            ),
+          ),
+          const SizedBox(height: StoreSpacing.xs),
+          Text(
+            'storeRefreshingHome'.tr,
+            style: StoreTypography.body.copyWith(
+              color: StorePalette.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _SectionState<T> extends StatelessWidget {
@@ -573,47 +870,99 @@ class HomeLoadingSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     physics: const AlwaysScrollableScrollPhysics(),
-    padding: const EdgeInsets.all(StoreSpacing.md),
+    padding: const EdgeInsetsDirectional.fromSTEB(
+      StoreSpacing.md,
+      StoreSpacing.xs,
+      StoreSpacing.md,
+      StoreSpacing.md,
+    ),
     children: const [
       StoreSkeletonBox(
         height: StoreCalibration.homeHeroHeight,
         borderRadius: StoreRadii.lg,
       ),
-      SizedBox(height: StoreSpacing.md),
-      Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: StoreSkeletonBox(width: 140, height: 18),
+      SizedBox(height: StoreSpacing.sm),
+      Row(
+        children: [
+          Expanded(child: _HomeCategorySkeleton()),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: _HomeCategorySkeleton()),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: _HomeCategorySkeleton()),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: _HomeCategorySkeleton()),
+          SizedBox(width: StoreSpacing.xs),
+          Expanded(child: _HomeCategorySkeleton()),
+        ],
       ),
       SizedBox(height: StoreSpacing.sm),
       Row(
         children: [
-          Expanded(child: StoreSkeletonBox(height: 88)),
-          SizedBox(width: StoreSpacing.xs),
-          Expanded(child: StoreSkeletonBox(height: 88)),
-          SizedBox(width: StoreSpacing.xs),
-          Expanded(child: StoreSkeletonBox(height: 88)),
-          SizedBox(width: StoreSpacing.xs),
-          Expanded(child: StoreSkeletonBox(height: 88)),
-          SizedBox(width: StoreSpacing.xs),
-          Expanded(child: StoreSkeletonBox(height: 88)),
+          StoreSkeletonBox(width: 116, height: 18),
+          Spacer(),
+          StoreSkeletonBox(width: 64, height: 14),
         ],
-      ),
-      SizedBox(height: StoreSpacing.md),
-      Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: StoreSkeletonBox(width: 120, height: 18),
       ),
       SizedBox(height: StoreSpacing.sm),
       Row(
         children: [
-          Expanded(child: StoreSkeletonBox(height: 220)),
+          Expanded(child: _HomeProductSkeleton()),
           SizedBox(width: StoreSpacing.xs),
-          Expanded(child: StoreSkeletonBox(height: 220)),
+          Expanded(child: _HomeProductSkeleton()),
           SizedBox(width: StoreSpacing.xs),
-          Expanded(child: StoreSkeletonBox(height: 220)),
+          Expanded(child: _HomeProductSkeleton()),
         ],
       ),
+      SizedBox(height: StoreSpacing.sm),
+      StoreSkeletonBox(height: 112, borderRadius: StoreRadii.lg),
     ],
+  );
+}
+
+class _HomeCategorySkeleton extends StatelessWidget {
+  const _HomeCategorySkeleton();
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      const StoreSkeletonBox(height: 54, borderRadius: StoreRadii.md),
+      const SizedBox(height: StoreSpacing.xxs),
+      Center(child: StoreSkeletonBox(width: 42, height: 9)),
+    ],
+  );
+}
+
+class _HomeProductSkeleton extends StatelessWidget {
+  const _HomeProductSkeleton();
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: StoreCalibration.homeProductCardHeight,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: StorePalette.surface,
+        border: Border.all(color: StorePalette.border),
+        borderRadius: BorderRadius.circular(StoreRadii.lg),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(StoreSpacing.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: StoreSkeletonBox(borderRadius: StoreRadii.md)),
+            SizedBox(height: StoreSpacing.xs),
+            StoreSkeletonBox(height: 11),
+            SizedBox(height: StoreSpacing.xxs),
+            StoreSkeletonBox(width: 64, height: 9),
+            SizedBox(height: StoreSpacing.xs),
+            StoreSkeletonBox(
+              height: StoreCalibration.compactControlHeight,
+              borderRadius: StoreRadii.sm,
+            ),
+          ],
+        ),
+      ),
+    ),
   );
 }
 
@@ -623,6 +972,27 @@ String _categoryName(Category category, String languageCode) =>
         : languageCode == 'en'
         ? category.nameEng
         : category.nameAbree;
+
+Future<void> _requestFavorite(Item item) async {
+  if (!Get.isRegistered<FavoritesController>()) return;
+  final outcome = Get.find<FavoritesController>().requestToggle(
+    listingId: item.listingId,
+    productId: item.productId,
+  );
+  if (outcome == FavoriteActionOutcome.loginRequired) {
+    await Get.toNamed(RouteHelper.intoLog);
+    return;
+  }
+  if (outcome == FavoriteActionOutcome.unavailable ||
+      outcome == FavoriteActionOutcome.invalidIdentity) {
+    Get.snackbar(
+      'storeFavoritesUnavailableTitle'.tr,
+      'storeFavoritesUnavailableMessage'.tr,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(StoreSpacing.md),
+    );
+  }
+}
 
 String _itemName(Item item, String languageCode) =>
     languageCode == 'ar'

@@ -120,6 +120,7 @@ class _DestinationButton extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: StoreTypography.caption.copyWith(
                   color: color,
+                  fontSize: 9.5,
                   fontWeight:
                       selected
                           ? StoreTypography.semiBold

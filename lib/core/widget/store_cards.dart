@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
@@ -21,6 +22,7 @@ class StoreProductCard extends StatelessWidget {
     this.onFavorite,
     this.onAddToCart,
     this.compact = false,
+    this.homePresentation = false,
     super.key,
   });
 
@@ -38,6 +40,7 @@ class StoreProductCard extends StatelessWidget {
   final VoidCallback? onFavorite;
   final VoidCallback? onAddToCart;
   final bool compact;
+  final bool homePresentation;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +61,9 @@ class StoreProductCard extends StatelessWidget {
             start: StoreSpacing.xs,
             child: StoreDiscountChip(percent: discountPercent!),
           ),
-        if (compact && discountPercent == null)
+        if (compact &&
+            discountPercent == null &&
+            (!homePresentation || !inStock))
           PositionedDirectional(
             top: StoreSpacing.xs,
             start: StoreSpacing.xs,
@@ -68,18 +73,46 @@ class StoreProductCard extends StatelessWidget {
           PositionedDirectional(
             top: StoreSpacing.xxs,
             end: StoreSpacing.xxs,
-            child: IconButton.filledTonal(
-              tooltip:
-                  isFavorite ? 'storeRemoveFavorite'.tr : 'storeAddFavorite'.tr,
-              onPressed: onFavorite,
-              icon: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color:
-                    isFavorite
-                        ? StorePalette.error
-                        : StorePalette.textSecondary,
-              ),
-            ),
+            child:
+                homePresentation
+                    ? SizedBox.square(
+                      dimension: 32,
+                      child: IconButton.filledTonal(
+                        tooltip:
+                            isFavorite
+                                ? 'storeRemoveFavorite'.tr
+                                : 'storeAddFavorite'.tr,
+                        onPressed: onFavorite,
+                        padding: EdgeInsets.zero,
+                        iconSize: StoreIconSizes.medium,
+                        style: IconButton.styleFrom(
+                          backgroundColor: StorePalette.surface.withValues(
+                            alpha: 0.9,
+                          ),
+                        ),
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color:
+                              isFavorite
+                                  ? StorePalette.error
+                                  : StorePalette.textPrimary,
+                        ),
+                      ),
+                    )
+                    : IconButton.filledTonal(
+                      tooltip:
+                          isFavorite
+                              ? 'storeRemoveFavorite'.tr
+                              : 'storeAddFavorite'.tr,
+                      onPressed: onFavorite,
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color:
+                            isFavorite
+                                ? StorePalette.error
+                                : StorePalette.textSecondary,
+                      ),
+                    ),
           ),
       ],
     );
@@ -137,7 +170,7 @@ class StoreProductCard extends StatelessWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
-                            '$price $currency',
+                            '${homePresentation ? _formatStorePrice(price) : price} $currency',
                             style: (compact
                                     ? StoreTypography.label
                                     : StoreTypography.title)
@@ -145,7 +178,7 @@ class StoreProductCard extends StatelessWidget {
                           ),
                           if (originalPrice != null)
                             Text(
-                              '$originalPrice $currency',
+                              '${homePresentation ? _formatStorePrice(originalPrice!) : originalPrice} $currency',
                               style: StoreTypography.caption.copyWith(
                                 decoration: TextDecoration.lineThrough,
                               ),
@@ -226,6 +259,9 @@ class StoreProductCard extends StatelessWidget {
   }
 }
 
+String _formatStorePrice(num value) =>
+    NumberFormat('#,##0.##', 'en_US').format(value);
+
 class StoreCategoryCard extends StatelessWidget {
   const StoreCategoryCard({
     required this.title,
@@ -255,6 +291,47 @@ class StoreCategoryCard extends StatelessWidget {
               'title': title,
               'count': countLabel,
             });
+    if (compact) {
+      return Semantics(
+        button: true,
+        label: semanticsLabel,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(StoreRadii.md),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(StoreSpacing.xxs),
+                    decoration: BoxDecoration(
+                      color: StorePalette.background,
+                      borderRadius: BorderRadius.circular(StoreRadii.md),
+                    ),
+                    child: media,
+                  ),
+                ),
+                const SizedBox(height: StoreSpacing.xxs),
+                Text(
+                  title,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: StoreTypography.caption.copyWith(
+                    color: StorePalette.textPrimary,
+                    fontSize: 10,
+                    fontWeight: StoreTypography.medium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Semantics(
       button: true,
       label: semanticsLabel,
@@ -265,9 +342,7 @@ class StoreCategoryCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Container(
-            padding: EdgeInsets.all(
-              compact ? StoreSpacing.xxs : StoreSpacing.sm,
-            ),
+            padding: const EdgeInsets.all(StoreSpacing.sm),
             decoration: BoxDecoration(
               border: Border.all(color: StorePalette.border),
               borderRadius: BorderRadius.circular(StoreRadii.lg),
@@ -275,20 +350,13 @@ class StoreCategoryCard extends StatelessWidget {
             child: Column(
               children: [
                 Expanded(child: media),
-                SizedBox(height: compact ? StoreSpacing.xxs : StoreSpacing.xs),
+                const SizedBox(height: StoreSpacing.xs),
                 Text(
                   title,
-                  maxLines: compact ? 1 : 2,
+                  maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style:
-                      compact
-                          ? StoreTypography.caption.copyWith(
-                            color: StorePalette.textPrimary,
-                            fontSize: 10,
-                            fontWeight: StoreTypography.medium,
-                          )
-                          : StoreTypography.label,
+                  style: StoreTypography.label,
                 ),
                 if (countLabel != null)
                   Text(countLabel, style: StoreTypography.caption),

@@ -11,6 +11,7 @@ import 'package:doctor_bike/core/widget/store_fields.dart';
 import 'package:doctor_bike/core/widget/store_media.dart';
 import 'package:doctor_bike/core/widget/store_states.dart';
 import 'package:doctor_bike/core/widget/store_top_bar.dart';
+import 'package:doctor_bike/features/home_screen/widget/promo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -190,10 +191,10 @@ void main() {
     expect(find.bySemanticsLabel('الأقسام'), findsOneWidget);
     expect(find.bySemanticsLabel('طلباتي'), findsOneWidget);
     expect(find.bySemanticsLabel('المفضلة'), findsOneWidget);
-    expect(find.bySemanticsLabel('حسابي'), findsOneWidget);
+    expect(find.bySemanticsLabel('الملف الشخصي'), findsOneWidget);
 
     final home = tester.getCenter(find.bySemanticsLabel('الرئيسية'));
-    final profile = tester.getCenter(find.bySemanticsLabel('حسابي'));
+    final profile = tester.getCenter(find.bySemanticsLabel('الملف الشخصي'));
     expect(home.dx, greaterThan(profile.dx));
 
     await tester.tap(find.bySemanticsLabel('المفضلة'));
@@ -290,6 +291,7 @@ void main() {
                   rating: 4.5,
                   discountPercent: 10,
                   compact: true,
+                  homePresentation: true,
                   media: ColoredBox(color: StorePalette.background),
                   onTap: _noop,
                   onAddToCart: _noop,
@@ -304,6 +306,71 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('home promo uses a full-bleed image below its content', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      _TestApp(
+        child: Scaffold(
+          body: SizedBox(
+            width: 288,
+            height: StoreCalibration.homeHeroHeight,
+            child: PromoCard(
+              imageUrl: '',
+              title: 'صيانة كهربائية متخصصة',
+              description: 'فحص البطارية والمحرك وأنظمة التحكم باحتراف',
+              buttonText: 'تسوّق الآن',
+              onPressed: _noop,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final media = tester.widget<StoreNetworkMedia>(
+      find.byType(StoreNetworkMedia),
+    );
+    final positioned = tester.widget<Positioned>(
+      find.ancestor(
+        of: find.byType(StoreNetworkMedia),
+        matching: find.byType(Positioned),
+      ),
+    );
+    expect(media.fit, BoxFit.cover);
+    expect(positioned.left, 0);
+    expect(positioned.top, 0);
+    expect(positioned.right, 0);
+    expect(positioned.bottom, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('store media removes duplicate public path prefixes', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const _TestApp(
+        child: SizedBox.square(
+          dimension: 80,
+          child: StoreNetworkMedia(
+            url: 'public/OnlineStore/Content/category.jpg',
+            semanticLabel: 'تصنيف',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final image = tester.widget<Image>(find.byType(Image));
+    final provider = image.image as NetworkImage;
+    expect(
+      provider.url,
+      'https://dr-bike.duosparktech.com/public/OnlineStore/Content/category.jpg',
+    );
+  });
 
   testWidgets('foundation renders at the reference viewport', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));

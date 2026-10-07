@@ -111,7 +111,7 @@ abstract final class StoreCalibration {
   static const splashProgressWidth = 190.0;
   static const splashTrailGlowWidth = 18.0;
   static const splashTrailLineWidth = 2.0;
-  static const splashSequence = Duration(milliseconds: 2400);
-  static const splashMinimumDisplay = Duration(milliseconds: 1800);
+  static const splashSequence = Duration(milliseconds: 3200);
+  static const splashMinimumDisplay = Duration(milliseconds: 3200);
   static const splashInitializationTimeout = Duration(seconds: 12);
 }

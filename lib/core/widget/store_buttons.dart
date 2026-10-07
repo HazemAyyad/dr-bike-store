@@ -121,7 +121,9 @@ class StoreIconButton extends StatelessWidget {
     required this.semanticLabel,
     required this.onPressed,
     this.badgeCount,
+    this.badgeColor = StorePalette.error,
     this.foregroundColor,
+    this.tonal = false,
     super.key,
   });
 
@@ -129,7 +131,9 @@ class StoreIconButton extends StatelessWidget {
   final String semanticLabel;
   final VoidCallback? onPressed;
   final int? badgeCount;
+  final Color badgeColor;
   final Color? foregroundColor;
+  final bool tonal;
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +149,14 @@ class StoreIconButton extends StatelessWidget {
           IconButton(
             onPressed: onPressed,
             tooltip: semanticLabel,
+            style:
+                tonal
+                    ? IconButton.styleFrom(
+                      backgroundColor: StorePalette.background,
+                      foregroundColor:
+                          foregroundColor ?? StorePalette.textPrimary,
+                    )
+                    : null,
             icon: Icon(icon, color: foregroundColor),
           ),
           if (count != null && count > 0)
@@ -154,9 +166,9 @@ class StoreIconButton extends StatelessWidget {
               child: Container(
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 3),
-                decoration: const BoxDecoration(
-                  color: StorePalette.error,
-                  borderRadius: BorderRadius.all(
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: const BorderRadius.all(
                     Radius.circular(StoreRadii.round),
                   ),
                 ),

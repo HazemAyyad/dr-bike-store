@@ -146,6 +146,7 @@ class StoreFilterChip extends StatelessWidget {
     required this.onSelected,
     this.count,
     this.compact = false,
+    this.solidSelected = false,
     super.key,
   });
 
@@ -154,6 +155,7 @@ class StoreFilterChip extends StatelessWidget {
   final ValueChanged<bool> onSelected;
   final int? count;
   final bool compact;
+  final bool solidSelected;
 
   @override
   Widget build(BuildContext context) => FilterChip(
@@ -161,11 +163,18 @@ class StoreFilterChip extends StatelessWidget {
     onSelected: onSelected,
     label: Text(count == null ? label : '$label ($count)'),
     labelStyle: StoreTypography.label.copyWith(
-      color: selected ? StorePalette.navy : StorePalette.textPrimary,
+      color:
+          selected && solidSelected
+              ? Colors.white
+              : selected
+              ? StorePalette.navy
+              : StorePalette.textPrimary,
     ),
     backgroundColor: StorePalette.surface,
-    selectedColor: StorePalette.lightPurple,
+    selectedColor:
+        solidSelected ? StorePalette.purple : StorePalette.lightPurple,
     checkmarkColor: StorePalette.purple,
+    showCheckmark: !solidSelected,
     side: BorderSide(
       color: selected ? StorePalette.purple : StorePalette.border,
     ),
