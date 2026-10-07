@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 
 import '../../../controller/auth/forgetpassword.controller.dart';
 import '../../../core/theme/store_tokens.dart';
-import '../../../core/widget/store_buttons.dart';
 import '../../../core/widget/store_fields.dart';
 import '../widget/store_auth_scaffold.dart';
 
@@ -35,6 +34,8 @@ class ResetPasswordScreen extends StatelessWidget {
                     textInputAction: TextInputAction.next,
                     prefixIcon: Icons.lock_outline,
                     helperText: 'storePasswordRequirement'.tr,
+                    height: 56,
+                    borderRadius: StoreRadii.lg,
                   ),
                   const SizedBox(height: StoreSpacing.md),
                   StoreTextField(
@@ -43,10 +44,12 @@ class ResetPasswordScreen extends StatelessWidget {
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     prefixIcon: Icons.lock_reset_outlined,
+                    height: 56,
+                    borderRadius: StoreRadii.lg,
                     onSubmitted: (_) => controller.resetpassword(),
                   ),
                   const SizedBox(height: StoreSpacing.lg),
-                  StoreButton(
+                  StoreAuthPrimaryButton(
                     label: 'storeResetPasswordAction'.tr,
                     onPressed: controller.resetpassword,
                     isLoading: controller.isSubmitting,

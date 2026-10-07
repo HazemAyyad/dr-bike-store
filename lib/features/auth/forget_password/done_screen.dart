@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../../controller/auth/forgetpassword.controller.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
-import '../../../core/widget/store_buttons.dart';
 import '../widget/store_auth_scaffold.dart';
 
 class DoneScreen extends StatelessWidget {
@@ -41,7 +40,7 @@ class DoneScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: StoreSpacing.lg),
-                StoreButton(
+                StoreAuthPrimaryButton(
                   label: 'storeBackToLogin'.tr,
                   onPressed: controller.goToLogin,
                 ),

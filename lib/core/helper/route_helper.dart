@@ -16,7 +16,6 @@ import '../../features/auth/forget_password/forget_password_page.dart';
 import '../../features/auth/signup/sign_up_screen.dart';
 import '../../features/category/filter_screen.dart';
 import '../../features/home_screen/home_screen.dart';
-import '../../features/intro/intro_log.dart';
 import '../../features/lang/lang_screen.dart';
 
 import '../../features/notification/notification_screen.dart';
@@ -71,7 +70,9 @@ class RouteHelper {
     GetPage(name: searchScreen, page: () => const SearchScreen()),
     GetPage(name: lang, page: () => const LangScreen()),
     GetPage(name: onBoardin, page: () => const OnboardingScreen()),
-    GetPage(name: intoLog, page: () => const IntroLog()),
+    // Keep the legacy route name for callers outside auth, but skip the old
+    // intermediate welcome chooser and open the real login flow directly.
+    GetPage(name: intoLog, page: () => const SignInScreen()),
     GetPage(
       name: signIn,
       page: () => const SignInScreen(),

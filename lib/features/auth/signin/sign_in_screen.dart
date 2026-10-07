@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../../controller/auth/login.controller.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
-import '../../../core/widget/store_buttons.dart';
 import '../../../core/widget/store_fields.dart';
 import '../widget/store_auth_scaffold.dart';
 
@@ -27,6 +26,7 @@ class _SignInScreenState extends State<SignInScreen> {
             body: StoreAuthScaffold(
               title: 'storeLoginTitle'.tr,
               subtitle: 'storeLoginSubtitle'.tr,
+              showBack: true,
               footer: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -61,6 +61,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.mail_outline,
+                      height: 56,
+                      borderRadius: StoreRadii.lg,
                       validator:
                           (value) =>
                               value == null || value.trim().isEmpty
@@ -75,6 +77,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       obscureText: true,
                       textInputAction: TextInputAction.done,
                       prefixIcon: Icons.lock_outline,
+                      height: 56,
+                      borderRadius: StoreRadii.lg,
                       onSubmitted:
                           (_) => controller.login(_formKey.currentState),
                       validator:
@@ -107,7 +111,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ],
                     ),
                     const SizedBox(height: StoreSpacing.sm),
-                    StoreButton(
+                    StoreAuthPrimaryButton(
                       label: 'storeLoginAction'.tr,
                       onPressed: () => controller.login(_formKey.currentState),
                       isLoading: controller.isSubmitting,

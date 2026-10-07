@@ -27,6 +27,8 @@ class StoreTextField extends StatefulWidget {
     this.readOnly = false,
     this.obscureText = false,
     this.maxLines = 1,
+    this.height = StoreCalibration.controlHeight,
+    this.borderRadius = StoreRadii.md,
     this.semanticLabel,
     super.key,
   });
@@ -50,6 +52,8 @@ class StoreTextField extends StatefulWidget {
   final bool readOnly;
   final bool obscureText;
   final int maxLines;
+  final double height;
+  final double borderRadius;
   final String? semanticLabel;
 
   @override
@@ -106,8 +110,20 @@ class _StoreTextFieldState extends State<StoreTextField> {
                 )
                 : widget.suffixIcon,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(StoreRadii.md),
+          borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(color: statusColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: const BorderSide(color: StorePalette.purple, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: const BorderSide(color: StorePalette.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: const BorderSide(color: StorePalette.error, width: 1.5),
         ),
       ),
     );
@@ -118,7 +134,7 @@ class _StoreTextFieldState extends State<StoreTextField> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(height: StoreCalibration.controlHeight, child: field),
+          SizedBox(height: widget.height, child: field),
           if (statusText != null) ...[
             const SizedBox(height: StoreSpacing.xxs),
             Text(

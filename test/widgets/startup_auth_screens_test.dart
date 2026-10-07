@@ -3,6 +3,7 @@ import 'package:doctor_bike/controller/auth/signupController.dart';
 import 'package:doctor_bike/controller/auth/forgetpassword.controller.dart';
 import 'package:doctor_bike/controller/check_account/account_service.dart';
 import 'package:doctor_bike/core/locale/locale.dart';
+import 'package:doctor_bike/core/constants/images.dart';
 import 'package:doctor_bike/core/model/otp_model.dart';
 import 'package:doctor_bike/core/theme/light.dart';
 import 'package:doctor_bike/core/theme/store_typography.dart';
@@ -315,6 +316,41 @@ void main() {
     }
   });
 
+  testWidgets('auth and onboarding remain usable on a small phone viewport', (
+    tester,
+  ) async {
+    Get.put(
+      LoginControllerImp(
+        authRepository: _NoopAuthGateway(),
+        sessionStore: _NoopSessionStore(),
+        notificationTokenProvider: () async => '',
+        onAuthenticated: () {},
+      ),
+    );
+    Get.put(
+      SignUpControllerImp(
+        authRepository: _NoopAuthGateway(),
+        onRegistered: () {},
+      ),
+    );
+    Get.put(ForgetPasswordControllerImp(authRepository: _NoopAuthGateway()));
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    for (final screen in const <Widget>[
+      OnboardingScreen(),
+      SignInScreen(),
+      SignUpScreen(),
+      Scaffold(body: OtpPage()),
+      Scaffold(body: SendOtpScreen()),
+      Scaffold(body: ResetPasswordScreen()),
+    ]) {
+      await tester.pumpWidget(_ArabicTestApp(textScale: 1.2, child: screen));
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('required update cannot continue and recommended update can', (
     tester,
   ) async {
@@ -348,10 +384,73 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const _ArabicTestApp(child: OnboardingScreen()));
     await tester.pumpAndSettle();
+    final onboardingContext = tester.element(find.byType(OnboardingScreen));
+    await tester.runAsync(() async {
+      await precacheImage(
+        const AssetImage(Images.onBoarding1),
+        onboardingContext,
+      );
+      await precacheImage(const AssetImage(Images.logo), onboardingContext);
+    });
+    await tester.pump();
 
     await expectLater(
       find.byType(OnboardingScreen),
       matchesGoldenFile('goldens/p03-onboarding-ar-390x844.png'),
+    );
+  });
+
+  testWidgets('onboarding second page has a deterministic regression render', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const _ArabicTestApp(child: OnboardingScreen()));
+    await tester.pumpAndSettle();
+    final onboardingContext = tester.element(find.byType(OnboardingScreen));
+    await tester.runAsync(
+      () => precacheImage(
+        const AssetImage(Images.onBoarding2),
+        onboardingContext,
+      ),
+    );
+    await tester.tap(find.text('التالي'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+
+    await expectLater(
+      find.byType(OnboardingScreen),
+      matchesGoldenFile('goldens/p03-onboarding-2-ar-390x844.png'),
+    );
+  });
+
+  testWidgets('onboarding third page has a deterministic regression render', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const _ArabicTestApp(child: OnboardingScreen()));
+    await tester.pumpAndSettle();
+    final onboardingContext = tester.element(find.byType(OnboardingScreen));
+    await tester.runAsync(() async {
+      await precacheImage(
+        const AssetImage(Images.onBoarding2),
+        onboardingContext,
+      );
+      await precacheImage(
+        const AssetImage(Images.onBoarding3),
+        onboardingContext,
+      );
+    });
+    await tester.tap(find.text('التالي'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('التالي'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+
+    await expectLater(
+      find.byType(OnboardingScreen),
+      matchesGoldenFile('goldens/p03-onboarding-3-ar-390x844.png'),
     );
   });
 
@@ -367,12 +466,130 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const _ArabicTestApp(child: SignInScreen()));
+    await _precacheAuthAssets(tester, find.byType(SignInScreen));
     await tester.pumpAndSettle();
+    _expectAuthBackAtTop(tester);
 
     await expectLater(
       find.byType(SignInScreen),
       matchesGoldenFile('goldens/p04-login-ar-390x844.png'),
     );
+  });
+
+  testWidgets('registration has a deterministic regression render', (
+    tester,
+  ) async {
+    Get.put(
+      SignUpControllerImp(
+        authRepository: _NoopAuthGateway(),
+        onRegistered: () {},
+      ),
+    );
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const _ArabicTestApp(child: SignUpScreen()));
+    await _precacheAuthAssets(tester, find.byType(SignUpScreen));
+    await tester.pumpAndSettle();
+    _expectAuthBackAtTop(tester);
+
+    await expectLater(
+      find.byType(SignUpScreen),
+      matchesGoldenFile('goldens/p04-register-ar-390x844.png'),
+    );
+  });
+
+  testWidgets('recovery request has a deterministic regression render', (
+    tester,
+  ) async {
+    Get.put(ForgetPasswordControllerImp(authRepository: _NoopAuthGateway()));
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      const _ArabicTestApp(child: Scaffold(body: OtpPage())),
+    );
+    await _precacheAuthAssets(
+      tester,
+      find.byType(OtpPage),
+      includeRecoveryIllustration: true,
+    );
+    await tester.pumpAndSettle();
+    _expectAuthBackAtTop(tester);
+
+    await expectLater(
+      find.byType(OtpPage),
+      matchesGoldenFile('goldens/p04-forgot-password-ar-390x844.png'),
+    );
+  });
+
+  testWidgets('OTP entry has a deterministic regression render', (
+    tester,
+  ) async {
+    final controller = Get.put(
+      ForgetPasswordControllerImp(
+        authRepository: _NoopAuthGateway(),
+        resendDuration: Duration.zero,
+      ),
+    );
+    controller.email.text = 'customer@example.test';
+    controller.startTimer();
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      const _ArabicTestApp(child: Scaffold(body: SendOtpScreen())),
+    );
+    await _precacheAuthAssets(tester, find.byType(SendOtpScreen));
+    await tester.pump(const Duration(milliseconds: 300));
+    _expectAuthBackAtTop(tester);
+
+    await expectLater(
+      find.byType(SendOtpScreen),
+      matchesGoldenFile('goldens/p04-otp-ar-390x844.png'),
+    );
+  });
+
+  testWidgets('new password has a deterministic regression render', (
+    tester,
+  ) async {
+    final controller = Get.put(
+      ForgetPasswordControllerImp(authRepository: _NoopAuthGateway()),
+    );
+    controller.resetProof = 'test-only-proof';
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      const _ArabicTestApp(child: Scaffold(body: ResetPasswordScreen())),
+    );
+    await _precacheAuthAssets(tester, find.byType(ResetPasswordScreen));
+    await tester.pumpAndSettle();
+    _expectAuthBackAtTop(tester);
+
+    await expectLater(
+      find.byType(ResetPasswordScreen),
+      matchesGoldenFile('goldens/p04-new-password-ar-390x844.png'),
+    );
+  });
+}
+
+void _expectAuthBackAtTop(WidgetTester tester) {
+  final backButton = find.byKey(const ValueKey('auth-back-button'));
+  expect(backButton, findsOneWidget);
+  expect(tester.getTopLeft(backButton).dy, lessThanOrEqualTo(24));
+}
+
+Future<void> _precacheAuthAssets(
+  WidgetTester tester,
+  Finder screen, {
+  bool includeRecoveryIllustration = false,
+}) async {
+  final context = tester.element(screen);
+  await tester.runAsync(() async {
+    await precacheImage(const AssetImage(Images.logo), context);
+    if (includeRecoveryIllustration) {
+      await precacheImage(
+        const AssetImage(Images.passwordRecoveryIllustration),
+        context,
+      );
+    }
   });
 }
 

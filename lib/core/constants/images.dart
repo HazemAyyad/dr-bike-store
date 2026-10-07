@@ -11,7 +11,6 @@ class Images {
   static const String iconLock = 'assets/svg/iconLock.svg';
   static const String iconDocument = 'assets/svg/iconDocument.svg';
   static const String iconInfo = 'assets/svg/iconInfo.svg';
-
   static const String iconLang = 'assets/svg/iconLang.svg';
   static const String iconTheme = 'assets/svg/iconTheme.svg';
   static const String iconExit = 'assets/svg/iconExit.svg';
@@ -33,9 +32,14 @@ class Images {
   static const String logo = 'assets/images/logo.png';
   static const String logoDark = 'assets/images/logoDark.png';
   static const String splash = 'assets/images/splash12.png';
-  static const String onBoarding1 = 'assets/images/splash2.png';
-  static const String onBoarding2 = 'assets/images/splash3.png';
-  static const String onBoarding3 = 'assets/images/splash4.png';
+  static const String onBoarding1 =
+      'assets/images/onboarding_electric_ride.png';
+  static const String onBoarding2 =
+      'assets/images/onboarding_original_parts.png';
+  static const String onBoarding3 =
+      'assets/images/onboarding_professional_maintenance.png';
+  static const String passwordRecoveryIllustration =
+      'assets/images/password_recovery_illustration.png';
 
   static const String item = 'assets/images/item.png';
   static const String shopCar = 'assets/images/shopCar.png';

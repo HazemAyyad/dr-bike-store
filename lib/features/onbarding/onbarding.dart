@@ -21,10 +21,11 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pageController = PageController();
   int _currentPage = 0;
+  bool _didPrecacheAssets = false;
 
   List<_OnboardingItem> get _items => [
     _OnboardingItem(
-      image: Images.onBoarding3,
+      image: Images.onBoarding1,
       title: 'storeOnboardingAllTitle'.tr,
       description: 'storeOnboardingAllBody'.tr,
     ),
@@ -34,11 +35,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description: 'storeOnboardingQualityBody'.tr,
     ),
     _OnboardingItem(
-      image: Images.onBoarding1,
+      image: Images.onBoarding3,
       title: 'storeOnboardingServiceTitle'.tr,
       description: 'storeOnboardingServiceBody'.tr,
     ),
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didPrecacheAssets) return;
+    _didPrecacheAssets = true;
+    for (final item in _items) {
+      precacheImage(AssetImage(item.image), context);
+    }
+  }
 
   Future<void> _complete({required bool startAuthentication}) async {
     await AppUsageService.saveIsFirst(true);
@@ -47,9 +58,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       await callback();
       return;
     }
-    Get.offAllNamed(
-      startAuthentication ? RouteHelper.signIn : RouteHelper.homePage,
-    );
+    Get.offAllNamed(RouteHelper.signIn);
   }
 
   void _next() {
@@ -107,11 +116,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _pageController,
                 itemCount: items.length,
                 onPageChanged: (page) => setState(() => _currentPage = page),
-                itemBuilder: (_, index) => _OnboardingPage(item: items[index]),
+                itemBuilder:
+                    (_, index) => _OnboardingPage(
+                      key: ValueKey(items[index].image),
+                      item: items[index],
+                      index: index,
+                    ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(StoreSpacing.md),
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                StoreSpacing.md,
+                StoreSpacing.xs,
+                StoreSpacing.md,
+                StoreSpacing.md,
+              ),
               child: Column(
                 children: [
                   Semantics(
@@ -143,20 +162,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: StoreSpacing.lg),
+                  const SizedBox(height: StoreSpacing.md),
                   Row(
                     children: [
                       Expanded(
                         child: StoreButton(
                           label: 'storePrevious'.tr,
                           onPressed: _currentPage == 0 ? null : _previous,
-                          variant: StoreButtonVariant.text,
+                          variant: StoreButtonVariant.secondary,
+                          height: 56,
                         ),
                       ),
                       const SizedBox(width: StoreSpacing.sm),
                       Expanded(
                         flex: 2,
-                        child: StoreButton(
+                        child: _OnboardingPrimaryButton(
                           label:
                               _currentPage == items.length - 1
                                   ? 'storeStartNow'.tr
@@ -181,53 +201,141 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _OnboardingPage extends StatelessWidget {
-  const _OnboardingPage({required this.item});
+  const _OnboardingPage({required this.item, required this.index, super.key});
 
   final _OnboardingItem item;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final mediaHeight = (constraints.maxHeight *
-                StoreCalibration.onboardingMediaFraction)
-            .clamp(
-              StoreCalibration.onboardingMediaMinHeight,
-              StoreCalibration.onboardingMediaMaxHeight,
-            );
+        final compact = constraints.maxHeight < 610;
+        final mediaFraction =
+            compact
+                ? .48
+                : switch (index) {
+                  0 => .58,
+                  2 => .62,
+                  _ => .55,
+                };
+        final mediaHeight = (constraints.maxHeight * mediaFraction).clamp(
+          230.0,
+          StoreCalibration.onboardingMediaMaxHeight,
+        );
         return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.lg),
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            StoreSpacing.lg,
+            0,
+            StoreSpacing.lg,
+            StoreSpacing.xs,
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  height: mediaHeight,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: StorePalette.lightPurple,
-                    borderRadius: BorderRadius.circular(StoreRadii.pill),
+                if (index == 0) ...[
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          Images.logo,
+                          width: 72,
+                          height: 48,
+                          fit: BoxFit.contain,
+                        ),
+                        Text(
+                          'storeBrandName'.tr,
+                          textDirection: TextDirection.ltr,
+                          style: StoreTypography.title.copyWith(
+                            color: StorePalette.navy,
+                            fontSize: 14,
+                            height: 1,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  padding: const EdgeInsets.all(StoreSpacing.md),
-                  child: Image.asset(
-                    item.image,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
+                  SizedBox(height: compact ? StoreSpacing.xs : StoreSpacing.md),
+                ],
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    index == 2 ? StoreRadii.pill : StoreRadii.lg,
+                  ),
+                  child: SizedBox(
+                    height: mediaHeight,
+                    width: double.infinity,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(
+                          item.image,
+                          key: ValueKey(item.image),
+                          fit: index == 1 ? BoxFit.contain : BoxFit.cover,
+                          alignment:
+                              index == 2
+                                  ? Alignment.topCenter
+                                  : Alignment.center,
+                          filterQuality: FilterQuality.high,
+                        ),
+                        if (index == 0) ...[
+                          PositionedDirectional(
+                            top: 46,
+                            end: 10,
+                            child: _OnboardingCallout(
+                              width: 86,
+                              child: Text(
+                                'storeOnboardingElectricBikes'.tr,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                          PositionedDirectional(
+                            top: 150,
+                            start: 10,
+                            child: _OnboardingCallout(
+                              width: 92,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.bolt_rounded,
+                                    color: StorePalette.purple,
+                                    size: 26,
+                                  ),
+                                  Text(
+                                    'storeOnboardingBetterRide'.tr,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: StoreSpacing.lg),
+                SizedBox(height: compact ? StoreSpacing.md : StoreSpacing.lg),
                 Text(
                   item.title,
                   textAlign: TextAlign.center,
-                  style: StoreTypography.headline,
+                  style: StoreTypography.headline.copyWith(
+                    color: StorePalette.navy,
+                    fontSize: compact ? 22 : 27,
+                    height: 1.35,
+                  ),
                 ),
-                const SizedBox(height: StoreSpacing.xs),
+                SizedBox(height: compact ? StoreSpacing.xxs : StoreSpacing.xs),
                 Text(
                   item.description,
                   textAlign: TextAlign.center,
                   style: StoreTypography.body.copyWith(
                     color: StorePalette.textSecondary,
+                    fontSize: compact ? 13 : 16,
                   ),
                 ),
                 const SizedBox(height: StoreSpacing.md),
@@ -236,6 +344,96 @@ class _OnboardingPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _OnboardingCallout extends StatelessWidget {
+  const _OnboardingCallout({required this.width, required this.child});
+
+  final double width;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      padding: const EdgeInsets.symmetric(
+        horizontal: StoreSpacing.xs,
+        vertical: StoreSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .9),
+        borderRadius: BorderRadius.circular(StoreRadii.lg),
+        border: Border.all(color: Colors.white),
+        boxShadow: const [StoreElevation.lowShadow],
+      ),
+      child: DefaultTextStyle(
+        style: StoreTypography.caption.copyWith(
+          color: StorePalette.navy,
+          fontWeight: StoreTypography.semiBold,
+          height: 1.45,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _OnboardingPrimaryButton extends StatelessWidget {
+  const _OnboardingPrimaryButton({
+    required this.label,
+    required this.onPressed,
+    this.icon,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6257C8), Color(0xFF7468D7)],
+          ),
+          borderRadius: BorderRadius.circular(StoreRadii.lg),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x246B65BD),
+              blurRadius: 18,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: TextButton(
+          onPressed: onPressed,
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(StoreRadii.lg),
+            ),
+            textStyle: StoreTypography.title.copyWith(
+              color: Colors.white,
+              fontWeight: StoreTypography.semiBold,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label),
+              if (icon != null) ...[
+                const SizedBox(width: StoreSpacing.sm),
+                Icon(icon, size: 24),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
