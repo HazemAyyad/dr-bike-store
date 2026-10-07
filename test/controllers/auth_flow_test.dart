@@ -113,7 +113,7 @@ void main() {
       ),
     );
 
-    await controller.login();
+    await controller.login(identifier: '', password: '');
 
     expect(gateway.loginCalls, 0);
     expect(controller.status, AuthUiStatus.validationError);
@@ -134,10 +134,10 @@ void main() {
         onAuthenticated: () {},
       ),
     );
-    controller.email.text = 'customer@example.test';
-    controller.password.text = 'not-logged';
-
-    await controller.login();
+    await controller.login(
+      identifier: 'customer@example.test',
+      password: 'not-logged',
+    );
 
     expect(controller.status, AuthUiStatus.blocked);
     expect(controller.status, isNot(AuthUiStatus.success));
@@ -165,11 +165,12 @@ void main() {
           onAuthenticated: () => navigated = true,
         ),
       );
-      controller.email.text = 'customer@example.test';
-      controller.password.text = 'not-logged';
       controller.checkBox = true;
 
-      await controller.login();
+      await controller.login(
+        identifier: 'customer@example.test',
+        password: 'not-logged',
+      );
 
       expect(controller.status, AuthUiStatus.success);
       expect(store.session, same(session));

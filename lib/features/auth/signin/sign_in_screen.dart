@@ -16,6 +16,24 @@ class SignInScreen extends StatefulWidget {
 
 class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  void _submit(LoginControllerImp controller) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    controller.login(
+      form: _formKey.currentState,
+      identifier: _emailController.text,
+      password: _passwordController.text,
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +73,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       messageKey: controller.messageKey,
                     ),
                     StoreTextField(
-                      controller: controller.email,
+                      controller: _emailController,
                       label: 'storeIdentifierLabel'.tr,
                       hint: 'storeIdentifierHint'.tr,
                       semanticLabel: 'storeIdentifierLabel'.tr,
@@ -72,7 +90,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                     const SizedBox(height: StoreSpacing.md),
                     StoreTextField(
-                      controller: controller.password,
+                      controller: _passwordController,
                       label: 'storePassword'.tr,
                       semanticLabel: 'storePassword'.tr,
                       obscureText: true,
@@ -80,8 +98,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       prefixIcon: Icons.lock_outline,
                       height: 56,
                       borderRadius: StoreRadii.lg,
-                      onSubmitted:
-                          (_) => controller.login(_formKey.currentState),
+                      onSubmitted: (_) => _submit(controller),
                       validator:
                           (value) =>
                               value == null || value.isEmpty
@@ -106,7 +123,10 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                         ),
                         TextButton(
-                          onPressed: controller.goToForgetPassword,
+                          onPressed:
+                              () => controller.goToForgetPassword(
+                                _emailController.text,
+                              ),
                           child: Text('storeForgotPassword'.tr),
                         ),
                       ],
@@ -114,7 +134,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     const SizedBox(height: StoreSpacing.sm),
                     StoreAuthPrimaryButton(
                       label: 'storeLoginAction'.tr,
-                      onPressed: () => controller.login(_formKey.currentState),
+                      onPressed: () => _submit(controller),
                       isLoading: controller.isSubmitting,
                     ),
                   ],

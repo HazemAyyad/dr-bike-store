@@ -11,6 +11,8 @@ class Images {
   static const String iconLock = 'assets/svg/iconLock.svg';
   static const String iconDocument = 'assets/svg/iconDocument.svg';
   static const String iconInfo = 'assets/svg/iconInfo.svg';
+  static const String doctorBikeSplashLogo =
+      'assets/svg/doctor_bike_logo_rive.svg';
   static const String iconLang = 'assets/svg/iconLang.svg';
   static const String iconTheme = 'assets/svg/iconTheme.svg';
   static const String iconExit = 'assets/svg/iconExit.svg';
@@ -40,6 +42,10 @@ class Images {
       'assets/images/onboarding_professional_maintenance.png';
   static const String passwordRecoveryIllustration =
       'assets/images/password_recovery_illustration.png';
+
+  // Rive
+  static const String doctorBikeSplashRive =
+      'assets/rive/doctor_bike_splash.riv';
 
   static const String item = 'assets/images/item.png';
   static const String shopCar = 'assets/images/shopCar.png';

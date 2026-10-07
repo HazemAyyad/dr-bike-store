@@ -173,8 +173,34 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 250));
 
-    expect(find.text('Doctor Bike'), findsOneWidget);
+    expect(find.byKey(const ValueKey('splash-final-logo')), findsOneWidget);
     expect(find.text('جارٍ تجهيز المتجر'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('animated splash loads the Rive asset before its final hold', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      _ArabicTestApp(
+        child: SplashScreen(
+          resolver: const _FixedStartupResolver(
+            StartupDecision(destination: StartupDestination.guestHome),
+          ),
+          reduceMotionOverride: false,
+          onDecision: (_) {},
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const ValueKey('splash-rive-renderer')), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 2900));
+    expect(find.byKey(const ValueKey('splash-final-logo')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
