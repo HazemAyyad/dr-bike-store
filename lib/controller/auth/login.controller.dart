@@ -7,9 +7,13 @@ import '../../repository/auth/auth_repository.dart';
 import '../notification/notification_controller.dart';
 
 abstract class LoginController extends GetxController {
-  Future<void> login([FormState? form]);
+  Future<void> login({
+    FormState? form,
+    required String identifier,
+    required String password,
+  });
   void goToSignUp();
-  void goToForgetPassword();
+  void goToForgetPassword(String identifier);
 }
 
 abstract interface class AuthSessionStore {
@@ -55,9 +59,6 @@ class LoginControllerImp extends LoginController {
   final Future<String> Function() _notificationTokenProvider;
   final VoidCallback _onAuthenticated;
 
-  late final TextEditingController email;
-  late final TextEditingController password;
-
   bool checkBox = false;
   AuthUiStatus status = AuthUiStatus.idle;
   String? messageKey;
@@ -71,20 +72,24 @@ class LoginControllerImp extends LoginController {
   }
 
   @override
-  Future<void> login([FormState? form]) async {
+  Future<void> login({
+    FormState? form,
+    required String identifier,
+    required String password,
+  }) async {
     if (isSubmitting) return;
-    final identifier = email.text.trim();
+    final normalizedIdentifier = identifier.trim();
     if ((form != null && !form.validate()) ||
-        identifier.isEmpty ||
-        password.text.isEmpty) {
+        normalizedIdentifier.isEmpty ||
+        password.isEmpty) {
       _setStatus(AuthUiStatus.validationError, 'storeValidationRequired');
       return;
     }
 
     _setStatus(AuthUiStatus.submitting, null);
     final result = await authRepository.authenticate(
-      identifier: identifier,
-      password: password.text,
+      identifier: normalizedIdentifier,
+      password: password,
       notificationToken: await _notificationTokenProvider(),
     );
     switch (result) {
@@ -122,22 +127,8 @@ class LoginControllerImp extends LoginController {
   void goToSignUp() => Get.toNamed(RouteHelper.signUp);
 
   @override
-  void goToForgetPassword() => Get.toNamed(
+  void goToForgetPassword(String identifier) => Get.toNamed(
     RouteHelper.forgotPassword,
-    arguments: {'identifier': email.text.trim()},
+    arguments: {'identifier': identifier.trim()},
   );
-
-  @override
-  void onInit() {
-    email = TextEditingController();
-    password = TextEditingController();
-    super.onInit();
-  }
-
-  @override
-  void onClose() {
-    email.dispose();
-    password.dispose();
-    super.onClose();
-  }
 }

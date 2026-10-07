@@ -1,10 +1,13 @@
 import 'dart:async';
-import 'dart:ui' show Tangent;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:rive/rive.dart' as rive;
 
 import '../../controller/check_account/account_service.dart';
+import '../../core/constants/images.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
@@ -177,33 +180,126 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: StorePalette.surface,
-      body: Stack(
+      body:
+          _error == null
+              ? _AnimatedBrand(animation: _animation)
+              : SafeArea(
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.all(StoreSpacing.lg),
+                    constraints: const BoxConstraints(
+                      maxWidth: StoreCalibration.authContentMaxWidth,
+                    ),
+                    decoration: BoxDecoration(
+                      color: StorePalette.surface,
+                      borderRadius: BorderRadius.circular(StoreRadii.lg),
+                    ),
+                    child: StoreMessageState(
+                      kind: StoreMessageKind.error,
+                      message:
+                          _error?.message ??
+                          'storeSplashInitializationError'.tr,
+                      actionLabel: 'storeRetry'.tr,
+                      onAction: _begin,
+                    ),
+                  ),
+                ),
+              ),
+    );
+  }
+}
+
+class _AnimatedBrand extends StatefulWidget {
+  const _AnimatedBrand({required this.animation});
+
+  final Animation<double> animation;
+
+  @override
+  State<_AnimatedBrand> createState() => _AnimatedBrandState();
+}
+
+class _AnimatedBrandState extends State<_AnimatedBrand> {
+  late final rive.FileLoader _fileLoader = rive.FileLoader.fromAsset(
+    Images.doctorBikeSplashRive,
+    riveFactory: rive.Factory.flutter,
+  );
+
+  @override
+  void dispose() {
+    _fileLoader.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'storeSplashBrand'.tr,
+      image: true,
+      child: Stack(
         fit: StackFit.expand,
         children: [
+          AnimatedBuilder(
+            animation: widget.animation,
+            builder: (context, _) {
+              if (widget.animation.value >= 0.985) {
+                return const _FinalSplashLogo(
+                  key: ValueKey('splash-final-logo'),
+                );
+              }
+              return rive.RiveWidgetBuilder(
+                key: const ValueKey('splash-rive-animation'),
+                fileLoader: _fileLoader,
+                builder:
+                    (context, state) => switch (state) {
+                      rive.RiveLoaded() => rive.RiveWidget(
+                        key: const ValueKey('splash-rive-renderer'),
+                        controller: state.controller,
+                        fit: rive.Fit.contain,
+                        alignment: Alignment.center,
+                      ),
+                      rive.RiveLoading() => const SizedBox.expand(),
+                      rive.RiveFailed() => const _FinalSplashLogo(),
+                    },
+              );
+            },
+          ),
           SafeArea(
-            child:
-                _error == null
-                    ? _AnimatedBrand(animation: _animation)
-                    : Center(
-                      child: Container(
-                        margin: const EdgeInsets.all(StoreSpacing.lg),
-                        constraints: const BoxConstraints(
-                          maxWidth: StoreCalibration.authContentMaxWidth,
-                        ),
-                        decoration: BoxDecoration(
-                          color: StorePalette.surface,
-                          borderRadius: BorderRadius.circular(StoreRadii.lg),
-                        ),
-                        child: StoreMessageState(
-                          kind: StoreMessageKind.error,
-                          message:
-                              _error?.message ??
-                              'storeSplashInitializationError'.tr,
-                          actionLabel: 'storeRetry'.tr,
-                          onAction: _begin,
-                        ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: StoreSpacing.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: StoreCalibration.splashProgressWidth,
+                      child: AnimatedBuilder(
+                        animation: widget.animation,
+                        builder:
+                            (_, _) => LinearProgressIndicator(
+                              value: widget.animation.value.clamp(0.08, 1),
+                              minHeight: 3,
+                              borderRadius: BorderRadius.circular(
+                                StoreRadii.round,
+                              ),
+                              backgroundColor: StorePalette.lightPurple,
+                              valueColor: const AlwaysStoppedAnimation(
+                                StorePalette.purple,
+                              ),
+                            ),
                       ),
                     ),
+                    const SizedBox(height: StoreSpacing.sm),
+                    Text(
+                      'storeSplashLoading'.tr,
+                      style: StoreTypography.caption.copyWith(
+                        color: StorePalette.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -211,192 +307,28 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-class _AnimatedBrand extends StatelessWidget {
-  const _AnimatedBrand({required this.animation});
-
-  final Animation<double> animation;
+class _FinalSplashLogo extends StatelessWidget {
+  const _FinalSplashLogo({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final logoReveal = CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.05, 0.72, curve: Curves.easeOutCubic),
-    );
-    final wordmarkReveal = CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.72, 0.94, curve: Curves.easeOut),
-    );
-
-    return Semantics(
-      label: 'storeSplashBrand'.tr,
-      image: true,
-      child: Padding(
-        padding: const EdgeInsets.all(StoreSpacing.lg),
-        child: Column(
-          children: [
-            const Spacer(flex: 3),
-            AnimatedBuilder(
-              animation: animation,
-              builder: (context, _) {
-                final progress = logoReveal.value;
-                return SizedBox(
-                  width: StoreCalibration.splashLogoWidth,
-                  height: StoreCalibration.splashLogoHeight,
-                  child: CustomPaint(
-                    painter: _SplashLogoPainter(progress: progress),
-                  ),
-                );
-              },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scale = math.min(
+          constraints.maxWidth / 1080,
+          constraints.maxHeight / 1920,
+        );
+        return Center(
+          child: SizedBox(
+            width: 821 * 0.95 * scale,
+            height: 859 * 0.95 * scale,
+            child: SvgPicture.asset(
+              Images.doctorBikeSplashLogo,
+              fit: BoxFit.contain,
             ),
-            FadeTransition(
-              opacity: wordmarkReveal,
-              child: Column(
-                children: [
-                  Text(
-                    'storeBrandName'.tr,
-                    textDirection: TextDirection.ltr,
-                    style: StoreTypography.display.copyWith(
-                      color: StorePalette.navy,
-                      fontSize: StoreCalibration.splashWordmarkFontSize,
-                    ),
-                  ),
-                  Text(
-                    'storeBrandTagline'.tr,
-                    textDirection: TextDirection.ltr,
-                    style: StoreTypography.label.copyWith(
-                      color: StorePalette.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(flex: 4),
-            SizedBox(
-              width: StoreCalibration.splashProgressWidth,
-              child: AnimatedBuilder(
-                animation: animation,
-                builder:
-                    (_, _) => LinearProgressIndicator(
-                      value: animation.value.clamp(0.08, 0.96),
-                      minHeight: 4,
-                      borderRadius: BorderRadius.circular(StoreRadii.round),
-                      backgroundColor: StorePalette.lightPurple,
-                      valueColor: const AlwaysStoppedAnimation(
-                        StorePalette.purple,
-                      ),
-                    ),
-              ),
-            ),
-            const SizedBox(height: StoreSpacing.md),
-            Text(
-              'storeSplashLoading'.tr,
-              style: StoreTypography.caption.copyWith(
-                color: StorePalette.textSecondary,
-              ),
-            ),
-            const SizedBox(height: StoreSpacing.lg),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
-}
-
-class _SplashLogoPainter extends CustomPainter {
-  const _SplashLogoPainter({required this.progress});
-
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scale = Size(size.width / 191, size.height / 130);
-    canvas.save();
-    canvas.scale(scale.width, scale.height);
-
-    final paint =
-        Paint()
-          ..color = StorePalette.navy
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round
-          ..strokeWidth = 8;
-
-    final paths = <Path>[
-      Path()
-        ..addOval(Rect.fromCircle(center: const Offset(31, 101), radius: 24)),
-      Path()
-        ..addOval(Rect.fromCircle(center: const Offset(158, 101), radius: 24)),
-      Path()
-        ..moveTo(31, 101)
-        ..lineTo(91, 94)
-        ..lineTo(67, 111)
-        ..lineTo(158, 101),
-      Path()
-        ..moveTo(91, 94)
-        ..lineTo(119, 48)
-        ..lineTo(151, 62),
-      Path()
-        ..moveTo(119, 48)
-        ..lineTo(106, 18)
-        ..lineTo(97, 42),
-    ];
-
-    final segment = 1 / paths.length;
-    Tangent? drawingHead;
-    for (var index = 0; index < paths.length; index++) {
-      final localProgress = ((progress - (segment * index)) / segment).clamp(
-        0.0,
-        1.0,
-      );
-      if (localProgress == 0) continue;
-      for (final metric in paths[index].computeMetrics()) {
-        final distance = metric.length * localProgress;
-        canvas.drawPath(metric.extractPath(0, distance), paint);
-        if (localProgress < 1) {
-          drawingHead = metric.getTangentForOffset(distance);
-        }
-      }
-    }
-    if (drawingHead != null && progress < 0.995) {
-      _paintMagicHead(canvas, drawingHead, progress);
-    }
-    canvas.restore();
-  }
-
-  void _paintMagicHead(Canvas canvas, Tangent head, double animationValue) {
-    final pulse = 0.75 + (0.25 * ((animationValue * 40) % 1));
-    final glow =
-        Paint()
-          ..color = StorePalette.purple.withValues(alpha: 0.24 * pulse)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
-    canvas.drawCircle(head.position, 12 * pulse, glow);
-
-    canvas.save();
-    canvas.translate(head.position.dx, head.position.dy);
-    canvas.rotate(head.angle);
-    final bolt =
-        Path()
-          ..moveTo(-11, -3)
-          ..lineTo(-3, -1)
-          ..lineTo(-6, 5)
-          ..lineTo(12, -4)
-          ..lineTo(3, -3)
-          ..lineTo(6, -9)
-          ..close();
-    canvas.drawPath(bolt, Paint()..color = StorePalette.purple);
-
-    final sparkPaint =
-        Paint()
-          ..color = StorePalette.purple.withValues(alpha: 0.72)
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = 2;
-    canvas.drawLine(const Offset(2, -14), const Offset(2, -19), sparkPaint);
-    canvas.drawLine(const Offset(13, -9), const Offset(17, -13), sparkPaint);
-    canvas.drawLine(const Offset(14, 3), const Offset(20, 4), sparkPaint);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _SplashLogoPainter oldDelegate) =>
-      oldDelegate.progress != progress;
 }
