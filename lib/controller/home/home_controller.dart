@@ -169,9 +169,6 @@ class HomeControllerImp extends HomeController {
     );
     update();
 
-    if (destination == StoreDestination.favorites) {
-      return ShellNavigationOutcome.capabilityUnavailable;
-    }
     return ShellNavigationOutcome.selected;
   }
 

@@ -40,15 +40,14 @@ class ShopRepository extends GetxService {
     );
   }
 
-  Future<Response> checkCode(code) async {
+  Future<Response> checkCode(
+    String code, {
+    required String accountRole,
+    required List<Map<String, dynamic>> items,
+  }) async {
     return await apiClient.postData(
-      '/DiscoundCodes/GetByDiscoundCode?code=$code&userid=${await AppUsageService.getUserId()}',
-      body: {
-        "listRelatedObjects": ["<string>", "<string>"],
-        "entity": {"nullable": true},
-        "listOrderOptions": ["<string>", "<string>"],
-        "paginationInfo": {"pageIndex": 0, "pageSize": 0},
-      },
+      '/OnlineStore/Coupons/Validate',
+      body: {'coupon_code': code, 'account_role': accountRole, 'items': items},
       headers: {
         'Content-Type': 'application/json',
         "authorization": "Bearer ${await AppUsageService.getToken()}",
