@@ -19,6 +19,7 @@ class StoreProductCard extends StatelessWidget {
     this.discountPercent,
     this.inStock = true,
     this.isFavorite = false,
+    this.isInCart = false,
     this.onFavorite,
     this.onAddToCart,
     this.compact = false,
@@ -37,6 +38,7 @@ class StoreProductCard extends StatelessWidget {
   final num? discountPercent;
   final bool inStock;
   final bool isFavorite;
+  final bool isInCart;
   final VoidCallback? onFavorite;
   final VoidCallback? onAddToCart;
   final bool compact;
@@ -228,22 +230,32 @@ class StoreProductCard extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    icon: const Icon(
-                                      Icons.add_shopping_cart_outlined,
+                                    icon: Icon(
+                                      isInCart
+                                          ? Icons.check_circle_rounded
+                                          : Icons.add_shopping_cart_outlined,
                                       size: StoreIconSizes.small,
                                     ),
                                     label: Text(
-                                      'storeAddToCart'.tr,
+                                      isInCart
+                                          ? 'تمت الإضافة للسلة'
+                                          : 'storeAddToCart'.tr,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   )
                                   : OutlinedButton.icon(
                                     onPressed: inStock ? onAddToCart : null,
-                                    icon: const Icon(
-                                      Icons.add_shopping_cart_outlined,
+                                    icon: Icon(
+                                      isInCart
+                                          ? Icons.check_circle_rounded
+                                          : Icons.add_shopping_cart_outlined,
                                     ),
-                                    label: Text('storeAddToCart'.tr),
+                                    label: Text(
+                                      isInCart
+                                          ? 'تمت الإضافة للسلة'
+                                          : 'storeAddToCart'.tr,
+                                    ),
                                   ),
                         ),
                       ],

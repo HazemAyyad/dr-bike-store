@@ -11,9 +11,14 @@ class CategoriesRepository extends GetxService {
 
   Future<Response> getAllCategoriesByMainCategoresId({
     required mainCategoresId,
+    Map<String, String> filters = const {},
   }) async {
+    final query = <String, String>{
+      'MainCategory': '$mainCategoresId',
+      ...filters,
+    };
     return await apiClient.postData(
-      "/Items/GetAllItemsShowByMainCategory?MainCategory=$mainCategoresId",
+      "/Items/GetAllItemsShowByMainCategory?${Uri(queryParameters: query).query}",
       body: {
         "listRelatedObjects": [
           "ViewImgs",
@@ -36,7 +41,11 @@ class CategoriesRepository extends GetxService {
 
   Future<Response> getListingsByOnlineStoreCategory({
     required int categoryId,
-  }) => getAllCategoriesByMainCategoresId(mainCategoresId: categoryId);
+    Map<String, String> filters = const {},
+  }) => getAllCategoriesByMainCategoresId(
+    mainCategoresId: categoryId,
+    filters: filters,
+  );
 
   Future<Response> getCategoriesById({required categoryId}) async {
     return await apiClient.postData(

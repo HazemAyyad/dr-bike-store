@@ -3,85 +3,112 @@ import 'package:doctor_bike/repository/favorites/favorites_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const repository = FavoritesRepository();
-
-  test('guest favorite action is gated', () {
+  test('guest favorite action is gated without a remote mutation', () async {
+    final repository = _FakeFavoritesGateway();
     final controller = FavoritesController(
       repository: repository,
       isAuthenticated: () => false,
     );
+
     expect(
-      controller.requestToggle(listingId: 9),
+      await controller.requestToggle(listingId: 9),
       FavoriteActionOutcome.loginRequired,
     );
+    expect(repository.toggledIds, isEmpty);
   });
-  test('authenticated action is truthfully unavailable', () {
+
+  test('malformed listing identity is rejected locally', () async {
+    final repository = _FakeFavoritesGateway();
     final controller = FavoritesController(
       repository: repository,
       isAuthenticated: () => true,
     );
+
     expect(
-      controller.requestToggle(listingId: 9),
-      FavoriteActionOutcome.unavailable,
+      await controller.requestToggle(listingId: 0),
+      FavoriteActionOutcome.invalidIdentity,
     );
+    expect(repository.toggledIds, isEmpty);
   });
-  test(
-    'repository exposes no remote capability',
-    () => expect(repository.supportsRemoteFavorites, isFalse),
-  );
-  test(
-    'unsupported capability is explicit',
-    () => expect(repository.capability, FavoritesCapability.unsupported),
-  );
-  test('unavailable remains unavailable after controller restart', () {
-    for (var i = 0; i < 2; i++) {
-      final controller = FavoritesController(
-        repository: repository,
-        isAuthenticated: () => true,
-      )..resolveCapability();
-      expect(controller.status.value, FavoritesStatus.unavailable);
-    }
-  });
-  test('error is distinct from unavailable', () {
+
+  test('server add result is reflected by listing identity', () async {
+    final repository = _FakeFavoritesGateway(isFavorite: true);
     final controller = FavoritesController(
       repository: repository,
       isAuthenticated: () => true,
     );
-    controller.status.value = FavoritesStatus.error;
-    expect(controller.status.value, FavoritesStatus.error);
+
+    expect(
+      await controller.requestToggle(listingId: 44, productId: 2),
+      FavoriteActionOutcome.added,
+    );
+    expect(controller.contains(44), isTrue);
+    expect(repository.toggledIds, [44]);
   });
-  test('login transition is returned only for guest', () {
-    final auth = FavoritesController(
+
+  test('server remove result clears listing identity', () async {
+    final repository = _FakeFavoritesGateway(isFavorite: false);
+    final controller = FavoritesController(
       repository: repository,
       isAuthenticated: () => true,
     );
+    controller.listingIds.add(44);
+
     expect(
-      auth.requestToggle(listingId: 4),
-      isNot(FavoriteActionOutcome.loginRequired),
+      await controller.requestToggle(listingId: 44),
+      FavoriteActionOutcome.removed,
     );
+    expect(controller.contains(44), isFalse);
+    expect(controller.status.value, FavoritesStatus.empty);
   });
-  test('repository has no network dependency and cannot fabricate success', () {
+
+  test('load restores persisted favorite identities', () async {
+    final repository = _FakeFavoritesGateway(initialIds: {7, 8});
+    final controller = FavoritesController(
+      repository: repository,
+      isAuthenticated: () => true,
+    );
+
+    await controller.load();
+
+    expect(controller.listingIds, {7, 8});
+    expect(controller.status.value, FavoritesStatus.empty);
+  });
+
+  test('remote failure is explicit and does not fabricate success', () async {
+    final controller = FavoritesController(
+      repository: _FakeFavoritesGateway(throwOnToggle: true),
+      isAuthenticated: () => true,
+    );
+
     expect(
-      repository.requestMutation(listingId: 4),
-      FavoriteMutationResult.unsupported,
+      await controller.requestToggle(listingId: 4),
+      FavoriteActionOutcome.failed,
     );
+    expect(controller.contains(4), isFalse);
   });
-  test('listing identity is preserved at mutation boundary', () {
-    expect(
-      repository.requestMutation(listingId: 44, productId: 2),
-      FavoriteMutationResult.unsupported,
-    );
+}
+
+class _FakeFavoritesGateway implements FavoritesGateway {
+  _FakeFavoritesGateway({
+    this.isFavorite = true,
+    this.throwOnToggle = false,
+    this.initialIds = const {},
   });
-  test('malformed listing identity is rejected', () {
-    expect(
-      repository.requestMutation(listingId: 0),
-      FavoriteMutationResult.invalidIdentity,
-    );
-  });
-  test('productId is never a listing identity fallback', () {
-    expect(
-      repository.requestMutation(listingId: null, productId: 44),
-      FavoriteMutationResult.invalidIdentity,
-    );
-  });
+
+  final bool isFavorite;
+  final bool throwOnToggle;
+  final Set<int> initialIds;
+  final List<int> toggledIds = [];
+
+  @override
+  Future<FavoriteSnapshot> load() async =>
+      FavoriteSnapshot(listingIds: initialIds, items: const []);
+
+  @override
+  Future<FavoriteToggleResult> toggle(int listingId) async {
+    if (throwOnToggle) throw StateError('network failure');
+    toggledIds.add(listingId);
+    return FavoriteToggleResult(listingId: listingId, isFavorite: isFavorite);
+  }
 }

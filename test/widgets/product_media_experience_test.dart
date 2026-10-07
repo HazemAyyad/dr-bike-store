@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:doctor_bike/controller/product/product_controller.dart';
+import 'package:doctor_bike/controller/shop/shop_controller.dart';
 import 'package:doctor_bike/core/api_client.dart';
 import 'package:doctor_bike/core/classes/store_view_state.dart';
 import 'package:doctor_bike/core/locale/locale.dart';
@@ -11,27 +14,52 @@ import 'package:doctor_bike/features/product/widget/image_view.dart';
 import 'package:doctor_bike/features/product/widget/product_360_view.dart';
 import 'package:doctor_bike/features/product/widget/view_image_and_video.dart';
 import 'package:doctor_bike/repository/categories/categories_repository.dart';
+import 'package:doctor_bike/repository/shop/shop_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late SharedPreferences preferences;
+  late GetStorage storage;
+  late Directory storageDirectory;
+
+  const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
 
   setUpAll(() async {
+    storageDirectory = Directory(
+      '${Directory.systemTemp.path}${Platform.pathSeparator}'
+      'doctor-bike-product-media-experience-test',
+    );
+    await storageDirectory.create(recursive: true);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          pathProviderChannel,
+          (_) async => storageDirectory.path,
+        );
     final cairo = FontLoader('Cairo')
       ..addFont(rootBundle.load('assets/font/Cairo-Variable.ttf'));
     await cairo.load();
+  });
+
+  tearDownAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(pathProviderChannel, null);
   });
 
   setUp(() async {
     Get.testMode = true;
     SharedPreferences.setMockInitialValues(<String, Object>{});
     preferences = await SharedPreferences.getInstance();
+    Get.put<SharedPreferences>(preferences);
+    await GetStorage.init('product-media-experience-test');
+    storage = GetStorage('product-media-experience-test');
+    await storage.erase();
   });
 
   tearDown(Get.reset);
@@ -138,7 +166,7 @@ void main() {
         final controller = _controller(preferences, [
           _image(id: 1, main: true),
           _image(id: 2),
-        ]);
+        ], storage: storage);
         Get.put<ProductControllerImp>(controller);
 
         await tester.pumpWidget(_app(const ProductDetailsScreen()));
@@ -176,14 +204,21 @@ Widget _app(Widget child) => GetMaterialApp(
 
 ProductControllerImp _controller(
   SharedPreferences preferences,
-  List<ProductMedia> media,
-) {
+  List<ProductMedia> media, {
+  GetStorage? storage,
+}) {
   final item = Item.fromJson(_detail(media));
+  final apiClient = ApiClient(sharedPreferences: preferences);
   final controller = ProductControllerImp(
-    categoriesRepository: _FakeCategoriesRepository(
-      apiClient: ApiClient(sharedPreferences: preferences),
-    ),
+    categoriesRepository: _FakeCategoriesRepository(apiClient: apiClient),
     connectivityCheck: () async => true,
+    shopController:
+        storage == null
+            ? null
+            : ShopController(
+              shopRepository: ShopRepository(apiClient: apiClient),
+              storage: storage,
+            ),
   );
   controller
     ..itemView = item

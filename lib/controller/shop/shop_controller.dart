@@ -42,6 +42,27 @@ class ShopController extends GetxController {
 
   bool addToCart(Item item) => addItem(item, closeAfterAdd: false);
 
+  bool containsItem(Item item) {
+    try {
+      final identity = CartLineIdentity.fromItem(item);
+      return cartLines.any((line) => line.identity == identity);
+    } on FormatException {
+      return false;
+    }
+  }
+
+  int quantityFor(Item item) {
+    try {
+      final identity = CartLineIdentity.fromItem(item);
+      return cartLines
+              .firstWhereOrNull((line) => line.identity == identity)
+              ?.quantity ??
+          0;
+    } on FormatException {
+      return 0;
+    }
+  }
+
   loadingIsNormail() async {
     isNormail = await AppUsageService.getTypeUser() == "Normail";
     update();
@@ -58,8 +79,20 @@ class ShopController extends GetxController {
   void clearCart() {
     cartLines.clear();
     items.clear();
+    selectedVillage = null;
+    selectedVillageId = null;
+    selectedCityPrice = 0;
+    hasAuthoritativeDeliveryQuote = false;
+    deliveryQuoteMessage = null;
+    couponIntent = '';
+    couponModel = null;
+    activeCode = null;
+    if (discountCodeController.text.isNotEmpty) {
+      discountCodeController.clear();
+    }
     box.remove(cartStorageKey);
     box.remove('cart');
+    box.remove(couponIntentStorageKey);
     update();
   }
 
@@ -112,6 +145,8 @@ class ShopController extends GetxController {
   bool isLoading = false;
   bool isVillagesLoading = false;
   bool isDeliveryLoading = false;
+  bool hasAuthoritativeDeliveryQuote = false;
+  String? deliveryQuoteMessage;
   bool? activeCode;
   List<Citys> cities = [];
   List<String> citiesList = [];
@@ -140,6 +175,9 @@ class ShopController extends GetxController {
   ShopController({required this.shopRepository, GetStorage? storage})
     : box = storage ?? GetStorage();
   getUserById() async {
+    selectedVillage = null;
+    selectedVillageId = null;
+    _invalidateDeliveryQuote();
     checkoutState = checkoutState.copyWith(stage: CheckoutStage.loadingProfile);
     update();
     if (await CheckInternet.checkInternet()) {
@@ -394,6 +432,8 @@ class ShopController extends GetxController {
             ? city.cityNameEng
             : city.cityNameAbree;
     selectedCityPrice = 0;
+    hasAuthoritativeDeliveryQuote = false;
+    deliveryQuoteMessage = null;
     selectedVillage = null;
     selectedVillageId = null;
     villages = [];
@@ -407,6 +447,8 @@ class ShopController extends GetxController {
     selectedVillage = village.name;
     selectedVillageId = village.id.toString();
     selectedCityPrice = 0;
+    hasAuthoritativeDeliveryQuote = false;
+    deliveryQuoteMessage = null;
     isDeliveryLoading = true;
     update();
     await calculateDeliveryFeeForSelectedVillage();
@@ -443,15 +485,26 @@ class ShopController extends GetxController {
       );
       if (response.statusCode == 200 && response.body is Map<String, dynamic>) {
         final body = response.body as Map<String, dynamic>;
-        selectedCityPrice =
+        final quotedPrice =
             (body['deliveryCost'] as num?)?.toDouble() ??
             (body['priceDelivery'] as num?)?.toDouble() ??
             ((body['fees'] is Map<String, dynamic>)
                 ? (body['fees']['delivery_cost'] as num?)?.toDouble()
-                : null) ??
-            0;
+                : null);
+        if (quotedPrice != null) {
+          selectedCityPrice = quotedPrice;
+          hasAuthoritativeDeliveryQuote = true;
+        } else {
+          deliveryQuoteMessage = 'سيعتمد الخادم رسوم الشحن عند إنشاء الطلب.';
+        }
+      } else {
+        deliveryQuoteMessage =
+            'تعذر جلب عرض الشحن الآن. سيعيد الخادم حسابه عند الطلب.';
       }
     } catch (e) {
+      hasAuthoritativeDeliveryQuote = false;
+      deliveryQuoteMessage =
+          'تعذر جلب عرض الشحن الآن. سيعيد الخادم حسابه عند الطلب.';
       debugPrint('[STORE_SHIPLY] delivery fee error=$e');
     } finally {
       isDeliveryLoading = false;
@@ -469,6 +522,13 @@ class ShopController extends GetxController {
       cartLines.fold(0, (total, line) => total + line.subtotal);
   double get cartTotal =>
       cartLines.fold(0, (total, line) => total + line.total);
+  double get appliedCouponDiscount =>
+      activeCode == true ? couponModel?.discountAmount ?? 0 : 0;
+  double get cartTotalAfterCoupon {
+    final payable = cartTotal - appliedCouponDiscount;
+    return payable < 0 ? 0 : payable;
+  }
+
   bool get canCheckout =>
       cartLines.isNotEmpty && cartLines.every((line) => line.structurallyValid);
 
@@ -504,6 +564,7 @@ class ShopController extends GetxController {
     } else {
       cartLines.add(candidate);
     }
+    _invalidateDeliveryQuote();
     _syncItemsFromLines();
     cal();
     saveCart();
@@ -564,16 +625,28 @@ class ShopController extends GetxController {
 
   void retainCouponIntent(String value) {
     couponIntent = value.trim();
-    discountCodeController.text = couponIntent;
+    if (couponModel?.code.trim().toUpperCase() != couponIntent.toUpperCase()) {
+      couponModel = null;
+      activeCode = null;
+    }
     box.write(couponIntentStorageKey, couponIntent);
     update();
   }
 
   void _afterCartMutation() {
+    _invalidateDeliveryQuote();
+    couponModel = null;
+    activeCode = null;
     _syncItemsFromLines();
     saveCart();
     cal();
     update();
+  }
+
+  void _invalidateDeliveryQuote() {
+    selectedCityPrice = 0;
+    hasAuthoritativeDeliveryQuote = false;
+    deliveryQuoteMessage = null;
   }
 
   CartLine? _resolveLine(dynamic identity) {
@@ -1407,15 +1480,44 @@ class ShopController extends GetxController {
       return;
     }
 
+    if (!canCheckout) {
+      showCustomSnackBar('أضف منتجًا صالحًا للسلة أولًا.', isError: true);
+      return;
+    }
+
+    final role =
+        checkoutState.selectedRole ?? await _resolveCheckoutAccountRole();
+    if (role == null) return;
+    checkoutState = checkoutState.copyWith(selectedRole: role);
     isLoading = true;
     update();
     if (await CheckInternet.checkInternet()) {
       try {
         statusRequest = StatusRequest.loading;
-        var response = await shopRepository.checkCode(code);
+        final response = await shopRepository.checkCode(
+          code,
+          accountRole: role,
+          items: cartLines
+              .map(
+                (line) => {
+                  'listing_id': line.identity.listingId,
+                  'size_id': line.identity.sizeId,
+                  'size_color_id': line.identity.sizeColorId,
+                  'quantity': line.quantity,
+                },
+              )
+              .toList(growable: false),
+        );
 
-        if (response.statusCode == 200) {
-          couponModel = CouponModel.fromJson(response.body);
+        if (response.statusCode == 200 &&
+            response.body is Map &&
+            response.body['data'] is Map &&
+            response.body['data']['coupon'] is Map) {
+          final data = Map<String, dynamic>.from(response.body['data']);
+          couponModel = CouponModel.fromJson(
+            Map<String, dynamic>.from(data['coupon']),
+            discountAmount: (data['coupon_discount'] as num?)?.toDouble() ?? 0,
+          );
           activeCode = couponModel!.isActive;
           if (couponModel!.isActive) {
             showCustomSnackBar("Activated".tr, isError: false);

@@ -247,7 +247,7 @@ class _ViewerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    height: 64,
+    height: 54,
     child: Stack(
       alignment: Alignment.center,
       children: [
@@ -259,7 +259,7 @@ class _ViewerHeader extends StatelessWidget {
         ),
         Positioned(
           left: StoreSpacing.xs,
-          child: IconButton(
+          child: IconButton.filled(
             key: const Key('fullscreen-media-close'),
             tooltip:
                 (Get.locale?.languageCode ??
@@ -268,8 +268,12 @@ class _ViewerHeader extends StatelessWidget {
                     ? 'إغلاق'
                     : 'Close',
             onPressed: onClose,
-            color: Colors.white,
-            icon: const Icon(Icons.close),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF111318),
+              minimumSize: const Size(42, 42),
+            ),
+            icon: const Icon(Icons.close_rounded, size: 24),
           ),
         ),
         Positioned(

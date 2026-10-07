@@ -606,30 +606,46 @@ class _ProductSection extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(width: StoreSpacing.xs),
             itemBuilder: (context, index) {
               final item = resolvedProducts[index];
+              final favorites =
+                  Get.isRegistered<FavoritesController>()
+                      ? Get.find<FavoritesController>()
+                      : null;
+              final shop =
+                  Get.isRegistered<ShopController>()
+                      ? Get.find<ShopController>()
+                      : null;
+              Widget card() => StoreProductCard(
+                name: _itemName(item, Get.locale?.languageCode ?? 'ar'),
+                price: controller.displayPriceFor(item),
+                discountPercent: item.discount > 0 ? item.discount : null,
+                rating: item.rate > 0 ? item.rate : null,
+                inStock: item.available && item.purchasable,
+                isFavorite: favorites?.contains(item.listingId) ?? false,
+                isInCart: shop?.containsItem(item) ?? false,
+                media: StoreNetworkMedia(
+                  url: _itemImage(item),
+                  semanticLabel: _itemName(
+                    item,
+                    Get.locale?.languageCode ?? 'ar',
+                  ),
+                  fit: BoxFit.contain,
+                ),
+                onTap: () => onSelected(item),
+                onFavorite: () => _requestFavorite(item),
+                onAddToCart: () => onAddToCart(item),
+                compact: true,
+                homePresentation: true,
+              );
               return SizedBox(
                 width: StoreCalibration.homeProductCardWidth,
-                child: StoreProductCard(
-                  name: _itemName(item, Get.locale?.languageCode ?? 'ar'),
-                  price: controller.displayPriceFor(item),
-                  discountPercent: item.discount > 0 ? item.discount : null,
-                  rating: item.rate > 0 ? item.rate : null,
-                  inStock: item.available && item.purchasable,
-                  media: StoreNetworkMedia(
-                    url: _itemImage(item),
-                    semanticLabel: _itemName(
-                      item,
-                      Get.locale?.languageCode ?? 'ar',
-                    ),
-                    fit: BoxFit.contain,
-                  ),
-                  onTap: () => onSelected(item),
-                  onFavorite: () {
-                    _requestFavorite(item);
-                  },
-                  onAddToCart: () => onAddToCart(item),
-                  compact: true,
-                  homePresentation: true,
-                ),
+                child:
+                    favorites == null && shop == null
+                        ? card()
+                        : Obx(() {
+                          favorites?.listingIds.length;
+                          shop?.cartLines.length;
+                          return card();
+                        }),
               );
             },
           ),
@@ -975,7 +991,7 @@ String _categoryName(Category category, String languageCode) =>
 
 Future<void> _requestFavorite(Item item) async {
   if (!Get.isRegistered<FavoritesController>()) return;
-  final outcome = Get.find<FavoritesController>().requestToggle(
+  final outcome = await Get.find<FavoritesController>().requestToggle(
     listingId: item.listingId,
     productId: item.productId,
   );
@@ -983,7 +999,7 @@ Future<void> _requestFavorite(Item item) async {
     await Get.toNamed(RouteHelper.intoLog);
     return;
   }
-  if (outcome == FavoriteActionOutcome.unavailable ||
+  if (outcome == FavoriteActionOutcome.failed ||
       outcome == FavoriteActionOutcome.invalidIdentity) {
     Get.snackbar(
       'storeFavoritesUnavailableTitle'.tr,

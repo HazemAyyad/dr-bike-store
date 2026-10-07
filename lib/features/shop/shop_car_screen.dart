@@ -24,14 +24,25 @@ class ShopCarScreen extends StatelessWidget {
               foregroundColor: StorePalette.textPrimary,
               elevation: 0,
               centerTitle: true,
-              title: Text('shopping cart'.tr, style: StoreTypography.title),
+              leading: IconButton(
+                tooltip: 'الرجوع',
+                onPressed: Get.back,
+                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 19),
+              ),
+              title: Text('سلة المشتريات (${controller.cartQuantity})'),
+              titleTextStyle: StoreTypography.title.copyWith(fontSize: 17),
               actions: [
                 if (controller.cartLines.isNotEmpty)
-                  StoreIconButton(
-                    icon: Icons.delete_sweep_outlined,
-                    semanticLabel: 'مسح السلة',
-                    foregroundColor: StorePalette.error,
-                    onPressed: () => _confirmClear(context, controller),
+                  PopupMenuButton<String>(
+                    tooltip: 'خيارات السلة',
+                    onSelected: (_) => _confirmClear(context, controller),
+                    itemBuilder:
+                        (_) => const [
+                          PopupMenuItem(
+                            value: 'clear',
+                            child: Text('مسح السلة'),
+                          ),
+                        ],
                   ),
               ],
             ),
@@ -41,54 +52,52 @@ class ShopCarScreen extends StatelessWidget {
                     : SafeArea(
                       top: false,
                       child: ListView(
-                        padding: const EdgeInsets.all(StoreSpacing.md),
+                        key: const PageStorageKey<String>('store-cart-scroll'),
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          12,
+                          10,
+                          12,
+                          18,
+                        ),
                         children: [
                           ...controller.cartLines.map(
                             (line) => Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: StoreSpacing.sm,
-                              ),
+                              padding: const EdgeInsets.only(bottom: 8),
                               child: ItemShopCar(line: line),
                             ),
                           ),
-                          const SizedBox(height: StoreSpacing.xs),
-                          Text('كود الخصم', style: StoreTypography.label),
-                          const SizedBox(height: StoreSpacing.xs),
-                          TextField(
-                            controller: controller.discountCodeController,
-                            onChanged: controller.retainCouponIntent,
-                            decoration: InputDecoration(
-                              hintText: 'أدخل كود الخصم',
-                              filled: true,
-                              fillColor: StorePalette.surface,
-                              suffixIcon: TextButton(
-                                onPressed:
-                                    controller.isLoading
-                                        ? null
-                                        : controller.checkCode,
-                                child: const Text('تحقق'),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  StoreRadii.md,
-                                ),
-                                borderSide: const BorderSide(
-                                  color: StorePalette.border,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: StoreSpacing.md),
+                          const SizedBox(height: 4),
+                          _CouponSection(controller: controller),
+                          const SizedBox(height: 12),
                           CartSummary(controller: controller),
-                          const SizedBox(height: StoreSpacing.md),
-                          StoreButton(
-                            label: 'Checkout'.tr,
-                            onPressed:
-                                controller.canCheckout
-                                    ? controller.getUserById
-                                    : null,
-                          ),
                         ],
+                      ),
+                    ),
+            bottomNavigationBar:
+                controller.cartLines.isEmpty
+                    ? null
+                    : SafeArea(
+                      top: false,
+                      child: Container(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          12,
+                          10,
+                          12,
+                          12,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: StorePalette.surface,
+                          boxShadow: [StoreElevation.lowShadow],
+                        ),
+                        child: StoreButton(
+                          label: 'إتمام الطلب',
+                          height: 46,
+                          isLoading: controller.isLoading,
+                          onPressed:
+                              controller.canCheckout
+                                  ? controller.getUserById
+                                  : null,
+                        ),
                       ),
                     ),
           ),
@@ -119,4 +128,84 @@ class ShopCarScreen extends StatelessWidget {
     );
     if (accepted == true) controller.clearCart();
   }
+}
+
+class _CouponSection extends StatelessWidget {
+  const _CouponSection({required this.controller});
+  final ShopController controller;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: StorePalette.surface,
+      border: Border.all(color: StorePalette.border),
+      borderRadius: BorderRadius.circular(StoreRadii.lg),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('كوبون خصم', style: StoreTypography.label),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 42,
+                child: TextField(
+                  controller: controller.discountCodeController,
+                  onChanged: controller.retainCouponIntent,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: controller.retainCouponIntent,
+                  style: StoreTypography.body,
+                  decoration: InputDecoration(
+                    hintText: 'أدخل رمز الخصم',
+                    hintStyle: StoreTypography.caption,
+                    filled: true,
+                    fillColor: StorePalette.background,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(StoreRadii.sm),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 42,
+              child: FilledButton(
+                onPressed: controller.isLoading ? null : controller.checkCode,
+                style: FilledButton.styleFrom(
+                  backgroundColor: StorePalette.lightPurple,
+                  foregroundColor: StorePalette.purple,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(StoreRadii.sm),
+                  ),
+                  textStyle: StoreTypography.label,
+                ),
+                child: Text(controller.activeCode == true ? 'مفعّل' : 'تطبيق'),
+              ),
+            ),
+          ],
+        ),
+        if (controller.activeCode == true &&
+            controller.couponModel != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            'تم تطبيق خصم ${controller.couponModel!.discountAmount.toStringAsFixed(2)} ₪، وسيعيد الخادم التحقق عند إنشاء الطلب.',
+            style: StoreTypography.caption.copyWith(
+              color: StorePalette.success,
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
 }

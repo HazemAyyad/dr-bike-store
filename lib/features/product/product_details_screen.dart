@@ -72,7 +72,7 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
   final ProductControllerImp controller;
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => const Size.fromHeight(56);
 
   @override
   Widget build(BuildContext context) {
@@ -99,11 +99,26 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
               semanticLabel: _label(context, 'مشاركة المنتج', 'Share product'),
               onPressed: item == null ? null : () => _share(context, item),
             ),
-            StoreIconButton(
-              icon: Icons.favorite_border,
-              semanticLabel: 'storeAddFavorite'.tr,
-              onPressed: item == null ? null : () => _favorite(item),
-            ),
+            if (Get.isRegistered<FavoritesController>())
+              Obx(() {
+                final selected = Get.find<FavoritesController>().contains(
+                  item?.listingId,
+                );
+                return StoreIconButton(
+                  icon: selected ? Icons.favorite : Icons.favorite_border,
+                  semanticLabel:
+                      selected
+                          ? 'storeRemoveFavorite'.tr
+                          : 'storeAddFavorite'.tr,
+                  onPressed: item == null ? null : () => _favorite(item),
+                );
+              })
+            else
+              StoreIconButton(
+                icon: Icons.favorite_border,
+                semanticLabel: 'storeAddFavorite'.tr,
+                onPressed: item == null ? null : () => _favorite(item),
+              ),
             _CartAction(onPressed: () => Get.to(() => const ShopCarScreen())),
           ],
         ),
@@ -139,7 +154,7 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   Future<void> _favorite(Item item) async {
     if (!Get.isRegistered<FavoritesController>()) return;
-    final outcome = Get.find<FavoritesController>().requestToggle(
+    final outcome = await Get.find<FavoritesController>().requestToggle(
       listingId: item.listingId,
       productId: item.productId,
     );
@@ -147,7 +162,7 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
       await Get.toNamed(RouteHelper.intoLog);
       return;
     }
-    if (outcome == FavoriteActionOutcome.unavailable ||
+    if (outcome == FavoriteActionOutcome.failed ||
         outcome == FavoriteActionOutcome.invalidIdentity) {
       Get.snackbar(
         'storeFavoritesUnavailableTitle'.tr,
@@ -208,29 +223,24 @@ class _ProductContent extends StatelessWidget {
           language == 'ar' ? TextDirection.rtl : Directionality.of(context),
       child: ListView(
         key: const Key('product-details-scroll'),
-        padding: const EdgeInsets.fromLTRB(
-          StoreSpacing.sm,
-          StoreSpacing.xs,
-          StoreSpacing.sm,
-          StoreSpacing.xl,
-        ),
+        padding: const EdgeInsets.fromLTRB(10, 4, 10, 18),
         children: [
           ViewImageAndVideo(controllerScreen: controller),
-          const SizedBox(height: StoreSpacing.md),
+          const SizedBox(height: StoreSpacing.sm),
           _ProductIdentity(item: item, name: name, controller: controller),
           if (_quickSpecs(item).isNotEmpty) ...[
-            const SizedBox(height: StoreSpacing.md),
+            const SizedBox(height: StoreSpacing.sm),
             _QuickSpecifications(item: item),
           ],
           if (controller.hasOptions) ...[
-            const SizedBox(height: StoreSpacing.md),
+            const SizedBox(height: StoreSpacing.sm),
             _OptionsSection(controller: controller, item: item),
           ],
-          const SizedBox(height: StoreSpacing.md),
+          const SizedBox(height: StoreSpacing.sm),
           _PurchaseSection(controller: controller, item: item),
-          const SizedBox(height: StoreSpacing.md),
+          const SizedBox(height: StoreSpacing.sm),
           _DetailsSections(item: item, description: description),
-          const SizedBox(height: StoreSpacing.lg),
+          const SizedBox(height: StoreSpacing.md),
           ProductReviewsSection(
             state: controller.reviewsState,
             onRetry: () => controller.loadReviews(item.productId),
@@ -242,7 +252,7 @@ class _ProductContent extends StatelessWidget {
             icon: const Icon(Icons.rate_review_outlined),
             label: Text(_label(context, 'عرض وكتابة التقييمات', 'Reviews')),
           ),
-          const SizedBox(height: StoreSpacing.lg),
+          const SizedBox(height: StoreSpacing.md),
           SimilarItemsSection(controller: controller),
         ],
       ),
@@ -286,7 +296,10 @@ class _ProductIdentity extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: StoreTypography.headline),
+                  Text(
+                    name,
+                    style: StoreTypography.headline.copyWith(fontSize: 19),
+                  ),
                   if (item.model.trim().isNotEmpty) ...[
                     const SizedBox(height: StoreSpacing.xxs),
                     Text(
@@ -450,8 +463,8 @@ class _QuickSpecCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(minHeight: 72),
-    padding: const EdgeInsets.all(StoreSpacing.xs),
+    constraints: const BoxConstraints(minHeight: 60),
+    padding: const EdgeInsets.all(6),
     decoration: BoxDecoration(
       color: StorePalette.surface,
       borderRadius: BorderRadius.circular(StoreRadii.md),
@@ -493,7 +506,7 @@ class _OptionsSection extends StatelessWidget {
             ? const <ItemSizeColor>[]
             : item.itemSizes[selectedSize].itemSizeColor;
     return Container(
-      padding: const EdgeInsets.all(StoreSpacing.sm),
+      padding: const EdgeInsets.all(StoreSpacing.xs),
       decoration: BoxDecoration(
         color: StorePalette.surface,
         borderRadius: BorderRadius.circular(StoreRadii.lg),
@@ -564,72 +577,95 @@ class _PurchaseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final purchasable = item.available && item.purchasable && item.stock > 0;
-    return Container(
-      padding: const EdgeInsets.all(StoreSpacing.sm),
-      decoration: BoxDecoration(
-        color: StorePalette.surface,
-        borderRadius: BorderRadius.circular(StoreRadii.lg),
-        border: Border.all(color: StorePalette.border),
-      ),
-      child: Column(
-        children: [
-          Row(
+    return GetBuilder<ShopController>(
+      init: controller.shopController,
+      builder: (shop) {
+        final inCart = shop.containsItem(item);
+        return Container(
+          padding: const EdgeInsets.all(StoreSpacing.xs),
+          decoration: BoxDecoration(
+            color: StorePalette.surface,
+            borderRadius: BorderRadius.circular(StoreRadii.lg),
+            border: Border.all(color: StorePalette.border),
+          ),
+          child: Column(
             children: [
-              Expanded(
-                child: Row(
-                  key: const Key('product-availability'),
-                  children: [
-                    Icon(
-                      purchasable
-                          ? Icons.check_circle
-                          : Icons.remove_shopping_cart_outlined,
-                      color:
+              Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      key: const Key('product-availability'),
+                      children: [
+                        Icon(
                           purchasable
-                              ? StorePalette.success
-                              : StorePalette.warning,
-                      size: 20,
-                    ),
-                    const SizedBox(width: StoreSpacing.xs),
-                    Flexible(
-                      child: Text(
-                        purchasable
-                            ? 'storeAvailableQuantity'.trParams({
-                              'count': '${item.stock}',
-                            })
-                            : 'storeOutOfStock'.tr,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: StoreTypography.label.copyWith(
+                              ? Icons.check_circle
+                              : Icons.remove_shopping_cart_outlined,
                           color:
                               purchasable
                                   ? StorePalette.success
                                   : StorePalette.warning,
+                          size: 20,
                         ),
-                      ),
+                        const SizedBox(width: StoreSpacing.xs),
+                        Flexible(
+                          child: Text(
+                            purchasable
+                                ? 'storeAvailableQuantity'.trParams({
+                                  'count': '${item.stock}',
+                                })
+                                : 'storeOutOfStock'.tr,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: StoreTypography.label.copyWith(
+                              color:
+                                  purchasable
+                                      ? StorePalette.success
+                                      : StorePalette.warning,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: StoreSpacing.xs),
+                  _QuantitySelector(controller: controller),
+                ],
               ),
-              const SizedBox(width: StoreSpacing.xs),
-              _QuantitySelector(controller: controller),
+              const SizedBox(height: StoreSpacing.xs),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: StoreButton(
+                      key: const Key('product-add-to-cart'),
+                      label: inCart ? 'في السلة' : 'storeAddToCart'.tr,
+                      height: 42,
+                      icon:
+                          inCart
+                              ? Icons.check_circle_rounded
+                              : Icons.shopping_cart_outlined,
+                      onPressed:
+                          controller.canPurchase ? controller.addToCart : null,
+                    ),
+                  ),
+                  const SizedBox(width: StoreSpacing.xs),
+                  Expanded(
+                    flex: 2,
+                    child: StoreButton(
+                      key: const Key('product-buy-now'),
+                      label: 'storeBuyNow'.tr,
+                      height: 42,
+                      variant: StoreButtonVariant.secondary,
+                      onPressed:
+                          controller.canPurchase ? controller.buyNow : null,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: StoreSpacing.sm),
-          StoreButton(
-            key: const Key('product-add-to-cart'),
-            label: 'storeAddToCart'.tr,
-            icon: Icons.shopping_cart_outlined,
-            onPressed: controller.canPurchase ? controller.addToCart : null,
-          ),
-          const SizedBox(height: StoreSpacing.xs),
-          StoreButton(
-            key: const Key('product-buy-now'),
-            label: 'storeBuyNow'.tr,
-            variant: StoreButtonVariant.secondary,
-            onPressed: controller.canPurchase ? controller.buyNow : null,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -38,7 +38,7 @@ class Mybinding extends Bindings {
     );
     Get.lazyPut(
       () => FavoritesController(
-        repository: const FavoritesRepository(),
+        repository: FavoritesRepository(apiClient: Get.find()),
         isAuthenticated: () => Get.find<HomeControllerImp>().isAuthenticated,
       ),
       fenix: true,

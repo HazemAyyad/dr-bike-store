@@ -19,6 +19,44 @@ import '../LocalizationController.dart';
 abstract class CategoresController extends GetxController
     with GetSingleTickerProviderStateMixin {}
 
+enum CatalogSort { recommended, newest, priceAsc, priceDesc, name }
+
+class CatalogFilters {
+  const CatalogFilters({
+    this.minimumPrice,
+    this.maximumPrice,
+    this.availableOnly = false,
+    this.onSale = false,
+    this.sort = CatalogSort.recommended,
+  });
+
+  final double? minimumPrice;
+  final double? maximumPrice;
+  final bool availableOnly;
+  final bool onSale;
+  final CatalogSort sort;
+
+  int get activeCount =>
+      (minimumPrice == null ? 0 : 1) +
+      (maximumPrice == null ? 0 : 1) +
+      (availableOnly ? 1 : 0) +
+      (onSale ? 1 : 0);
+
+  Map<String, String> get query => {
+    if (minimumPrice != null) 'minPrice': '$minimumPrice',
+    if (maximumPrice != null) 'maxPrice': '$maximumPrice',
+    if (availableOnly) 'availableOnly': 'true',
+    if (onSale) 'onSale': 'true',
+    'sort': switch (sort) {
+      CatalogSort.recommended => 'recommended',
+      CatalogSort.newest => 'newest',
+      CatalogSort.priceAsc => 'price_asc',
+      CatalogSort.priceDesc => 'price_desc',
+      CatalogSort.name => 'name',
+    },
+  };
+}
+
 class CategoresControllerImp extends CategoresController {
   CategoresControllerImp({required this.categoriesRepository, this.titleMain});
   final CategoriesRepository categoriesRepository;
@@ -50,6 +88,7 @@ class CategoresControllerImp extends CategoresController {
   int selectedIndex = 0;
   ItemsResponse? itemList;
   final catalogState = Rx<StoreViewState<List<Item>>>(const StoreInitial());
+  final filters = const CatalogFilters().obs;
   var supCategores = <Category>[].obs;
   List<Item> allProducts = <Item>[].obs;
   RxList<Item> _filteredProducts = <Item>[].obs;
@@ -121,7 +160,10 @@ class CategoresControllerImp extends CategoresController {
     }
     try {
       final response = await categoriesRepository
-          .getListingsByOnlineStoreCategory(categoryId: categoryId);
+          .getListingsByOnlineStoreCategory(
+            categoryId: categoryId,
+            filters: filters.value.query,
+          );
       if (response.statusCode != 200 ||
           response.body is! Map<String, dynamic>) {
         throw const FormatException('catalog response is incompatible');
@@ -152,6 +194,17 @@ class CategoresControllerImp extends CategoresController {
       isLoading.value = false;
     }
   }
+
+  Future<void> applyCatalogFilters(CatalogFilters value) async {
+    filters.value = value;
+    await getProductsByOnlineStoreCategory(
+      selectedOnlineStoreCategoryId,
+      navigate: false,
+    );
+  }
+
+  Future<void> clearCatalogFilters() =>
+      applyCatalogFilters(const CatalogFilters());
 
   @Deprecated('Use getProductsByOnlineStoreCategory')
   Future<void> getProductsByStoreSection(int storeSectionId) async {

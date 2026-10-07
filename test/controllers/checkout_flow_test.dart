@@ -1,6 +1,7 @@
 import 'package:doctor_bike/core/functions/checkout_attempt.dart';
 import 'package:doctor_bike/core/functions/native_checkout.dart';
 import 'package:doctor_bike/core/model/checkout_flow_model.dart';
+import 'package:doctor_bike/core/model/discount_code_model.dart';
 import 'package:doctor_bike/core/model/get_all_item_model.dart';
 import 'package:doctor_bike/core/widget/store_bottom_navigation.dart';
 import 'package:doctor_bike/features/shop/check_out_done.dart';
@@ -122,6 +123,23 @@ void main() {
   test(
     'coupon included when valid',
     () => expect(payload(coupon: ' SAVE ')['coupon_code'], 'SAVE'),
+  );
+  test(
+    'coupon preview parses fixed and percentage values without legacy fields',
+    () {
+      final coupon = CouponModel.fromJson({
+        'id': 12,
+        'code': 'SAVE10',
+        'discount_type': 'fixed',
+        'discount_value': 10,
+        'is_active': true,
+      }, discountAmount: 10);
+      expect(coupon.code, 'SAVE10');
+      expect(coupon.discountType, 'fixed');
+      expect(coupon.discountValue, 10);
+      expect(coupon.discountAmount, 10);
+      expect(coupon.isActive, isTrue);
+    },
   );
   test(
     'payment is cash only',

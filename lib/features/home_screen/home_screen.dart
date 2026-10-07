@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../controller/categores/categores_controller.dart';
 import '../../controller/home/home_controller.dart';
+import '../../controller/favorites/favorites_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../controller/order/order_controller.dart';
 import '../../controller/notification/notification_controller.dart';
@@ -84,6 +85,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (destination == StoreDestination.orders &&
         Get.isRegistered<OrderController>()) {
       await Get.find<OrderController>().load();
+    }
+    if (destination == StoreDestination.favorites &&
+        Get.isRegistered<FavoritesController>()) {
+      await Get.find<FavoritesController>().load();
     }
   }
 
@@ -179,6 +184,11 @@ class _HomeScreenState extends State<HomeScreen> {
         bottomNavigationBar: StoreBottomNavigation(
           current: current,
           onSelected: _selectDestination,
+          badges: {
+            if (Get.isRegistered<FavoritesController>())
+              StoreDestination.favorites:
+                  Get.find<FavoritesController>().listingIds.length,
+          },
         ),
       ),
     );

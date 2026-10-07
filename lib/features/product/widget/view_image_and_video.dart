@@ -55,7 +55,7 @@ class _ViewImageAndVideoState extends State<ViewImageAndVideo> {
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            final height = (constraints.maxWidth * 0.86).clamp(250.0, 350.0);
+            final height = (constraints.maxWidth * 0.68).clamp(210.0, 280.0);
             return SizedBox(
               height: height,
               child: ClipRRect(
@@ -174,9 +174,9 @@ class _ViewImageAndVideoState extends State<ViewImageAndVideo> {
           },
         ),
         if (multiple) ...[
-          const SizedBox(height: StoreSpacing.sm),
+          const SizedBox(height: StoreSpacing.xs),
           SizedBox(
-            height: 72,
+            height: 60,
             child: ListView.separated(
               key: const Key('product-media-thumbnails'),
               padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.xxs),
