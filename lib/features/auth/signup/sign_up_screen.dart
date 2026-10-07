@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../../controller/auth/signupController.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
-import '../../../core/widget/store_buttons.dart';
 import '../../../core/widget/store_fields.dart';
 import '../widget/store_auth_scaffold.dart';
 
@@ -54,8 +53,10 @@ class SignUpScreen extends StatelessWidget {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.mail_outline,
+                      height: 56,
+                      borderRadius: StoreRadii.lg,
                     ),
-                    const SizedBox(height: StoreSpacing.md),
+                    const SizedBox(height: StoreSpacing.sm),
                     StoreTextField(
                       controller: controller.PhoneController,
                       label: 'storePhone'.tr,
@@ -64,27 +65,32 @@ class SignUpScreen extends StatelessWidget {
                       textDirection: TextDirection.ltr,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.phone_outlined,
+                      height: 56,
+                      borderRadius: StoreRadii.lg,
                     ),
-                    const SizedBox(height: StoreSpacing.md),
+                    const SizedBox(height: StoreSpacing.sm),
                     StoreTextField(
                       controller: controller.PasswordController,
                       label: 'storePassword'.tr,
                       obscureText: true,
                       textInputAction: TextInputAction.next,
                       prefixIcon: Icons.lock_outline,
-                      helperText: 'storePasswordRequirement'.tr,
+                      height: 56,
+                      borderRadius: StoreRadii.lg,
                     ),
-                    const SizedBox(height: StoreSpacing.md),
+                    const SizedBox(height: StoreSpacing.sm),
                     StoreTextField(
                       controller: controller.ConfirmPassword,
                       label: 'storeConfirmPassword'.tr,
                       obscureText: true,
                       textInputAction: TextInputAction.done,
                       prefixIcon: Icons.lock_reset_outlined,
+                      height: 56,
+                      borderRadius: StoreRadii.lg,
                       onSubmitted: (_) => controller.signUp(),
                     ),
                     const SizedBox(height: StoreSpacing.lg),
-                    StoreButton(
+                    StoreAuthPrimaryButton(
                       label: 'storeCreateAccountAction'.tr,
                       onPressed: controller.signUp,
                       isLoading: controller.isSubmitting,

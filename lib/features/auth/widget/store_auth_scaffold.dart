@@ -26,93 +26,194 @@ class StoreAuthScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final compact = viewportHeight < 720;
     return SafeArea(
       child: LayoutBuilder(
         builder:
-            (context, constraints) => SingleChildScrollView(
-              padding: EdgeInsetsDirectional.fromSTEB(
-                StoreSpacing.lg,
-                StoreSpacing.sm,
-                StoreSpacing.lg,
-                StoreSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight:
-                      constraints.maxHeight -
-                      StoreCalibration.authViewportInsetAdjustment,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: StoreCalibration.authContentMaxWidth,
+            (context, constraints) => Stack(
+              children: [
+                Positioned.fill(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      StoreSpacing.lg,
+                      compact ? StoreSpacing.xxs : StoreSpacing.sm,
+                      StoreSpacing.lg,
+                      StoreSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (showBack)
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: IconButton(
-                              onPressed: onBack ?? Get.back,
-                              tooltip: 'storeBack'.tr,
-                              icon: Icon(
-                                Directionality.of(context) == TextDirection.rtl
-                                    ? Icons.arrow_forward_ios
-                                    : Icons.arrow_back_ios,
-                              ),
-                            ),
-                          )
-                        else
-                          const SizedBox(height: StoreSpacing.sm),
-                        Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight:
+                            constraints.maxHeight -
+                            StoreCalibration.authViewportInsetAdjustment,
+                      ),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: StoreCalibration.authContentMaxWidth,
+                          ),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Image.asset(
-                                Images.logo,
-                                width: StoreCalibration.authLogoWidth,
-                                height: StoreCalibration.authLogoHeight,
-                                fit: BoxFit.contain,
-                                filterQuality: FilterQuality.high,
-                              ),
-                              Text(
-                                'storeBrandName'.tr,
-                                textDirection: TextDirection.ltr,
-                                style: StoreTypography.title.copyWith(
-                                  color: StorePalette.navy,
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Image.asset(
+                                      Images.logo,
+                                      width: compact ? 104 : 126,
+                                      height: compact ? 72 : 88,
+                                      fit: BoxFit.contain,
+                                      filterQuality: FilterQuality.high,
+                                    ),
+                                    Text(
+                                      'storeBrandName'.tr,
+                                      textDirection: TextDirection.ltr,
+                                      style: StoreTypography.title.copyWith(
+                                        color: StorePalette.navy,
+                                        fontSize: compact ? 17 : 20,
+                                        height: 1.15,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              SizedBox(height: compact ? StoreSpacing.md : 30),
+                              Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: StoreTypography.headline.copyWith(
+                                  color: StorePalette.navy,
+                                  fontSize: compact ? 24 : 28,
+                                  height: 1.3,
+                                ),
+                              ),
+                              if (subtitle != null) ...[
+                                const SizedBox(height: StoreSpacing.xxs),
+                                Text(
+                                  subtitle!,
+                                  textAlign: TextAlign.center,
+                                  style: StoreTypography.body.copyWith(
+                                    color: StorePalette.textSecondary,
+                                    fontSize: compact ? 14 : 16,
+                                  ),
+                                ),
+                              ],
+                              SizedBox(height: compact ? StoreSpacing.md : 28),
+                              child,
+                              if (footer != null) ...[
+                                const SizedBox(height: StoreSpacing.md),
+                                footer!,
+                              ],
                             ],
                           ),
                         ),
-                        const SizedBox(height: StoreSpacing.md),
-                        Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: StoreTypography.headline,
-                        ),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: StoreSpacing.xxs),
-                          Text(
-                            subtitle!,
-                            textAlign: TextAlign.center,
-                            style: StoreTypography.body.copyWith(
-                              color: StorePalette.textSecondary,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: StoreSpacing.lg),
-                        child,
-                        if (footer != null) ...[
-                          const SizedBox(height: StoreSpacing.md),
-                          footer!,
-                        ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
+                if (showBack)
+                  PositionedDirectional(
+                    top: compact ? 0 : StoreSpacing.xxs,
+                    start: StoreSpacing.sm,
+                    child: IconButton(
+                      key: const ValueKey('auth-back-button'),
+                      onPressed: onBack ?? Get.back,
+                      tooltip: 'storeBack'.tr,
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: StorePalette.navy,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+      ),
+    );
+  }
+}
+
+class StoreAuthPrimaryButton extends StatelessWidget {
+  const StoreAuthPrimaryButton({
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.icon,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final callback = isLoading ? null : onPressed;
+    return Semantics(
+      button: true,
+      label: label,
+      enabled: callback != null,
+      child: SizedBox(
+        height: 56,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient:
+                callback == null
+                    ? null
+                    : const LinearGradient(
+                      colors: [Color(0xFF6257C8), Color(0xFF7468D7)],
+                      begin: AlignmentDirectional.centerStart,
+                      end: AlignmentDirectional.centerEnd,
+                    ),
+            color: callback == null ? StorePalette.border : null,
+            borderRadius: BorderRadius.circular(StoreRadii.lg),
+            boxShadow:
+                callback == null
+                    ? null
+                    : const [
+                      BoxShadow(
+                        color: Color(0x246B65BD),
+                        blurRadius: 18,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+          ),
+          child: TextButton(
+            onPressed: callback,
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              disabledForegroundColor: StorePalette.textDisabled,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(StoreRadii.lg),
+              ),
+              textStyle: StoreTypography.title.copyWith(
+                color: Colors.white,
+                fontWeight: StoreTypography.semiBold,
               ),
             ),
+            child:
+                isLoading
+                    ? const SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(label),
+                        if (icon != null) ...[
+                          const SizedBox(width: StoreSpacing.sm),
+                          Icon(icon, size: 24),
+                        ],
+                      ],
+                    ),
+          ),
+        ),
       ),
     );
   }

@@ -215,6 +215,27 @@ void main() {
     expect(controller.countdown, 3);
   });
 
+  test('development OTP response prefills the six-digit field', () async {
+    final gateway =
+        _FakeAuthGateway()
+          ..requestResult = const AuthSuccess(
+            ForgotPasswordResponse(
+              status: 'success',
+              message: 'sent',
+              developmentOtp: '654321',
+            ),
+          );
+    final controller = Get.put(
+      ForgetPasswordControllerImp(authRepository: gateway),
+    );
+    controller.email.text = 'customer@example.test';
+
+    await controller.checkEmail();
+
+    expect(controller.otpController.text, '654321');
+    expect(controller.currentPage, 1);
+  });
+
   test('OTP resend countdown advances in real one-second steps', () async {
     final controller = Get.put(
       ForgetPasswordControllerImp(
@@ -236,7 +257,7 @@ void main() {
       ForgetPasswordControllerImp(authRepository: gateway),
     );
     controller.email.text = 'customer@example.test';
-    controller.otpController.text = '1234';
+    controller.otpController.text = '123456';
 
     gateway.otpResult = const AuthFailure(
       kind: AuthFailureKind.otpInvalid,
@@ -263,7 +284,7 @@ void main() {
         ForgetPasswordControllerImp(authRepository: gateway),
       );
       controller.email.text = 'customer@example.test';
-      controller.otpController.text = '1234';
+      controller.otpController.text = '123456';
       await controller.checkOTP();
       expect(controller.resetProof, 'opaque-proof');
 
@@ -288,7 +309,7 @@ void main() {
       ForgetPasswordControllerImp(authRepository: gateway),
     );
     controller.email.text = 'customer@example.test';
-    controller.otpController.text = '1234';
+    controller.otpController.text = '123456';
     await controller.checkOTP();
     controller.password.text = 'StrongPass1';
     controller.repassword.text = 'StrongPass1';

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/helper/route_helper.dart';
+import '../../core/model/otp_model.dart';
 import '../../repository/auth/auth_repository.dart';
 
 abstract class ForgetPasswordController extends GetxController {
@@ -103,7 +104,8 @@ class ForgetPasswordControllerImp extends ForgetPasswordController {
       identifier: identifier,
     );
     switch (result) {
-      case AuthSuccess():
+      case AuthSuccess(:final data):
+        _prefillDevelopmentOtp(data);
         _setStatus(AuthUiStatus.success, null);
         currentPage = 1;
         _animateToCurrentPage();
@@ -121,7 +123,8 @@ class ForgetPasswordControllerImp extends ForgetPasswordController {
       identifier: email.text.trim(),
     );
     switch (result) {
-      case AuthSuccess():
+      case AuthSuccess(:final data):
+        _prefillDevelopmentOtp(data);
         _setStatus(AuthUiStatus.success, 'storeOtpResent');
         startTimer();
       case AuthFailure(:final kind, :final messageKey):
@@ -133,7 +136,7 @@ class ForgetPasswordControllerImp extends ForgetPasswordController {
   Future<void> checkOTP() async {
     if (isSubmitting) return;
     final otp = otpController.text.trim();
-    if (!RegExp(r'^\d{4,8}$').hasMatch(otp)) {
+    if (!RegExp(r'^\d{6}$').hasMatch(otp)) {
       _setStatus(AuthUiStatus.validationError, 'storeOtpInvalid');
       return;
     }
@@ -206,6 +209,13 @@ class ForgetPasswordControllerImp extends ForgetPasswordController {
     _setStatus(nextStatus, key);
     if (nextStatus == AuthUiStatus.upgradeRequired) {
       _onUpgradeRequired();
+    }
+  }
+
+  void _prefillDevelopmentOtp(ForgotPasswordResponse response) {
+    final otp = response.developmentOtp?.trim();
+    if (otp != null && RegExp(r'^\d{6}$').hasMatch(otp)) {
+      otpController.text = otp;
     }
   }
 

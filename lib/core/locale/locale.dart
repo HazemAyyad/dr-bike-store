@@ -217,6 +217,8 @@ class MyLocale implements Translations {
           "كل ما تحتاجه للدراجات الكهربائية في مكان واحد",
       "storeOnboardingAllBody":
           "منتجات أصلية وقطع غيار وخدمات متكاملة لدراجتك.",
+      "storeOnboardingElectricBikes": "دراجات\nكهربائية",
+      "storeOnboardingBetterRide": "أداء أعلى\nلرحلات أفضل",
       "storeOnboardingQualityTitle": "منتجات أصلية وخيارات متنوعة",
       "storeOnboardingQualityBody":
           "مجموعة مختارة من القطع والإكسسوارات عالية الجودة.",
@@ -655,6 +657,8 @@ class MyLocale implements Translations {
       "storeOnboardingAllTitle": "Everything for electric bikes in one place",
       "storeOnboardingAllBody":
           "Original products, spare parts, and complete bike services.",
+      "storeOnboardingElectricBikes": "Electric\nbikes",
+      "storeOnboardingBetterRide": "Better performance\nfor every ride",
       "storeOnboardingQualityTitle": "Original products and varied choices",
       "storeOnboardingQualityBody":
           "A selected range of high-quality parts and accessories.",
@@ -1125,6 +1129,8 @@ class MyLocale implements Translations {
       "storeOnboardingAllTitle": "כל מה שצריך לאופניים חשמליים במקום אחד",
       "storeOnboardingAllBody":
           "מוצרים מקוריים, חלקי חילוף ושירותים מלאים לאופניים.",
+      "storeOnboardingElectricBikes": "אופניים\nחשמליים",
+      "storeOnboardingBetterRide": "ביצועים טובים יותר\nלכל רכיבה",
       "storeOnboardingQualityTitle": "מוצרים מקוריים ומבחר אפשרויות",
       "storeOnboardingQualityBody": "מבחר חלקים ואביזרים באיכות גבוהה.",
       "storeOnboardingServiceTitle": "תחזוקה מקצועית",

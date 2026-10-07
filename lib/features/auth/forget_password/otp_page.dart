@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../controller/auth/forgetpassword.controller.dart';
+import '../../../core/constants/images.dart';
 import '../../../core/theme/store_tokens.dart';
-import '../../../core/widget/store_buttons.dart';
 import '../../../core/widget/store_fields.dart';
 import '../widget/store_auth_scaffold.dart';
 
@@ -37,13 +37,26 @@ class OtpPage extends StatelessWidget {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.done,
                     prefixIcon: Icons.mail_outline,
+                    height: 56,
+                    borderRadius: StoreRadii.lg,
                     onSubmitted: (_) => controller.checkEmail(),
                   ),
                   const SizedBox(height: StoreSpacing.lg),
-                  StoreButton(
+                  StoreAuthPrimaryButton(
                     label: 'storeSendVerification'.tr,
                     onPressed: controller.checkEmail,
                     isLoading: controller.isSubmitting,
+                  ),
+                  const SizedBox(height: StoreSpacing.lg),
+                  Semantics(
+                    image: true,
+                    label: 'storeRecoveryRequestTitle'.tr,
+                    child: Image.asset(
+                      Images.passwordRecoveryIllustration,
+                      height: 250,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
                   ),
                 ],
               ),
