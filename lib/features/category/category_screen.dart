@@ -13,6 +13,7 @@ import '../../core/widget/store_cards.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_navigation_icons.dart';
 import '../../core/widget/store_product_layout_toggle.dart';
+import '../../core/widget/store_skeletons.dart';
 import '../../repository/categories/categories_repository.dart';
 import '../../repository/shop/shop_repository.dart';
 import 'filter_screen.dart';
@@ -80,7 +81,7 @@ class CategoryScreen extends StatelessWidget {
 
   Widget _body(BuildContext context, StoreViewState<List<Item>> state) {
     if (state is StoreLoading<List<Item>>) {
-      return const Center(child: CircularProgressIndicator());
+      return StoreProductCollectionSkeleton(isGrid: controller.isGrid.value);
     }
     if (state is StoreOffline<List<Item>>) {
       return _CatalogMessage(

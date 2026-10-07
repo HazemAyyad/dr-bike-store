@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../constants/app_constants.dart';
 import '../constants/images.dart';
+import 'store_states.dart';
 
 class CustomImageWidget extends StatelessWidget {
   final String image;
@@ -22,16 +23,17 @@ class CustomImageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedHeight = height ?? 85.h;
     return CachedNetworkImage(
       placeholder:
-          (context, url) => Image.asset(
-            placeholder ?? Images.logo,
-            height: height,
+          (context, url) => SizedBox(
+            height: resolvedHeight,
             width: width,
+            child: const StoreSkeletonBox(borderRadius: 0),
           ),
       imageUrl: AppConstants.appBaseUrl + image,
       fit: fit ?? BoxFit.cover,
-      height: height ?? 85.h,
+      height: resolvedHeight,
       width: width,
       errorWidget:
           (c, o, s) => Image.asset(

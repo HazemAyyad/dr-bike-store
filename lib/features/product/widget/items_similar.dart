@@ -9,6 +9,7 @@ import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
 import '../../../core/widget/store_cards.dart';
 import '../../../core/widget/store_media.dart';
+import '../../../core/widget/store_skeletons.dart';
 
 class SimilarItemsSection extends StatelessWidget {
   const SimilarItemsSection({required this.controller, super.key});
@@ -24,8 +25,8 @@ class SimilarItemsSection extends StatelessWidget {
         Text('storeSimilarProducts'.tr, style: StoreTypography.title),
         const SizedBox(height: StoreSpacing.sm),
         switch (state) {
-          StoreInitial<List<Item>>() || StoreLoading<List<Item>>() =>
-            const Center(child: CircularProgressIndicator()),
+          StoreInitial<List<Item>>() ||
+          StoreLoading<List<Item>>() => const StoreHorizontalProductsSkeleton(),
           StoreEmpty<List<Item>>(:final message) => Text(
             message.tr,
             style: StoreTypography.body,

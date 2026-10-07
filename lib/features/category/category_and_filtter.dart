@@ -13,6 +13,7 @@ import '../../core/constants/styles.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/widget/custom_image_widget.dart';
 import '../../core/widget/store_navigation_icons.dart';
+import '../../core/widget/store_skeletons.dart';
 import '../../repository/categories/categories_repository.dart';
 import '../../repository/shop/shop_repository.dart';
 import 'widget/build_list_view.dart';
@@ -236,7 +237,10 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
         ),
         body: Obx(() {
           if (controller.isLoading.value) {
-            return Center(child: CircularProgressIndicator());
+            return StoreProductCollectionSkeleton(
+              isGrid: controller.isGrid.value,
+              showHeader: false,
+            );
           }
           return controller.itemList!.rows.isEmpty
               ? Center(

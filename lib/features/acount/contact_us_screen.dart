@@ -10,19 +10,38 @@ import '../../core/constants/dimensions.dart';
 import '../../core/constants/images.dart';
 import '../../core/constants/styles.dart';
 import '../../core/functions/theme_services.dart';
+import '../../core/widget/store_states.dart';
 import '../../repository/auth/auth_repository.dart';
 
-class ContactUsPage extends StatelessWidget {
+class ContactUsPage extends StatefulWidget {
   const ContactUsPage({super.key});
 
   @override
+  State<ContactUsPage> createState() => _ContactUsPageState();
+}
+
+class _ContactUsPageState extends State<ContactUsPage> {
+  late final AccountControllerImp controller =
+      Get.isRegistered<AccountControllerImp>()
+          ? Get.find<AccountControllerImp>()
+          : Get.put(
+            AccountControllerImp(
+              authRepository: AuthRepository(apiClient: Get.find()),
+            ),
+          );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.conactUsModel == null && !controller.contactLoading) {
+        controller.getConactUs();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final AccountControllerImp controllerImp = Get.put(
-      AccountControllerImp(
-        authRepository: AuthRepository(apiClient: Get.find()),
-      ),
-    );
-    controllerImp.getConactUs();
     return Directionality(
       textDirection: TextDirection.rtl, // Arabic text direction
       child: GetBuilder<AccountControllerImp>(
@@ -42,101 +61,113 @@ class ContactUsPage extends StatelessWidget {
               elevation: 0,
               iconTheme: const IconThemeData(color: Colors.black),
             ),
-            body: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 20),
-                    Center(
-                      child: Text(
-                        "Our friendly team is ready to talk to you during business hours."
-                            .tr,
-                        style: robotoRegular.copyWith(
-                          fontSize: Dimensions.fontSizeExtraLarge,
-                          color: Theme.of(context).hintColor,
+            body:
+                accountControllerImp.contactLoading &&
+                        accountControllerImp.conactUsModel == null
+                    ? const StoreSkeletonList(itemCount: 4)
+                    : accountControllerImp.contactMessage != null &&
+                        accountControllerImp.conactUsModel == null
+                    ? StoreMessageState(
+                      kind: StoreMessageKind.error,
+                      message: accountControllerImp.contactMessage!,
+                      actionLabel: 'storeRetry'.tr,
+                      onAction: accountControllerImp.getConactUs,
+                    )
+                    : Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 20),
+                            Center(
+                              child: Text(
+                                "Our friendly team is ready to talk to you during business hours."
+                                    .tr,
+                                style: robotoRegular.copyWith(
+                                  fontSize: Dimensions.fontSizeExtraLarge,
+                                  color: Theme.of(context).hintColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Buttons for Message and Call
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildContactButton(
+                                  onTap: accountControllerImp.openCall,
+                                  Images.iconCall,
+                                  "Contact us",
+                                  context,
+                                ),
+                                const SizedBox(width: 20),
+                                _buildContactButton(
+                                  onTap: accountControllerImp.openSms,
+                                  Images.iconChat,
+                                  "message".tr,
+                                  context,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Divider with "أو"
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Divider(
+                                    thickness: 1,
+                                    color: Color(0xffeeeeee),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  child: Text(
+                                    "or".tr,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Theme.of(context).hintColor,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Divider(
+                                    thickness: 1,
+                                    color: Color(0xffeeeeee),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Social Media Icons
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildSocialIcon(
+                                  Images.facebookIcon,
+                                  onTap: accountControllerImp.openTwitter,
+                                ),
+                                const SizedBox(width: 20),
+                                _buildSocialIcon(
+                                  Images.iconsInstagram,
+                                  onTap: accountControllerImp.openInstagram,
+                                ),
+                                const SizedBox(width: 20),
+                                _buildSocialIcon(
+                                  Images.iconWhatsapp2,
+                                  onTap: accountControllerImp.openWhatsApp,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(height: 30),
-
-                    // Buttons for Message and Call
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildContactButton(
-                          onTap: accountControllerImp.openCall,
-                          Images.iconCall,
-                          "Contact us",
-                          context,
-                        ),
-                        const SizedBox(width: 20),
-                        _buildContactButton(
-                          onTap: accountControllerImp.openSms,
-                          Images.iconChat,
-                          "message".tr,
-                          context,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-
-                    // Divider with "أو"
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Color(0xffeeeeee),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            "or".tr,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).hintColor,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Color(0xffeeeeee),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-
-                    // Social Media Icons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildSocialIcon(
-                          Images.facebookIcon,
-                          onTap: accountControllerImp.openTwitter,
-                        ),
-                        const SizedBox(width: 20),
-                        _buildSocialIcon(
-                          Images.iconsInstagram,
-                          onTap: accountControllerImp.openInstagram,
-                        ),
-                        const SizedBox(width: 20),
-                        _buildSocialIcon(
-                          Images.iconWhatsapp2,
-                          onTap: accountControllerImp.openWhatsApp,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
           );
         },
       ),

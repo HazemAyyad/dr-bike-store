@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
 import '../constants/app_constants.dart';
+import 'store_states.dart';
 
 enum StoreMediaType { image, video, model3d, spin360 }
 
@@ -155,8 +156,8 @@ class StoreNetworkMedia extends StatelessWidget {
             excludeFromSemantics: true,
             frameBuilder: (context, child, frame, synchronous) {
               if (synchronous || frame != null) return child;
-              return const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
+              return const SizedBox.expand(
+                child: StoreSkeletonBox(borderRadius: 0),
               );
             },
             errorBuilder: (_, _, _) => StoreMediaPlaceholder(onRetry: onRetry),

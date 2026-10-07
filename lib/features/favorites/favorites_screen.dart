@@ -10,6 +10,7 @@ import '../../core/widget/store_cards.dart';
 import '../../core/widget/favorite_feedback.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_product_layout_toggle.dart';
+import '../../core/widget/store_skeletons.dart';
 import '../../core/widget/store_states.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -31,8 +32,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         switch (controller.status.value) {
           case FavoritesStatus.initial:
           case FavoritesStatus.loading:
-            return const Center(
-              child: CircularProgressIndicator(color: StorePalette.purple),
+            return StoreProductCollectionSkeleton(
+              isGrid: _isGrid,
+              showHeader: true,
             );
           case FavoritesStatus.error:
             return StoreMessageState(

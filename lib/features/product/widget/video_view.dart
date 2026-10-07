@@ -6,6 +6,7 @@ import '../../../core/model/product_media_model.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
 import '../../../core/widget/store_media.dart';
+import '../../../core/widget/store_states.dart';
 import 'product_media_presentation.dart';
 
 class VideoView extends StatefulWidget {
@@ -97,9 +98,7 @@ class _VideoViewState extends State<VideoView> {
             )
           else
             const ColoredBox(color: Color(0xFF0D0E12)),
-          const Center(
-            child: CircularProgressIndicator(color: StorePalette.purple),
-          ),
+          const SizedBox.expand(child: StoreSkeletonBox(borderRadius: 0)),
         ],
       );
     }

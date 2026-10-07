@@ -129,16 +129,21 @@ class StoreStateView<T> extends StatelessWidget {
         return Stack(
           children: [
             contentBuilder(context, data),
-            const Positioned.fill(
-              child: ColoredBox(
-                color: StorePalette.derivedLoadingOverlay,
-                child: Center(child: CircularProgressIndicator()),
+            const PositionedDirectional(
+              start: StoreSpacing.md,
+              end: StoreSpacing.md,
+              top: StoreSpacing.xs,
+              child: IgnorePointer(
+                child: StoreSkeletonBox(
+                  height: 4,
+                  borderRadius: StoreRadii.round,
+                ),
               ),
             ),
           ],
         );
       }
-      return loading ?? const Center(child: CircularProgressIndicator());
+      return loading ?? const StoreSkeletonList();
     }
     if (current is StoreEmpty<T>) {
       return StoreMessageState(
@@ -198,7 +203,7 @@ class StoreStateView<T> extends StatelessWidget {
         message: current.message,
       );
     }
-    return loading ?? const SizedBox.shrink();
+    return loading ?? const StoreSkeletonList();
   }
 }
 

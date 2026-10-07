@@ -7,6 +7,7 @@ import '../../../core/model/city_model.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
 import '../../../core/widget/store_buttons.dart';
+import '../../../core/widget/store_skeletons.dart';
 import 'cart_summary.dart';
 
 class CheckoutShippingStep extends StatelessWidget {
@@ -81,7 +82,7 @@ class CheckoutShippingStep extends StatelessWidget {
       ),
       const SizedBox(height: 9),
       if (controller.isVillagesLoading)
-        const _InlineLoading(label: 'جارٍ تحميل مناطق التوصيل…')
+        const StoreInlineFieldSkeleton(label: 'جارٍ تحميل مناطق التوصيل')
       else
         DropdownButtonFormField<ShiplyVillage>(
           value:
@@ -109,7 +110,10 @@ class CheckoutShippingStep extends StatelessWidget {
         ),
       const SizedBox(height: 10),
       if (controller.isDeliveryLoading)
-        const _InlineLoading(label: 'جارٍ احتساب تكلفة الشحن…')
+        const StoreInlineFieldSkeleton(
+          height: 48,
+          label: 'جارٍ احتساب تكلفة الشحن',
+        )
       else if (controller.selectedVillageId != null &&
           controller.hasAuthoritativeDeliveryQuote)
         Container(
@@ -183,32 +187,6 @@ class CheckoutShippingStep extends StatelessWidget {
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(StoreRadii.md),
       borderSide: const BorderSide(color: StorePalette.border),
-    ),
-  );
-}
-
-class _InlineLoading extends StatelessWidget {
-  const _InlineLoading({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: StorePalette.surface,
-      borderRadius: BorderRadius.circular(StoreRadii.md),
-      border: Border.all(color: StorePalette.border),
-    ),
-    child: Row(
-      children: [
-        const SizedBox.square(
-          dimension: 18,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-        const SizedBox(width: 10),
-        Text(label, style: StoreTypography.caption),
-      ],
     ),
   );
 }
