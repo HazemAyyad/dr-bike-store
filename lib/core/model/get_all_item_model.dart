@@ -45,6 +45,7 @@ class Item {
   final String descriptionAbree;
   final String? videoUrl;
   final double normailPrice;
+  final double? oldPrice;
   final double wholesalePrice;
   final int stock;
   final int inventoryAvailableQty;
@@ -54,8 +55,10 @@ class Item {
   final bool isNewItem;
   final bool isMoreSales;
   final double rate;
+  final int reviewCount;
   final int? manufactureYear;
   final double discount;
+  final Map<String, dynamic> storePresentation;
   final String? userIdAdd;
   final DateTime? dateAdd;
   final String? userIdUpdate;
@@ -93,6 +96,7 @@ class Item {
     required this.descriptionAbree,
     this.videoUrl,
     required this.normailPrice,
+    this.oldPrice,
     required this.wholesalePrice,
     required this.stock,
     this.inventoryAvailableQty = 0,
@@ -102,8 +106,10 @@ class Item {
     required this.isNewItem,
     required this.isMoreSales,
     required this.rate,
+    this.reviewCount = 0,
     this.manufactureYear,
     required this.discount,
+    this.storePresentation = const <String, dynamic>{},
     this.userIdAdd,
     this.dateAdd,
     this.userIdUpdate,
@@ -174,6 +180,10 @@ class Item {
           storefront
               ? _requiredNumber(json, 'normailPrice').toDouble()
               : (json['normailPrice'] ?? 0).toDouble(),
+      oldPrice:
+          json['oldPrice'] == null
+              ? null
+              : (json['oldPrice'] as num).toDouble(),
       wholesalePrice: (json['wholesalePrice'] ?? 0).toDouble(),
       stock: storefront ? _requiredInt(json, 'stock') : json['stock'] ?? 0,
       inventoryAvailableQty:
@@ -196,8 +206,13 @@ class Item {
               ? _requiredBool(json, 'isMoreSales')
               : json['isMoreSales'] == true,
       rate: (json['rate'] ?? 0.0).toDouble(),
+      reviewCount: int.tryParse('${json['reviewCount'] ?? 0}') ?? 0,
       manufactureYear: json['manufactureYear'],
       discount: (json['discount'] ?? 0.0).toDouble(),
+      storePresentation:
+          json['storePresentation'] is Map
+              ? Map<String, dynamic>.from(json['storePresentation'] as Map)
+              : const <String, dynamic>{},
       userIdAdd: json['userIdAdd'],
       dateAdd: DateTime.tryParse(json['dateAdd']?.toString() ?? ''),
       userIdUpdate: json['userIdUpdate'],
@@ -244,6 +259,10 @@ class Item {
       descriptionAbree: json['descriptionAbree'] ?? "",
       videoUrl: json['videoUrl'],
       normailPrice: (json['normailPrice'] ?? 0).toDouble(),
+      oldPrice:
+          json['oldPrice'] == null
+              ? null
+              : (json['oldPrice'] as num).toDouble(),
       wholesalePrice: (json['wholesalePrice'] ?? 0).toDouble(),
       stock: json['stock'] ?? 0,
       inventoryAvailableQty:
@@ -260,8 +279,13 @@ class Item {
       isNewItem: json['isNewItem'],
       isMoreSales: json['isMoreSales'],
       rate: (json['rate'] ?? 0.0).toDouble(),
+      reviewCount: int.tryParse('${json['reviewCount'] ?? 0}') ?? 0,
       manufactureYear: json['manufactureYear'],
       discount: (json['discount'] ?? 0.0).toDouble(),
+      storePresentation:
+          json['storePresentation'] is Map
+              ? Map<String, dynamic>.from(json['storePresentation'] as Map)
+              : const <String, dynamic>{},
       userIdAdd: json['userIdAdd'],
       dateAdd: DateTime.parse(json['dateAdd']),
       userIdUpdate: json['userIdUpdate'],
@@ -315,6 +339,7 @@ class Item {
     'descriptionAbree': descriptionAbree,
     'videoUrl': videoUrl,
     'normailPrice': normailPrice,
+    'oldPrice': oldPrice,
     'wholesalePrice': wholesalePrice,
     'stock': stock,
     'availability': {
@@ -327,8 +352,10 @@ class Item {
     'isNewItem': isNewItem,
     'isMoreSales': isMoreSales,
     'rate': rate,
+    'reviewCount': reviewCount,
     'manufactureYear': manufactureYear,
     'discount': discount,
+    'storePresentation': storePresentation,
     'userIdAdd': userIdAdd ?? '',
     'dateAdd': dateAdd?.toIso8601String(),
     'userIdUpdate': userIdUpdate ?? '',
