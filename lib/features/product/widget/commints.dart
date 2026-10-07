@@ -5,6 +5,7 @@ import '../../../core/classes/store_view_state.dart';
 import '../../../core/model/commint_model.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
+import '../../../core/widget/store_skeletons.dart';
 
 class ProductReviewsSection extends StatelessWidget {
   const ProductReviewsSection({
@@ -24,8 +25,8 @@ class ProductReviewsSection extends StatelessWidget {
         Text('storeReviews'.tr, style: StoreTypography.title),
         const SizedBox(height: StoreSpacing.sm),
         switch (state) {
-          StoreInitial<List<Review>>() || StoreLoading<List<Review>>() =>
-            const Center(child: CircularProgressIndicator()),
+          StoreInitial<List<Review>>() ||
+          StoreLoading<List<Review>>() => const StoreReviewsSkeleton(),
           StoreEmpty<List<Review>>(:final message) => _SectionMessage(
             message: message.tr,
           ),

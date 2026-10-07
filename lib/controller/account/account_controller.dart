@@ -80,6 +80,8 @@ class AccountControllerImp extends AccountController {
   String? token;
   CitiesResponse? citiesResponse;
   ApiResponse? conactUsModel;
+  bool contactLoading = false;
+  String? contactMessage;
   late TextEditingController emailController;
   late TextEditingController nameController;
   late TextEditingController phoneNumberController;
@@ -478,55 +480,39 @@ class AccountControllerImp extends AccountController {
 
   @override
   getConactUs() async {
+    if (contactLoading) return;
+    contactLoading = true;
+    contactMessage = null;
+    update();
     if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
       try {
         statusRequest = StatusRequest.loading;
 
         var response = await authRepository.checkSettingAndConactUs();
         if (response.statusCode == 200) {
           conactUsModel = ApiResponse.fromJson(response.body);
-          print(response.body);
-          // Get.toNamed(RouteHelper.contactUsPage);
+        } else {
+          contactMessage = 'An error occurred. Please try again.'.tr;
         }
       } catch (e) {
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
+        contactMessage = 'An error occurred. Please try again.'.tr;
+        showCustomSnackBar(contactMessage!, isError: true);
       } finally {
-        OverlayLoadingProgress.stop();
+        contactLoading = false;
+        update();
       }
     } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
+      contactLoading = false;
+      contactMessage = 'Check the internet connection'.tr;
+      update();
+      showCustomSnackBar(contactMessage!, isError: true);
     }
   }
 
   @override
   getConactUsAccount() async {
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        statusRequest = StatusRequest.loading;
-
-        var response = await authRepository.checkSettingAndConactUs();
-        if (response.statusCode == 200) {
-          conactUsModel = ApiResponse.fromJson(response.body);
-          Get.toNamed(RouteHelper.contactUsPage);
-        }
-      } catch (e) {
-        showCustomSnackBar(
-          'An error occurred. Please try again.'.tr,
-          isError: true,
-        );
-      } finally {
-        OverlayLoadingProgress.stop();
-      }
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
+    await getConactUs();
+    if (conactUsModel != null) Get.toNamed(RouteHelper.contactUsPage);
   }
 
   @override

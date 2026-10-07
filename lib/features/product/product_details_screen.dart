@@ -14,6 +14,7 @@ import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
 import '../../core/widget/favorite_feedback.dart';
 import '../../core/widget/store_navigation_icons.dart';
+import '../../core/widget/store_skeletons.dart';
 import '../shop/shop_car_screen.dart';
 import 'review_screen.dart';
 import 'widget/commints.dart';
@@ -35,9 +36,8 @@ class ProductDetailsScreen extends StatelessWidget {
 
   Widget _body(ProductControllerImp controller) => switch (controller
       .productState) {
-    StoreInitial<Item>() || StoreLoading<Item>() => const Center(
-      child: CircularProgressIndicator(color: StorePalette.purple),
-    ),
+    StoreInitial<Item>() ||
+    StoreLoading<Item>() => const StoreProductDetailsSkeleton(),
     StoreEmpty<Item>(:final message) => _ProductState(
       icon: Icons.inventory_2_outlined,
       message: message.tr,

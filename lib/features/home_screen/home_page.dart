@@ -787,17 +787,11 @@ class _HomeRefreshPanel extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox.square(
-            dimension: 28,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              color: StorePalette.purple,
-            ),
-          ),
+          const StoreSkeletonBox(width: 132, height: 12),
           const SizedBox(height: StoreSpacing.xs),
           Text(
             'storeRefreshingHome'.tr,
-            style: StoreTypography.body.copyWith(
+            style: StoreTypography.caption.copyWith(
               color: StorePalette.textSecondary,
             ),
           ),
