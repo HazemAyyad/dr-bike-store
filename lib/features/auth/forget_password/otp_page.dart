@@ -15,6 +15,7 @@ class OtpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<ForgetPasswordControllerImp>(
+      autoRemove: false,
       builder:
           (controller) => StoreAuthScaffold(
             title: 'storeRecoveryRequestTitle'.tr,

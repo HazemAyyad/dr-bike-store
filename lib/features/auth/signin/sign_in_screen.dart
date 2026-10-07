@@ -20,6 +20,7 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<LoginControllerImp>(
+      autoRemove: false,
       builder:
           (controller) => Scaffold(
             backgroundColor: StorePalette.background,

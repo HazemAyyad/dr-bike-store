@@ -33,6 +33,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<ForgetPasswordControllerImp>(
+      autoRemove: false,
       builder:
           (controller) => Scaffold(
             backgroundColor: StorePalette.background,
