@@ -198,6 +198,17 @@ void main() {
       isTrue,
     ),
   );
+  test('checkout success prefers the serial order number', () {
+    final success = NativeCheckoutSuccess.tryParse(201, {
+      'data': {
+        'id': 6,
+        'serialNumber': 'DB-2026-00123',
+        'orderNumber': 'DB-2026-00123',
+      },
+    });
+    expect(success?.orderId, '6');
+    expect(success?.orderNumber, 'DB-2026-00123');
+  });
   test(
     '200 malformed is not success',
     () => expect(NativeCheckoutSuccess.tryParse(200, {}), isNull),

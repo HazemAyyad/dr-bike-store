@@ -68,8 +68,6 @@ class _ViewImageAndVideoState extends State<ViewImageAndVideo> {
                       child: PageView.builder(
                         key: const Key('product-media-pages'),
                         controller: _pageController,
-                        reverse:
-                            Directionality.of(context) == TextDirection.rtl,
                         itemCount: media.length,
                         onPageChanged: widget.controllerScreen.selectMedia,
                         itemBuilder:

@@ -305,6 +305,14 @@ void main() {
       await controller.submit();
       expect(controller.message, contains('للمراجعة'));
     });
+    test('server authorization failure exposes actionable message', () async {
+      repository.submitResponse = const Response(
+        statusCode: 403,
+        body: {'message': 'Account link required'},
+      );
+      expect(await controller.submit(), isFalse);
+      expect(controller.message, contains('حساب عميل نشط'));
+    });
     test('invalid rating is blocked client-side', () async {
       controller = ReviewController(
         repository: repository,

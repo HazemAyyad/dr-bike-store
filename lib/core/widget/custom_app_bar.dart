@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../constants/dimensions.dart';
 import '../constants/styles.dart';
+import 'store_navigation_icons.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -16,38 +17,45 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? type;
   final String? leadingIcon;
   final double? elevation;
-  const CustomAppBar(
-      {Key? key,
-      required this.title,
-      this.backButton = true,
-      this.onBackPressed,
-      this.showCart = false,
-      this.leadingIcon,
-      this.onVegFilterTap,
-      this.type,
-      this.titleCentre,
-      this.elevation})
-      : super(key: key);
+  const CustomAppBar({
+    Key? key,
+    required this.title,
+    this.backButton = true,
+    this.onBackPressed,
+    this.showCart = false,
+    this.leadingIcon,
+    this.onVegFilterTap,
+    this.type,
+    this.titleCentre,
+    this.elevation,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title,
-          style: robotoBold.copyWith(
-              fontSize: Dimensions.fontSizeLarge,
-              color: Theme.of(context).textTheme.bodyLarge!.color)),
+      title: Text(
+        title,
+        style: robotoBold.copyWith(
+          fontSize: Dimensions.fontSizeLarge,
+          color: Theme.of(context).textTheme.bodyLarge!.color,
+        ),
+      ),
       centerTitle: titleCentre ?? true,
-      leading: backButton
-          ? IconButton(
-              icon: leadingIcon != null
-                  ? Image.asset(leadingIcon!, height: 22, width: 22)
-                  : const Icon(Icons.arrow_back),
-              color: Theme.of(context).textTheme.bodyLarge!.color,
-              onPressed: () => onBackPressed != null
-                  ? onBackPressed!()
-                  : Navigator.pop(context),
-            )
-          : const SizedBox(),
+      leading:
+          backButton
+              ? IconButton(
+                icon:
+                    leadingIcon != null
+                        ? Image.asset(leadingIcon!, height: 22, width: 22)
+                        : Icon(storeBackIcon(context)),
+                color: Theme.of(context).textTheme.bodyLarge!.color,
+                onPressed:
+                    () =>
+                        onBackPressed != null
+                            ? onBackPressed!()
+                            : Navigator.pop(context),
+              )
+              : const SizedBox(),
       backgroundColor: Theme.of(context).cardColor,
       elevation: elevation ?? 0,
       // actions: showCart || onVegFilterTap != null ? [

@@ -63,6 +63,7 @@ class CheckoutFlowState {
     this.availableRoles = const [],
     this.message,
     this.orderId,
+    this.orderNumber,
     this.replayed = false,
     this.validationKind,
   });
@@ -72,6 +73,7 @@ class CheckoutFlowState {
   final List<String> availableRoles;
   final String? message;
   final String? orderId;
+  final String? orderNumber;
   final bool replayed;
   final CheckoutValidationKind? validationKind;
 
@@ -81,6 +83,7 @@ class CheckoutFlowState {
     List<String>? availableRoles,
     String? message,
     String? orderId,
+    String? orderNumber,
     bool? replayed,
     CheckoutValidationKind? validationKind,
   }) => CheckoutFlowState(
@@ -89,6 +92,7 @@ class CheckoutFlowState {
     availableRoles: availableRoles ?? this.availableRoles,
     message: message,
     orderId: orderId ?? this.orderId,
+    orderNumber: orderNumber ?? this.orderNumber,
     replayed: replayed ?? this.replayed,
     validationKind: validationKind,
   );

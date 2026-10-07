@@ -7,6 +7,7 @@ import '../../controller/shop/shop_controller.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/widget/store_cards.dart';
+import '../../core/widget/favorite_feedback.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_states.dart';
 
@@ -95,11 +96,13 @@ class _FavoriteCard extends StatelessWidget {
             () => Get.find<ProductControllerImp>().getCategoryById(
               itemId: item.productId,
             ),
-        onFavorite:
-            () => controller.requestToggle(
-              listingId: item.listingId,
-              productId: item.productId,
-            ),
+        onFavorite: () async {
+          final outcome = await controller.requestToggle(
+            listingId: item.listingId,
+            productId: item.productId,
+          );
+          showFavoriteFeedback(outcome);
+        },
         onAddToCart: () => shop.addToCart(item),
         compact: true,
       );

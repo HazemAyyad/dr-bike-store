@@ -16,6 +16,7 @@ import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_bottom_navigation.dart';
 import '../../core/widget/store_cards.dart';
+import '../../core/widget/favorite_feedback.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_states.dart';
 import 'widget/main_categorys.dart';
@@ -999,15 +1000,7 @@ Future<void> _requestFavorite(Item item) async {
     await Get.toNamed(RouteHelper.intoLog);
     return;
   }
-  if (outcome == FavoriteActionOutcome.failed ||
-      outcome == FavoriteActionOutcome.invalidIdentity) {
-    Get.snackbar(
-      'storeFavoritesUnavailableTitle'.tr,
-      'storeFavoritesUnavailableMessage'.tr,
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(StoreSpacing.md),
-    );
-  }
+  showFavoriteFeedback(outcome);
 }
 
 String _itemName(Item item, String languageCode) =>

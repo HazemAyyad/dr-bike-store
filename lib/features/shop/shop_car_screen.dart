@@ -5,6 +5,7 @@ import '../../controller/shop/shop_controller.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
+import '../../core/widget/store_navigation_icons.dart';
 import 'widget/cart_summary.dart';
 import 'widget/empty_car.dart';
 import 'widget/item_shop_car.dart';
@@ -27,7 +28,7 @@ class ShopCarScreen extends StatelessWidget {
               leading: IconButton(
                 tooltip: 'الرجوع',
                 onPressed: Get.back,
-                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 19),
+                icon: Icon(storeBackIcon(context), size: 19),
               ),
               title: Text('سلة المشتريات (${controller.cartQuantity})'),
               titleTextStyle: StoreTypography.title.copyWith(fontSize: 17),

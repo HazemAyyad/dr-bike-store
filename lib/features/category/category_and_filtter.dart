@@ -12,6 +12,7 @@ import '../../core/constants/images.dart';
 import '../../core/constants/styles.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/widget/custom_image_widget.dart';
+import '../../core/widget/store_navigation_icons.dart';
 import '../../repository/categories/categories_repository.dart';
 import '../../repository/shop/shop_repository.dart';
 import 'widget/build_list_view.dart';
@@ -54,7 +55,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
               Get.back();
               controller.useFiltter = false.obs;
             },
-            icon: const Icon(Icons.arrow_back, color: Color(0xff7f7f7f)),
+            icon: Icon(storeBackIcon(context), color: const Color(0xff7f7f7f)),
           ),
           title: Text(
             controller.titleMain.toString(),

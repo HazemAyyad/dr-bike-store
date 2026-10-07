@@ -7,6 +7,7 @@ import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
 import '../../core/widget/store_states.dart';
+import '../../core/widget/store_navigation_icons.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -139,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     child: ListTile(
       leading: Icon(icon, color: StorePalette.purple),
       title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(storeForwardIcon(context)),
       onTap: onTap,
     ),
   );

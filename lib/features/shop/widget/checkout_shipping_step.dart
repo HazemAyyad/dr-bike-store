@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../controller/shop/shop_controller.dart';
 import '../../../core/model/checkout_flow_model.dart';
@@ -6,22 +7,64 @@ import '../../../core/model/city_model.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
 import '../../../core/widget/store_buttons.dart';
+import 'cart_summary.dart';
 
 class CheckoutShippingStep extends StatelessWidget {
   const CheckoutShippingStep({required this.controller, super.key});
+
   final ShopController controller;
 
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(StoreSpacing.md),
+    key: const PageStorageKey<String>('checkout-shipping-scroll'),
+    padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 22),
     children: [
-      Text('الشحن', style: StoreTypography.headline),
-      const SizedBox(height: StoreSpacing.md),
+      Text('طريقة الشحن', style: StoreTypography.title),
+      const SizedBox(height: 10),
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: StorePalette.surface,
+          borderRadius: BorderRadius.circular(StoreRadii.lg),
+          border: Border.all(color: StorePalette.purple, width: 1.3),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              color: StorePalette.purple,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('التوصيل عبر Shiply', style: StoreTypography.bodyMedium),
+                  SizedBox(height: 2),
+                  Text(
+                    'تُحسب التكلفة من المنطقة المختارة',
+                    style: StoreTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.local_shipping_outlined,
+              color: StorePalette.purple,
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      Text('منطقة التوصيل', style: StoreTypography.title),
+      const SizedBox(height: 10),
       DropdownButtonFormField<Citys>(
         value:
             controller.cities
                 .where((c) => c.id.toString() == controller.selectedCityId)
                 .firstOrNull,
+        isExpanded: true,
         items:
             controller.cities
                 .map(
@@ -34,21 +77,18 @@ class CheckoutShippingStep extends StatelessWidget {
         onChanged: (city) {
           if (city != null) controller.onCitySelected(city);
         },
-        decoration: const InputDecoration(
-          labelText: 'المدينة',
-          filled: true,
-          fillColor: StorePalette.surface,
-        ),
+        decoration: _decoration('المدينة', Icons.location_city_outlined),
       ),
-      const SizedBox(height: StoreSpacing.sm),
+      const SizedBox(height: 9),
       if (controller.isVillagesLoading)
-        const Center(child: CircularProgressIndicator())
+        const _InlineLoading(label: 'جارٍ تحميل مناطق التوصيل…')
       else
         DropdownButtonFormField<ShiplyVillage>(
           value:
               controller.villages
                   .where((v) => v.id.toString() == controller.selectedVillageId)
                   .firstOrNull,
+          isExpanded: true,
           items:
               controller.villages
                   .where((v) => !v.isClosed)
@@ -59,31 +99,118 @@ class CheckoutShippingStep extends StatelessWidget {
                     ),
                   )
                   .toList(),
-          onChanged: (village) {
-            if (village != null) controller.onVillageSelected(village);
-          },
-          decoration: const InputDecoration(
-            labelText: 'القرية / المنطقة',
-            filled: true,
-            fillColor: StorePalette.surface,
+          onChanged:
+              controller.selectedCityId == null
+                  ? null
+                  : (village) {
+                    if (village != null) controller.onVillageSelected(village);
+                  },
+          decoration: _decoration('القرية / المنطقة', Icons.place_outlined),
+        ),
+      const SizedBox(height: 10),
+      if (controller.isDeliveryLoading)
+        const _InlineLoading(label: 'جارٍ احتساب تكلفة الشحن…')
+      else if (controller.selectedVillageId != null &&
+          controller.hasAuthoritativeDeliveryQuote)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: StorePalette.lightPurple,
+            borderRadius: BorderRadius.circular(StoreRadii.md),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.receipt_long_outlined,
+                size: 19,
+                color: StorePalette.purple,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('تكلفة الشحن الحالية', style: StoreTypography.body),
+              ),
+              Text(
+                '${_price(controller.selectedCityPrice)} ₪',
+                style: StoreTypography.label.copyWith(
+                  color: StorePalette.purple,
+                ),
+              ),
+            ],
           ),
         ),
-      const SizedBox(height: StoreSpacing.md),
-      if (controller.isDeliveryLoading)
-        const LinearProgressIndicator()
-      else if (controller.selectedVillageId != null)
-        Text(
-          'عرض التوصيل الحالي: ${controller.selectedCityPrice.toStringAsFixed(2)} ₪\nيعيد الخادم التحقق منه عند إنشاء الطلب.',
-          style: StoreTypography.body,
+      if (!controller.isDeliveryLoading &&
+          controller.selectedVillageId != null &&
+          !controller.hasAuthoritativeDeliveryQuote)
+        Container(
+          padding: const EdgeInsets.all(11),
+          decoration: BoxDecoration(
+            color: StorePalette.derivedWarningSurface,
+            borderRadius: BorderRadius.circular(StoreRadii.md),
+          ),
+          child: Text(
+            controller.deliveryQuoteMessage ??
+                'سيعتمد الخادم رسوم الشحن عند إنشاء الطلب.',
+            style: StoreTypography.caption.copyWith(
+              color: StorePalette.textPrimary,
+            ),
+          ),
         ),
-      const SizedBox(height: StoreSpacing.lg),
+      const SizedBox(height: 18),
+      Text('ملخص الطلب', style: StoreTypography.title),
+      const SizedBox(height: 10),
+      CartSummary(controller: controller),
+      const SizedBox(height: 18),
       StoreButton(
-        label: 'متابعة إلى الدفع',
+        label: 'متابعة الدفع',
+        icon: Icons.arrow_back_rounded,
         onPressed:
-            controller.selectedVillageId == null
+            controller.selectedVillageId == null || controller.isDeliveryLoading
                 ? null
                 : () => controller.setCheckoutStage(CheckoutStage.payment),
       ),
     ],
   );
+
+  InputDecoration _decoration(String label, IconData icon) => InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon, size: 20, color: StorePalette.textSecondary),
+    filled: true,
+    fillColor: StorePalette.surface,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(StoreRadii.md),
+      borderSide: const BorderSide(color: StorePalette.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(StoreRadii.md),
+      borderSide: const BorderSide(color: StorePalette.border),
+    ),
+  );
 }
+
+class _InlineLoading extends StatelessWidget {
+  const _InlineLoading({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: StorePalette.surface,
+      borderRadius: BorderRadius.circular(StoreRadii.md),
+      border: Border.all(color: StorePalette.border),
+    ),
+    child: Row(
+      children: [
+        const SizedBox.square(
+          dimension: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        const SizedBox(width: 10),
+        Text(label, style: StoreTypography.caption),
+      ],
+    ),
+  );
+}
+
+String _price(num value) => NumberFormat('#,##0.##', 'en_US').format(value);

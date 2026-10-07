@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../controller/categores/categores_controller.dart';
 import '../../core/constants/dimensions.dart';
 import '../../core/constants/styles.dart';
+import '../../core/widget/store_navigation_icons.dart';
 import '../../repository/categories/categories_repository.dart';
 import '../home_screen/widget/main_categorys.dart';
 
@@ -28,7 +29,10 @@ class SupcategoryScreen extends StatelessWidget {
           onPressed: () {
             Get.back();
           },
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).hoverColor),
+          icon: Icon(
+            storeBackIcon(context),
+            color: Theme.of(context).hoverColor,
+          ),
         ),
         title: Text(
           controller.titleMain.toString(),

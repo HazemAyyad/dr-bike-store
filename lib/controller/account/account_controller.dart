@@ -15,6 +15,7 @@ import '../../core/helper/route_helper.dart';
 import '../../core/model/city_model.dart';
 import '../../core/model/conact_us_model.dart';
 import '../../core/model/orders_model.dart';
+import '../../core/model/store_address_model.dart';
 import '../../core/model/user_data_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../LocalizationController.dart';
@@ -96,6 +97,9 @@ class AccountControllerImp extends AccountController {
   AccountViewStatus profileStatus = AccountViewStatus.initial;
   AccountMutationStatus mutationStatus = AccountMutationStatus.idle;
   String? message;
+  List<StoreAddress> addresses = const [];
+  bool addressesLoading = false;
+  String? addressesMessage;
   final AuthRepository authRepository;
   final ConnectivityChecker connectivityChecker;
   late StatusRequest statusRequest;
@@ -315,6 +319,120 @@ class AccountControllerImp extends AccountController {
   }
 
   Future<bool> deleteUserAccount() => deactivateAccount(confirmed: true);
+
+  Future<void> loadAddresses() async {
+    addressesLoading = true;
+    addressesMessage = null;
+    update();
+    try {
+      final response = await authRepository.getStoreAddresses();
+      if (response.statusCode != 200 || response.body is! Map) {
+        throw const FormatException('store addresses');
+      }
+      final raw = (response.body as Map)['data'];
+      if (raw is! List) throw const FormatException('store addresses data');
+      addresses = raw
+          .whereType<Map>()
+          .map((row) => StoreAddress.fromJson(Map<String, dynamic>.from(row)))
+          .where((address) => address.id > 0)
+          .toList(growable: false);
+    } catch (_) {
+      addressesMessage = 'تعذر تحميل العناوين.';
+    } finally {
+      addressesLoading = false;
+      update();
+    }
+  }
+
+  Future<bool> saveAddress({
+    StoreAddress? current,
+    required String label,
+    required String streetAddress,
+    String? phone,
+    bool isDefault = false,
+  }) async {
+    final cleanLabel = label.trim();
+    final cleanStreet = streetAddress.trim();
+    if (cleanLabel.isEmpty || cleanStreet.isEmpty) {
+      addressesMessage = 'اسم العنوان وتفاصيله مطلوبان.';
+      update();
+      return false;
+    }
+    addressesLoading = true;
+    addressesMessage = null;
+    update();
+    try {
+      final body = <String, dynamic>{
+        if (current != null) 'address_id': current.id,
+        'label': cleanLabel,
+        'street_address': cleanStreet,
+        'phone': phone?.trim().isEmpty == true ? null : phone?.trim(),
+        'city_id': current?.cityId ?? userModel?.cityId,
+        'shiply_city_id': current?.shiplyCityId,
+        'shiply_village_id': current?.shiplyVillageId,
+        'shiply_city_name': current?.shiplyCityName,
+        'shiply_village_name': current?.shiplyVillageName,
+        'delivery_notes': current?.deliveryNotes,
+        'is_default': isDefault,
+      };
+      final response =
+          current == null
+              ? await authRepository.createStoreAddress(body)
+              : await authRepository.updateStoreAddress(body);
+      if ((current == null && response.statusCode != 201) ||
+          (current != null && response.statusCode != 200)) {
+        throw const FormatException('save store address');
+      }
+      await loadAddresses();
+      final defaultAddress = addresses.firstWhereOrNull(
+        (address) => address.isDefault,
+      );
+      if (defaultAddress != null) {
+        userModel?.address = defaultAddress.streetAddress;
+        addressController.text = defaultAddress.streetAddress;
+      }
+      showCustomSnackBar(
+        current == null ? 'تمت إضافة العنوان بنجاح.' : 'تم تحديث العنوان.',
+        isError: false,
+      );
+      return true;
+    } catch (_) {
+      addressesMessage = 'تعذر حفظ العنوان.';
+      addressesLoading = false;
+      update();
+      showCustomSnackBar(addressesMessage, isError: true);
+      return false;
+    }
+  }
+
+  Future<bool> makeDefaultAddress(StoreAddress address) => saveAddress(
+    current: address,
+    label: address.label,
+    streetAddress: address.streetAddress,
+    phone: address.phone,
+    isDefault: true,
+  );
+
+  Future<bool> deleteAddress(StoreAddress address) async {
+    addressesLoading = true;
+    addressesMessage = null;
+    update();
+    try {
+      final response = await authRepository.deleteStoreAddress(address.id);
+      if (response.statusCode != 200) {
+        throw const FormatException('delete store address');
+      }
+      await loadAddresses();
+      showCustomSnackBar('تم حذف العنوان.', isError: false);
+      return true;
+    } catch (_) {
+      addressesMessage = 'تعذر حذف العنوان.';
+      addressesLoading = false;
+      update();
+      showCustomSnackBar(addressesMessage, isError: true);
+      return false;
+    }
+  }
 
   @override
   getAllOrders() async {

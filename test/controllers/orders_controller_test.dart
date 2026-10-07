@@ -52,6 +52,10 @@ void main() {
     () => expect(_order('Done').totalPriceWithDiscound, 75),
   );
   test('delivery fee retained', () => expect(_order('Done').priceDelivery, 12));
+  test('authoritative grand total includes delivery', () {
+    expect(_order('Done').grandTotal, 82);
+    expect(_order('Done').discountTotal, 10);
+  });
   test(
     'coupon snapshot retained',
     () => expect(_order('Done').totalPriceWithDiscoundCode, 70),
@@ -59,6 +63,13 @@ void main() {
   test(
     'current product price never recalculates history',
     () => expect(_order('Done').details.single.item.normailPrice, 999),
+  );
+  test(
+    'normal product image is preferred for order thumbnails',
+    () => expect(
+      _order('Done').details.single.item.primaryImageUrl,
+      '/media/thumb.jpg',
+    ),
   );
   test(
     'missing optional handover tolerated',
@@ -190,13 +201,26 @@ void main() {
     await c.load();
     expect(repository.lastStatus, 'New');
   });
-  test('reorder unsupported', () => expect(OrderController, isNotNull));
-  test(
-    'share unsupported without stable contract',
-    () => expect(OrderController, isNotNull),
-  );
-  test('edit address unsupported', () => expect(OrderController, isNotNull));
-  test('add note unsupported', () => expect(OrderController, isNotNull));
+  test('tracking requires authoritative tracking data', () {
+    final c = _controller(repository);
+    expect(c.canTrack(_order('New')), isTrue);
+    expect(
+      c.canTrack(_order('New', handover: false, tracking: false)),
+      isFalse,
+    );
+  });
+  test('reorder unsupported', () {
+    expect(_controller(repository).canReorder(_order('Done')), isFalse);
+  });
+  test('share unsupported without stable contract', () {
+    expect(_controller(repository).canShare(_order('Done')), isFalse);
+  });
+  test('edit address unsupported', () {
+    expect(_controller(repository).canEditAddress(_order('New')), isFalse);
+  });
+  test('add note unsupported', () {
+    expect(_controller(repository).canAddNote(_order('New')), isFalse);
+  });
 }
 
 OrderController _controller(AuthRepository repository) => OrderController(
@@ -328,6 +352,9 @@ Map<String, dynamic> _json(
         'discount': 0,
         'dateAdd': '',
         'dateUpdate': '',
+        'normalImagesItems': [
+          {'id': 1, 'imageUrl': '/media/thumb.jpg', 'itemId': 5},
+        ],
         'viewImagesItems': [],
         'itemSizes': [],
       },

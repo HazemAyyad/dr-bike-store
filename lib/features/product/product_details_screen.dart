@@ -12,6 +12,8 @@ import '../../core/model/get_all_item_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
+import '../../core/widget/favorite_feedback.dart';
+import '../../core/widget/store_navigation_icons.dart';
 import '../shop/shop_car_screen.dart';
 import 'review_screen.dart';
 import 'widget/commints.dart';
@@ -84,44 +86,39 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       surfaceTintColor: StorePalette.surface,
       titleSpacing: StoreSpacing.xs,
-      title: Directionality(
-        textDirection: TextDirection.ltr,
-        child: Row(
-          children: [
-            StoreIconButton(
-              icon: Icons.arrow_back_ios_new,
-              semanticLabel: _label(context, 'رجوع', 'Back'),
-              onPressed: () => Navigator.of(context).maybePop(),
-            ),
-            const Spacer(),
-            StoreIconButton(
-              icon: Icons.share_outlined,
-              semanticLabel: _label(context, 'مشاركة المنتج', 'Share product'),
-              onPressed: item == null ? null : () => _share(context, item),
-            ),
-            if (Get.isRegistered<FavoritesController>())
-              Obx(() {
-                final selected = Get.find<FavoritesController>().contains(
-                  item?.listingId,
-                );
-                return StoreIconButton(
-                  icon: selected ? Icons.favorite : Icons.favorite_border,
-                  semanticLabel:
-                      selected
-                          ? 'storeRemoveFavorite'.tr
-                          : 'storeAddFavorite'.tr,
-                  onPressed: item == null ? null : () => _favorite(item),
-                );
-              })
-            else
-              StoreIconButton(
-                icon: Icons.favorite_border,
-                semanticLabel: 'storeAddFavorite'.tr,
+      title: Row(
+        children: [
+          StoreIconButton(
+            icon: storeBackIcon(context),
+            semanticLabel: _label(context, 'رجوع', 'Back'),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          const Spacer(),
+          StoreIconButton(
+            icon: Icons.share_outlined,
+            semanticLabel: _label(context, 'مشاركة المنتج', 'Share product'),
+            onPressed: item == null ? null : () => _share(context, item),
+          ),
+          if (Get.isRegistered<FavoritesController>())
+            Obx(() {
+              final selected = Get.find<FavoritesController>().contains(
+                item?.listingId,
+              );
+              return StoreIconButton(
+                icon: selected ? Icons.favorite : Icons.favorite_border,
+                semanticLabel:
+                    selected ? 'storeRemoveFavorite'.tr : 'storeAddFavorite'.tr,
                 onPressed: item == null ? null : () => _favorite(item),
-              ),
-            _CartAction(onPressed: () => Get.to(() => const ShopCarScreen())),
-          ],
-        ),
+              );
+            })
+          else
+            StoreIconButton(
+              icon: Icons.favorite_border,
+              semanticLabel: 'storeAddFavorite'.tr,
+              onPressed: item == null ? null : () => _favorite(item),
+            ),
+          _CartAction(onPressed: () => Get.to(() => const ShopCarScreen())),
+        ],
       ),
     );
   }
@@ -162,15 +159,7 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
       await Get.toNamed(RouteHelper.intoLog);
       return;
     }
-    if (outcome == FavoriteActionOutcome.failed ||
-        outcome == FavoriteActionOutcome.invalidIdentity) {
-      Get.snackbar(
-        'storeFavoritesUnavailableTitle'.tr,
-        'storeFavoritesUnavailableMessage'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(StoreSpacing.md),
-      );
-    }
+    showFavoriteFeedback(outcome);
   }
 }
 
