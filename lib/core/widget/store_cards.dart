@@ -71,50 +71,22 @@ class StoreProductCard extends StatelessWidget {
             start: StoreSpacing.xs,
             child: StoreAvailabilityChip(inStock: inStock),
           ),
-        if (onFavorite != null)
+        if (onFavorite != null || onAddToCart != null)
           PositionedDirectional(
             top: StoreSpacing.xxs,
             end: StoreSpacing.xxs,
-            child:
-                homePresentation
-                    ? SizedBox.square(
-                      dimension: 32,
-                      child: IconButton.filledTonal(
-                        tooltip:
-                            isFavorite
-                                ? 'storeRemoveFavorite'.tr
-                                : 'storeAddFavorite'.tr,
-                        onPressed: onFavorite,
-                        padding: EdgeInsets.zero,
-                        iconSize: StoreIconSizes.medium,
-                        style: IconButton.styleFrom(
-                          backgroundColor: StorePalette.surface.withValues(
-                            alpha: 0.9,
-                          ),
-                        ),
-                        icon: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color:
-                              isFavorite
-                                  ? StorePalette.error
-                                  : StorePalette.textPrimary,
-                        ),
-                      ),
-                    )
-                    : IconButton.filledTonal(
-                      tooltip:
-                          isFavorite
-                              ? 'storeRemoveFavorite'.tr
-                              : 'storeAddFavorite'.tr,
-                      onPressed: onFavorite,
-                      icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color:
-                            isFavorite
-                                ? StorePalette.error
-                                : StorePalette.textSecondary,
-                      ),
-                    ),
+            child: _StoreProductActions(
+              inStock: inStock,
+              isFavorite: isFavorite,
+              isInCart: isInCart,
+              onFavorite: onFavorite,
+              onAddToCart: onAddToCart,
+              dimension: homePresentation ? 30 : 36,
+              iconSize:
+                  homePresentation
+                      ? StoreIconSizes.small
+                      : StoreIconSizes.medium,
+            ),
           ),
       ],
     );
@@ -199,42 +171,6 @@ class StoreProductCard extends StatelessWidget {
                           ],
                         ),
                       ],
-                      if (onAddToCart != null) ...[
-                        SizedBox(
-                          height: compact ? StoreSpacing.xxs : StoreSpacing.xs,
-                        ),
-                        Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: Tooltip(
-                            message:
-                                isInCart
-                                    ? 'تمت الإضافة للسلة'
-                                    : 'storeAddToCart'.tr,
-                            child: IconButton.filled(
-                              onPressed: inStock ? onAddToCart : null,
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    isInCart
-                                        ? StorePalette.success
-                                        : StorePalette.purple,
-                                disabledBackgroundColor: StorePalette.border,
-                                foregroundColor: Colors.white,
-                                minimumSize: Size.square(compact ? 36 : 42),
-                                padding: EdgeInsets.zero,
-                              ),
-                              icon: Icon(
-                                isInCart
-                                    ? Icons.shopping_cart_rounded
-                                    : Icons.add_shopping_cart_rounded,
-                                size:
-                                    compact
-                                        ? StoreIconSizes.small
-                                        : StoreIconSizes.medium,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -310,24 +246,15 @@ class StoreProductListCard extends StatelessWidget {
                               style: StoreTypography.bodyMedium,
                             ),
                           ),
-                          if (onFavorite != null)
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints.tightFor(
-                                width: 34,
-                                height: 34,
-                              ),
-                              onPressed: onFavorite,
-                              icon: Icon(
-                                isFavorite
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                color:
-                                    isFavorite
-                                        ? StorePalette.error
-                                        : StorePalette.textSecondary,
-                              ),
+                          if (onFavorite != null || onAddToCart != null)
+                            _StoreProductActions(
+                              inStock: inStock,
+                              isFavorite: isFavorite,
+                              isInCart: isInCart,
+                              onFavorite: onFavorite,
+                              onAddToCart: onAddToCart,
+                              dimension: 34,
+                              iconSize: StoreIconSizes.small,
                             ),
                         ],
                       ),
@@ -355,30 +282,6 @@ class StoreProductListCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                          if (onAddToCart != null)
-                            Tooltip(
-                              message:
-                                  isInCart
-                                      ? 'تمت الإضافة للسلة'
-                                      : 'storeAddToCart'.tr,
-                              child: IconButton.filled(
-                                onPressed: inStock ? onAddToCart : null,
-                                style: IconButton.styleFrom(
-                                  backgroundColor:
-                                      isInCart
-                                          ? StorePalette.success
-                                          : StorePalette.purple,
-                                  disabledBackgroundColor: StorePalette.border,
-                                  foregroundColor: Colors.white,
-                                ),
-                                icon: Icon(
-                                  isInCart
-                                      ? Icons.shopping_cart_rounded
-                                      : Icons.add_shopping_cart_rounded,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
                         ],
                       ),
                     ],
@@ -448,7 +351,7 @@ class StoreCategoryCard extends StatelessWidget {
                 const SizedBox(height: StoreSpacing.xxs),
                 Text(
                   title,
-                  maxLines: 1,
+                  maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   style: StoreTypography.caption.copyWith(
@@ -484,7 +387,7 @@ class StoreCategoryCard extends StatelessWidget {
                 const SizedBox(height: StoreSpacing.xs),
                 Text(
                   title,
-                  maxLines: 2,
+                  maxLines: 3,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   style: StoreTypography.label,
@@ -498,4 +401,75 @@ class StoreCategoryCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StoreProductActions extends StatelessWidget {
+  const _StoreProductActions({
+    required this.inStock,
+    required this.isFavorite,
+    required this.isInCart,
+    required this.dimension,
+    required this.iconSize,
+    this.onFavorite,
+    this.onAddToCart,
+  });
+
+  final bool inStock;
+  final bool isFavorite;
+  final bool isInCart;
+  final double dimension;
+  final double iconSize;
+  final VoidCallback? onFavorite;
+  final VoidCallback? onAddToCart;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (onAddToCart != null)
+        SizedBox.square(
+          dimension: dimension,
+          child: IconButton.filled(
+            tooltip: isInCart ? 'تمت الإضافة للسلة' : 'storeAddToCart'.tr,
+            onPressed: inStock ? onAddToCart : null,
+            padding: EdgeInsets.zero,
+            iconSize: iconSize,
+            style: IconButton.styleFrom(
+              backgroundColor:
+                  isInCart ? StorePalette.success : StorePalette.purple,
+              disabledBackgroundColor: StorePalette.border,
+              foregroundColor: Colors.white,
+            ),
+            icon: Icon(
+              isInCart
+                  ? Icons.shopping_cart_rounded
+                  : Icons.add_shopping_cart_rounded,
+            ),
+          ),
+        ),
+      if (onAddToCart != null && onFavorite != null)
+        const SizedBox(width: StoreSpacing.xxs),
+      if (onFavorite != null)
+        SizedBox.square(
+          dimension: dimension,
+          child: IconButton.filledTonal(
+            tooltip:
+                isFavorite ? 'storeRemoveFavorite'.tr : 'storeAddFavorite'.tr,
+            onPressed: onFavorite,
+            padding: EdgeInsets.zero,
+            iconSize: iconSize,
+            style: IconButton.styleFrom(
+              backgroundColor: StorePalette.surface.withValues(alpha: 0.92),
+            ),
+            icon: Icon(
+              isFavorite
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_border_rounded,
+              color:
+                  isFavorite ? StorePalette.error : StorePalette.textSecondary,
+            ),
+          ),
+        ),
+    ],
+  );
 }
