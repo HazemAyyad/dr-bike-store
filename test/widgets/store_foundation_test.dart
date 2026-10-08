@@ -307,6 +307,72 @@ void main() {
     },
   );
 
+  testWidgets('cart action is beside favorite action on product cards', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const _TestApp(
+        child: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: StoreCalibration.homeProductCardWidth,
+              height: StoreCalibration.homeProductCardHeight,
+              child: StoreProductCard(
+                name: 'دراجة كهربائية',
+                price: 1350,
+                compact: true,
+                homePresentation: true,
+                media: ColoredBox(color: StorePalette.background),
+                onTap: _noop,
+                onFavorite: _noop,
+                onAddToCart: _noop,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final cart = find.byIcon(Icons.add_shopping_cart_rounded);
+    final favorite = find.byIcon(Icons.favorite_border_rounded);
+    expect(cart, findsOneWidget);
+    expect(favorite, findsOneWidget);
+    expect(
+      (tester.getCenter(cart).dy - tester.getCenter(favorite).dy).abs(),
+      lessThan(1),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('category card shows its full long name without overflow', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const _TestApp(
+        textScale: 1.3,
+        child: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: StoreCalibration.homeStoreCategoryWidth,
+              height: StoreCalibration.homeStoreCategoryHeight,
+              child: StoreCategoryCard(
+                title: 'قطع غيار وإكسسوارات',
+                media: ColoredBox(color: StorePalette.background),
+                onTap: _noop,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final title = tester.widget<Text>(find.text('قطع غيار وإكسسوارات'));
+    expect(title.maxLines, 3);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('home promo uses a full-bleed image below its content', (
     tester,
   ) async {

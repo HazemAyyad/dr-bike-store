@@ -86,10 +86,10 @@ abstract final class StoreCalibration {
   static const productMediaAspectRatio = 1.05;
   static const compactControlHeight = 40.0;
   static const homeHeroHeight = 168.0;
-  static const homeQuickCategoryWidth = 64.0;
-  static const homeQuickCategoryHeight = 96.0;
-  static const homeStoreCategoryWidth = 84.0;
-  static const homeStoreCategoryHeight = 120.0;
+  static const homeQuickCategoryWidth = 68.0;
+  static const homeQuickCategoryHeight = 108.0;
+  static const homeStoreCategoryWidth = 108.0;
+  static const homeStoreCategoryHeight = 136.0;
   static const homeProductCardWidth = 112.0;
   static const homeProductCardHeight = 236.0;
   static const searchResultCardHeight = 140.0;
