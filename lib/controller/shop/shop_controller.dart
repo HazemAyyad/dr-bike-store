@@ -19,6 +19,7 @@ import '../../core/model/city_model.dart';
 import '../../core/model/cart_line_model.dart';
 import '../../core/model/checkout_flow_model.dart';
 import '../../core/model/discount_code_model.dart';
+import '../../core/model/store_address_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../../repository/shop/shop_repository.dart';
 import '../LocalizationController.dart';
@@ -155,6 +156,10 @@ class ShopController extends GetxController {
   List<String> citiesList = [];
   List<ShiplyVillage> villages = [];
   List<String> villagesList = [];
+  List<StoreAddress> checkoutAddresses = const [];
+  StoreAddress? selectedStoreAddress;
+  bool checkoutAddressesLoading = false;
+  String? checkoutAddressesMessage;
   UserModel? userModel;
   CitiesResponse? citiesResponse;
   VillagesResponse? villagesResponse;
@@ -178,6 +183,9 @@ class ShopController extends GetxController {
   ShopController({required this.shopRepository, GetStorage? storage})
     : box = storage ?? GetStorage();
   getUserById() async {
+    checkoutAddresses = const [];
+    selectedStoreAddress = null;
+    checkoutAddressesMessage = null;
     selectedVillage = null;
     selectedVillageId = null;
     _invalidateDeliveryQuote();
@@ -220,7 +228,8 @@ class ShopController extends GetxController {
             }
           }
           createListCity();
-          if (selectedCityId != null) {
+          await loadCheckoutAddresses(notify: false);
+          if (selectedStoreAddress == null && selectedCityId != null) {
             await loadVillagesForSelectedCity();
           }
         }
@@ -427,6 +436,7 @@ class ShopController extends GetxController {
   }
 
   Future<void> onCitySelected(Citys city) async {
+    selectedStoreAddress = null;
     selectedCityId = city.id.toString();
     selectedCity =
         localizationController.locale.languageCode == 'ar'
@@ -447,6 +457,7 @@ class ShopController extends GetxController {
   }
 
   Future<void> onVillageSelected(ShiplyVillage village) async {
+    selectedStoreAddress = null;
     selectedVillage = village.name;
     selectedVillageId = village.id.toString();
     selectedCityPrice = 0;
@@ -473,6 +484,70 @@ class ShopController extends GetxController {
       debugPrint('[STORE_SHIPLY] villages error=$e');
     } finally {
       isVillagesLoading = false;
+      update();
+    }
+  }
+
+  Future<void> loadCheckoutAddresses({bool notify = true}) async {
+    checkoutAddressesLoading = true;
+    checkoutAddressesMessage = null;
+    if (notify) update();
+    try {
+      final response = await shopRepository.getStoreAddresses();
+      if (response.statusCode != 200 || response.body is! Map) {
+        throw const FormatException('checkout addresses');
+      }
+      final raw = (response.body as Map)['data'];
+      if (raw is! List) throw const FormatException('checkout addresses data');
+      checkoutAddresses = raw
+          .whereType<Map>()
+          .map((row) => StoreAddress.fromJson(Map<String, dynamic>.from(row)))
+          .where((address) => address.id > 0)
+          .toList(growable: false);
+      selectedStoreAddress = null;
+      final preferred =
+          checkoutAddresses.firstWhereOrNull(
+            (address) => address.isDefault && address.isDeliveryReady,
+          ) ??
+          checkoutAddresses.firstWhereOrNull(
+            (address) => address.isDeliveryReady,
+          );
+      if (preferred != null) {
+        await selectCheckoutAddress(preferred, notify: false);
+      }
+    } catch (_) {
+      checkoutAddressesMessage = 'تعذر تحميل العناوين المحفوظة.';
+    } finally {
+      checkoutAddressesLoading = false;
+      if (notify) update();
+    }
+  }
+
+  Future<void> selectCheckoutAddress(
+    StoreAddress address, {
+    bool notify = true,
+  }) async {
+    if (!address.isDeliveryReady) {
+      checkoutAddressesMessage =
+          'هذا العنوان غير مكتمل. عدّله وحدد المدينة والقرية.';
+      if (notify) update();
+      return;
+    }
+    selectedStoreAddress = address;
+    addressController.text = address.streetAddress;
+    selectedCityId = address.shiplyCityId.toString();
+    selectedCity = address.shiplyCityName;
+    selectedVillageId = address.shiplyVillageId.toString();
+    selectedVillage = address.shiplyVillageName;
+    await loadVillagesForSelectedCity();
+    await calculateDeliveryFeeForSelectedVillage();
+    if (notify) update();
+  }
+
+  void onCheckoutAddressTextChanged(String value) {
+    if (selectedStoreAddress != null &&
+        value.trim() != selectedStoreAddress!.streetAddress.trim()) {
+      selectedStoreAddress = null;
       update();
     }
   }
@@ -794,6 +869,8 @@ class ShopController extends GetxController {
                   customerAddress: addressController.text,
                   shiplyCityId: int.parse(selectedCityId!),
                   shiplyVillageId: int.parse(selectedVillageId!),
+                  partnerAddressId:
+                      role == 'customer' ? selectedStoreAddress?.id : null,
                   couponCode: coupon,
                 ),
               ),
@@ -1027,6 +1104,8 @@ class ShopController extends GetxController {
               customerAddress: addressController.text,
               shiplyCityId: int.parse(selectedCityId!),
               shiplyVillageId: int.parse(selectedVillageId!),
+              partnerAddressId:
+                  accountRole == 'customer' ? selectedStoreAddress?.id : null,
             ),
           ),
         );
@@ -1234,6 +1313,8 @@ class ShopController extends GetxController {
               customerAddress: addressController.text,
               shiplyCityId: int.parse(selectedCityId!),
               shiplyVillageId: int.parse(selectedVillageId!),
+              partnerAddressId:
+                  accountRole == 'customer' ? selectedStoreAddress?.id : null,
               couponCode: couponModel!.code,
             ),
           ),

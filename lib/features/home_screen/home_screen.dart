@@ -212,11 +212,14 @@ class _CategoriesDestination extends StatefulWidget {
 
 class _CategoriesDestinationState extends State<_CategoriesDestination> {
   final _search = TextEditingController();
+  final _searchFocus = FocusNode();
   String _query = '';
+  bool _searchExpanded = false;
 
   @override
   void dispose() {
     _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -335,46 +338,88 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                 child: IconButton(
                   tooltip: 'الرجوع',
                   onPressed: widget.onBack,
-                  icon: Icon(storeBackIcon(context), size: 19),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
+                ),
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: IconButton(
+                  tooltip: _searchExpanded ? 'إغلاق البحث' : 'بحث',
+                  onPressed: () {
+                    setState(() {
+                      _searchExpanded = !_searchExpanded;
+                      if (!_searchExpanded) {
+                        _search.clear();
+                        _query = '';
+                        _searchFocus.unfocus();
+                      }
+                    });
+                    if (_searchExpanded) {
+                      WidgetsBinding.instance.addPostFrameCallback(
+                        (_) => _searchFocus.requestFocus(),
+                      );
+                    }
+                  },
+                  icon: Icon(
+                    _searchExpanded
+                        ? Icons.close_rounded
+                        : Icons.search_rounded,
+                    size: 21,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.xs),
-          child: SizedBox(
-            height: StoreCalibration.compactControlHeight,
-            child: TextField(
-              controller: _search,
-              onChanged: (value) => setState(() => _query = value.trim()),
-              textInputAction: TextInputAction.search,
-              style: StoreTypography.body,
-              decoration: InputDecoration(
-                hintText: 'ابحث عن قسم...',
-                hintStyle: StoreTypography.caption,
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon:
-                    _query.isEmpty
-                        ? null
-                        : IconButton(
-                          tooltip: 'مسح البحث',
-                          onPressed: () {
-                            _search.clear();
-                            setState(() => _query = '');
-                          },
-                          icon: const Icon(Icons.close, size: 18),
+        AnimatedSwitcher(
+          duration: StoreMotion.standard,
+          child:
+              _searchExpanded
+                  ? Padding(
+                    key: const ValueKey('categories-search-expanded'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: StoreSpacing.xs,
+                    ),
+                    child: SizedBox(
+                      height: StoreCalibration.compactControlHeight,
+                      child: TextField(
+                        controller: _search,
+                        focusNode: _searchFocus,
+                        onChanged:
+                            (value) => setState(() => _query = value.trim()),
+                        textInputAction: TextInputAction.search,
+                        style: StoreTypography.body,
+                        decoration: InputDecoration(
+                          hintText: 'ابحث عن قسم...',
+                          hintStyle: StoreTypography.caption,
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          suffixIcon:
+                              _query.isEmpty
+                                  ? null
+                                  : IconButton(
+                                    tooltip: 'مسح البحث',
+                                    onPressed: () {
+                                      _search.clear();
+                                      setState(() => _query = '');
+                                    },
+                                    icon: const Icon(Icons.close, size: 18),
+                                  ),
+                          filled: true,
+                          fillColor: StorePalette.surface,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(StoreRadii.md),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
-                filled: true,
-                fillColor: StorePalette.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(StoreRadii.md),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
+                      ),
+                    ),
+                  )
+                  : const SizedBox.shrink(
+                    key: ValueKey('categories-search-collapsed'),
+                  ),
         ),
       ],
     ),

@@ -138,6 +138,113 @@ class StoreReviewsSkeleton extends StatelessWidget {
   );
 }
 
+class StoreOrdersSkeleton extends StatelessWidget {
+  const StoreOrdersSkeleton({this.itemCount = 4, super.key});
+
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) => ListView.separated(
+    key: const ValueKey('store-orders-skeleton'),
+    padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 20),
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: itemCount,
+    separatorBuilder: (_, _) => const SizedBox(height: StoreSpacing.xs),
+    itemBuilder:
+        (_, _) => Container(
+          height: 132,
+          padding: const EdgeInsets.all(StoreSpacing.sm),
+          decoration: BoxDecoration(
+            color: StorePalette.surface,
+            borderRadius: BorderRadius.circular(StoreRadii.lg),
+            border: Border.all(color: StorePalette.border),
+          ),
+          child: const Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: StoreSkeletonBox(height: 14)),
+                  SizedBox(width: StoreSpacing.lg),
+                  StoreSkeletonBox(width: 62, height: 22),
+                ],
+              ),
+              SizedBox(height: StoreSpacing.xs),
+              Row(
+                children: [
+                  StoreSkeletonBox(width: 46, height: 46),
+                  SizedBox(width: StoreSpacing.xs),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        StoreSkeletonBox(height: 13),
+                        SizedBox(height: StoreSpacing.xxs),
+                        StoreSkeletonBox(width: 110, height: 10),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Spacer(),
+              Row(
+                children: [
+                  StoreSkeletonBox(width: 72, height: 13),
+                  Spacer(),
+                  StoreSkeletonBox(width: 84, height: 13),
+                ],
+              ),
+            ],
+          ),
+        ),
+  );
+}
+
+class StoreAddressesSkeleton extends StatelessWidget {
+  const StoreAddressesSkeleton({this.itemCount = 3, super.key});
+
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) => ListView.separated(
+    key: const ValueKey('store-addresses-skeleton'),
+    padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 96),
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: itemCount,
+    separatorBuilder: (_, _) => const SizedBox(height: StoreSpacing.xs),
+    itemBuilder:
+        (_, _) => Container(
+          height: 116,
+          padding: const EdgeInsets.all(StoreSpacing.sm),
+          decoration: BoxDecoration(
+            color: StorePalette.surface,
+            borderRadius: BorderRadius.circular(StoreRadii.lg),
+            border: Border.all(color: StorePalette.border),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              StoreSkeletonBox(width: 40, height: 40),
+              SizedBox(width: StoreSpacing.xs),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    StoreSkeletonBox(width: 92, height: 14),
+                    SizedBox(height: StoreSpacing.xs),
+                    StoreSkeletonBox(height: 12),
+                    SizedBox(height: StoreSpacing.xxs),
+                    StoreSkeletonBox(width: 146, height: 10),
+                    Spacer(),
+                    StoreSkeletonBox(width: 120, height: 22),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+  );
+}
+
 class StoreInlineFieldSkeleton extends StatelessWidget {
   const StoreInlineFieldSkeleton({this.height = 56, this.label, super.key});
 

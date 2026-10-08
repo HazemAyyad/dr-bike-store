@@ -57,6 +57,7 @@ Map<String, dynamic> buildNativeCheckoutPayload({
   required String customerAddress,
   required int shiplyCityId,
   required int shiplyVillageId,
+  int? partnerAddressId,
   String? couponCode,
 }) {
   if (items.any((item) => item.listingId == null)) {
@@ -75,6 +76,7 @@ Map<String, dynamic> buildNativeCheckoutPayload({
       'customer_address': customerAddress.trim(),
       'shiply_city_id': shiplyCityId,
       'shiply_village_id': shiplyVillageId,
+      if (partnerAddressId != null) 'partner_address_id': partnerAddressId,
     },
     'items':
         items

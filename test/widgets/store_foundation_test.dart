@@ -307,7 +307,7 @@ void main() {
     },
   );
 
-  testWidgets('cart action is beside favorite action on product cards', (
+  testWidgets('compact card keeps favorite and cart actions visible', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -339,8 +339,8 @@ void main() {
     expect(cart, findsOneWidget);
     expect(favorite, findsOneWidget);
     expect(
-      (tester.getCenter(cart).dy - tester.getCenter(favorite).dy).abs(),
-      lessThan(1),
+      tester.getCenter(cart).dy,
+      greaterThan(tester.getCenter(favorite).dy),
     );
     expect(tester.takeException(), isNull);
   });

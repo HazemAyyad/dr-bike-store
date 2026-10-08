@@ -71,7 +71,7 @@ class StoreProductCard extends StatelessWidget {
             start: StoreSpacing.xs,
             child: StoreAvailabilityChip(inStock: inStock),
           ),
-        if (onFavorite != null || onAddToCart != null)
+        if (onFavorite != null || (!compact && onAddToCart != null))
           PositionedDirectional(
             top: StoreSpacing.xxs,
             end: StoreSpacing.xxs,
@@ -80,7 +80,7 @@ class StoreProductCard extends StatelessWidget {
               isFavorite: isFavorite,
               isInCart: isInCart,
               onFavorite: onFavorite,
-              onAddToCart: onAddToCart,
+              onAddToCart: compact ? null : onAddToCart,
               dimension: homePresentation ? 30 : 36,
               iconSize:
                   homePresentation
@@ -159,6 +159,50 @@ class StoreProductCard extends StatelessWidget {
                             ),
                         ],
                       ),
+                      if (compact && onAddToCart != null) ...[
+                        const SizedBox(height: StoreSpacing.xs),
+                        SizedBox(
+                          height: 32,
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: inStock ? onAddToCart : null,
+                            style: FilledButton.styleFrom(
+                              backgroundColor:
+                                  isInCart
+                                      ? StorePalette.success
+                                      : StorePalette.purple,
+                              disabledBackgroundColor: StorePalette.border,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  StoreRadii.sm,
+                                ),
+                              ),
+                              textStyle: StoreTypography.caption.copyWith(
+                                color: Colors.white,
+                                fontWeight: StoreTypography.semiBold,
+                              ),
+                            ),
+                            icon: Icon(
+                              isInCart
+                                  ? Icons.shopping_cart_rounded
+                                  : Icons.add_shopping_cart_rounded,
+                              size: 16,
+                            ),
+                            label: Text(
+                              inStock
+                                  ? isInCart
+                                      ? 'في السلة'
+                                      : 'أضف للسلة'
+                                  : 'غير متوفر',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                       if (!compact) ...[
                         const SizedBox(height: StoreSpacing.xs),
                         Row(
@@ -193,6 +237,9 @@ class StoreProductListCard extends StatelessWidget {
     required this.media,
     required this.onTap,
     this.originalPrice,
+    this.discountPercent,
+    this.rating,
+    this.reviewCount,
     this.inStock = true,
     this.isFavorite = false,
     this.isInCart = false,
@@ -204,6 +251,9 @@ class StoreProductListCard extends StatelessWidget {
   final String name;
   final num price;
   final num? originalPrice;
+  final num? discountPercent;
+  final double? rating;
+  final int? reviewCount;
   final Widget media;
   final VoidCallback onTap;
   final bool inStock;
@@ -228,7 +278,21 @@ class StoreProductListCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              SizedBox(width: 120, child: media),
+              SizedBox(
+                width: 120,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    media,
+                    if (discountPercent != null && discountPercent! > 0)
+                      PositionedDirectional(
+                        top: StoreSpacing.xs,
+                        start: StoreSpacing.xs,
+                        child: StoreDiscountChip(percent: discountPercent!),
+                      ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(StoreSpacing.sm),
@@ -258,6 +322,10 @@ class StoreProductListCard extends StatelessWidget {
                             ),
                         ],
                       ),
+                      if (rating != null) ...[
+                        const SizedBox(height: StoreSpacing.xxs),
+                        StoreRating(value: rating!, count: reviewCount),
+                      ],
                       const Spacer(),
                       Row(
                         children: [

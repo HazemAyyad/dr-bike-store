@@ -9,6 +9,7 @@ import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_states.dart';
+import '../../core/widget/store_skeletons.dart';
 import '../../core/widget/store_navigation_icons.dart';
 
 class OrderScreen extends StatelessWidget {
@@ -63,7 +64,7 @@ class OrderScreen extends StatelessWidget {
   Widget _content(OrderController controller) => switch (controller
       .listStatus) {
     OrderListStatus.initial ||
-    OrderListStatus.loading => const StoreSkeletonList(itemCount: 4),
+    OrderListStatus.loading => const StoreOrdersSkeleton(itemCount: 4),
     OrderListStatus.offline => _refreshable(
       controller,
       StoreMessageState(
@@ -124,39 +125,44 @@ class _OrderFilters extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     color: StorePalette.background,
     padding: const EdgeInsetsDirectional.fromSTEB(14, 2, 14, 5),
-    child: Row(
-      children: [
-        Expanded(child: _chip(OrderListFilter.current, 'الحالية')),
-        const SizedBox(width: 6),
-        Expanded(child: _chip(OrderListFilter.completed, 'المكتملة')),
-        const SizedBox(width: 6),
-        Expanded(child: _chip(OrderListFilter.canceled, 'الملغاة')),
-      ],
+    child: Container(
+      height: 38,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: StorePalette.surface,
+        border: Border.all(color: StorePalette.border),
+        borderRadius: BorderRadius.circular(StoreRadii.md),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _segment(OrderListFilter.current, 'الحالية')),
+          Expanded(child: _segment(OrderListFilter.completed, 'المكتملة')),
+          Expanded(child: _segment(OrderListFilter.canceled, 'الملغاة')),
+        ],
+      ),
     ),
   );
 
-  Widget _chip(OrderListFilter filter, String label) {
+  Widget _segment(OrderListFilter filter, String label) {
     final selected = controller.selectedFilter == filter;
-    return ChoiceChip(
-      selected: selected,
-      showCheckmark: false,
-      label: Text(label),
-      onSelected: (_) => controller.load(filter: filter),
-      labelStyle: StoreTypography.caption.copyWith(
-        color: selected ? Colors.white : StorePalette.textSecondary,
-        fontWeight:
-            selected ? StoreTypography.semiBold : StoreTypography.regular,
-      ),
-      selectedColor: StorePalette.purple,
-      backgroundColor: StorePalette.surface,
-      side: BorderSide(
-        color: selected ? StorePalette.purple : StorePalette.border,
-      ),
-      shape: RoundedRectangleBorder(
+    return Material(
+      color: selected ? StorePalette.lightPurple : Colors.transparent,
+      borderRadius: BorderRadius.circular(StoreRadii.sm),
+      child: InkWell(
+        onTap: () => controller.load(filter: filter),
         borderRadius: BorderRadius.circular(StoreRadii.sm),
+        child: Center(
+          child: Text(
+            label,
+            style: StoreTypography.caption.copyWith(
+              color:
+                  selected ? StorePalette.purple : StorePalette.textSecondary,
+              fontWeight:
+                  selected ? StoreTypography.semiBold : StoreTypography.regular,
+            ),
+          ),
+        ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      visualDensity: VisualDensity.compact,
     );
   }
 }
@@ -178,7 +184,7 @@ class _OrderCard extends StatelessWidget {
         Get.toNamed(RouteHelper.orderDetailsScreen, arguments: order);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
           border: Border.all(color: StorePalette.border),
           borderRadius: BorderRadius.circular(StoreRadii.lg),
@@ -211,15 +217,9 @@ class _OrderCard extends StatelessWidget {
                 _OrderStatusBadge(order: order),
               ],
             ),
+            const SizedBox(height: 6),
+            _OrderProductPreview(order: order),
             const SizedBox(height: 7),
-            Row(
-              children: [
-                Expanded(child: _OrderThumbnails(order: order)),
-                const SizedBox(width: 8),
-                Text('${order.itemCount} منتج', style: StoreTypography.caption),
-              ],
-            ),
-            const Divider(height: 14, color: StorePalette.border),
             Row(
               children: [
                 Text(
@@ -229,6 +229,8 @@ class _OrderCard extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
+                const SizedBox(width: 8),
+                Text('${order.itemCount} منتج', style: StoreTypography.caption),
                 const Spacer(),
                 if (order.hasTracking) ...[
                   const Icon(
@@ -264,47 +266,63 @@ class _OrderCard extends StatelessWidget {
   );
 }
 
-class _OrderThumbnails extends StatelessWidget {
-  const _OrderThumbnails({required this.order});
+class _OrderProductPreview extends StatelessWidget {
+  const _OrderProductPreview({required this.order});
 
   final Order order;
 
   @override
   Widget build(BuildContext context) {
-    final lines = order.details.take(4).toList(growable: false);
-    if (lines.isEmpty) {
+    if (order.details.isEmpty) {
       return Text('تفاصيل المنتجات غير متاحة', style: StoreTypography.caption);
     }
+    final line = order.details.first;
+    final name =
+        line.item.nameAr.trim().isEmpty
+            ? 'منتج ${line.itemId}'
+            : line.item.nameAr;
     return SizedBox(
-      height: 34,
+      height: 46,
       child: Row(
         children: [
-          ...lines.map(
-            (line) => Container(
-              width: 34,
-              height: 34,
-              margin: const EdgeInsetsDirectional.only(end: 5),
-              decoration: BoxDecoration(
-                color: StorePalette.background,
-                borderRadius: BorderRadius.circular(StoreRadii.sm),
-                border: Border.all(color: StorePalette.border),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: StoreNetworkMedia(
-                url: line.item.primaryImageUrl,
-                semanticLabel:
-                    line.item.nameAr.isEmpty
-                        ? 'منتج ${line.itemId}'
-                        : line.item.nameAr,
-                fit: BoxFit.contain,
-              ),
+          Container(
+            width: 46,
+            height: 46,
+            margin: const EdgeInsetsDirectional.only(end: 8),
+            decoration: BoxDecoration(
+              color: StorePalette.background,
+              borderRadius: BorderRadius.circular(StoreRadii.sm),
+              border: Border.all(color: StorePalette.border),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: StoreNetworkMedia(
+              url: line.item.primaryImageUrl,
+              semanticLabel: name,
+              fit: BoxFit.contain,
             ),
           ),
-          if (order.details.length > lines.length)
-            Text(
-              '+${order.details.length - lines.length}',
-              style: StoreTypography.caption,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: StoreTypography.bodyMedium,
+                ),
+                Text(
+                  order.details.length > 1
+                      ? 'الكمية ${line.quantity}  •  +${order.details.length - 1} منتج آخر'
+                      : 'الكمية ${line.quantity}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: StoreTypography.caption,
+                ),
+              ],
             ),
+          ),
         ],
       ),
     );

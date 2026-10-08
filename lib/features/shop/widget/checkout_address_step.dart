@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../controller/shop/shop_controller.dart';
+import '../../../core/helper/route_helper.dart';
 import '../../../core/model/checkout_flow_model.dart';
+import '../../../core/model/store_address_model.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
 import '../../../core/widget/store_buttons.dart';
+import '../../../core/widget/store_states.dart';
 
 class CheckoutAddressStep extends StatelessWidget {
   const CheckoutAddressStep({required this.controller, super.key});
@@ -20,7 +24,11 @@ class CheckoutAddressStep extends StatelessWidget {
       children: [
         Text('عنوان التوصيل', style: StoreTypography.title),
         const SizedBox(height: 10),
-        _AccountAddressCard(controller: controller),
+        _SavedAddressesSection(controller: controller),
+        if (controller.checkoutAddresses.isEmpty) ...[
+          const SizedBox(height: 10),
+          _AccountAddressCard(controller: controller),
+        ],
         const SizedBox(height: 18),
         Text('بيانات التواصل', style: StoreTypography.title),
         const SizedBox(height: 10),
@@ -149,6 +157,7 @@ class _AccountAddressCard extends StatelessWidget {
         const SizedBox(height: 10),
         TextFormField(
           controller: controller.addressController,
+          onChanged: controller.onCheckoutAddressTextChanged,
           minLines: 2,
           maxLines: 3,
           validator:
@@ -170,6 +179,153 @@ class _AccountAddressCard extends StatelessWidget {
           ),
         ),
       ],
+    ),
+  );
+}
+
+class _SavedAddressesSection extends StatelessWidget {
+  const _SavedAddressesSection({required this.controller});
+
+  final ShopController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    if (controller.checkoutAddressesLoading &&
+        controller.checkoutAddresses.isEmpty) {
+      return const StoreSkeletonBox(height: 92, borderRadius: StoreRadii.lg);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                controller.checkoutAddresses.isEmpty
+                    ? 'لا توجد عناوين محفوظة'
+                    : 'اختر عنوانًا محفوظًا',
+                style: StoreTypography.bodyMedium,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                await Get.toNamed(RouteHelper.addresses);
+                await controller.loadCheckoutAddresses();
+              },
+              icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+              label: Text(
+                controller.checkoutAddresses.isEmpty ? 'إضافة عنوان' : 'إدارة',
+              ),
+            ),
+          ],
+        ),
+        if (controller.checkoutAddressesMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              controller.checkoutAddressesMessage!,
+              style: StoreTypography.caption.copyWith(
+                color: StorePalette.warning,
+              ),
+            ),
+          ),
+        ...controller.checkoutAddresses.map(
+          (address) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _CheckoutAddressCard(
+              address: address,
+              selected: controller.selectedStoreAddress?.id == address.id,
+              onTap:
+                  address.isDeliveryReady
+                      ? () => controller.selectCheckoutAddress(address)
+                      : null,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CheckoutAddressCard extends StatelessWidget {
+  const _CheckoutAddressCard({
+    required this.address,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final StoreAddress address;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: StorePalette.surface,
+    borderRadius: BorderRadius.circular(StoreRadii.md),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(StoreRadii.md),
+      child: Container(
+        padding: const EdgeInsets.all(11),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(StoreRadii.md),
+          border: Border.all(
+            color: selected ? StorePalette.purple : StorePalette.border,
+            width: selected ? 1.4 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
+              color:
+                  onTap == null
+                      ? StorePalette.textDisabled
+                      : StorePalette.purple,
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          address.label,
+                          style: StoreTypography.label,
+                        ),
+                      ),
+                      if (address.isDefault)
+                        Text('افتراضي', style: StoreTypography.caption),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    address.streetAddress,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: StoreTypography.body,
+                  ),
+                  Text(
+                    address.isDeliveryReady
+                        ? address.locationLabel
+                        : 'غير مكتمل للشحن — عدّله قبل الاستخدام',
+                    style: StoreTypography.caption.copyWith(
+                      color:
+                          address.isDeliveryReady
+                              ? StorePalette.textSecondary
+                              : StorePalette.warning,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     ),
   );
 }
