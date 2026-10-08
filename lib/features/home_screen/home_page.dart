@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -317,6 +319,7 @@ class _ConfiguredHeroSection extends StatelessWidget {
                 description: banner.content(language),
                 buttonText: 'storeShopNow'.tr,
                 onPressed: () {
+                  unawaited(controller.recordBannerClick(banner.id));
                   if (banner.actionType == 'url' &&
                       banner.actionUrl?.trim().isNotEmpty == true) {
                     controller.openWeb(banner.actionUrl!);

@@ -272,6 +272,12 @@ class HomeControllerImp extends HomeController {
     }
   }
 
+  Future<void> recordBannerClick(int bannerId) async {
+    final source = homeRepository;
+    if (source is! StoreHomeDataSource || bannerId <= 0) return;
+    await (source as StoreHomeDataSource).recordBannerClick(bannerId);
+  }
+
   void _setHomeOffline() {
     homeSectionsState.value = StoreOffline(
       message: 'storeOfflineMessage'.tr,
