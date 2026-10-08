@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart' as intl;
 
 import '../../controller/categores/categores_controller.dart';
+import '../../controller/favorites/favorites_controller.dart';
 import '../../controller/product/product_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../core/classes/store_view_state.dart';
@@ -10,8 +10,8 @@ import '../../core/model/get_all_item_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_cards.dart';
+import '../../core/widget/favorite_feedback.dart';
 import '../../core/widget/store_media.dart';
-import '../../core/widget/store_navigation_icons.dart';
 import '../../core/widget/store_product_layout_toggle.dart';
 import '../../core/widget/store_skeletons.dart';
 import '../../repository/categories/categories_repository.dart';
@@ -48,6 +48,11 @@ class CategoryScreen extends StatelessWidget {
             ),
           );
 
+  FavoritesController? get favoritesController =>
+      Get.isRegistered<FavoritesController>()
+          ? Get.find<FavoritesController>()
+          : null;
+
   @override
   Widget build(BuildContext context) => Directionality(
     textDirection: TextDirection.rtl,
@@ -61,7 +66,7 @@ class CategoryScreen extends StatelessWidget {
         leading: IconButton(
           tooltip: 'الرجوع',
           onPressed: Get.back,
-          icon: Icon(storeBackIcon(context), size: 19),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
         ),
         title: const Text('قائمة المنتجات'),
         titleTextStyle: StoreTypography.label.copyWith(fontSize: 14),
@@ -146,26 +151,18 @@ class CategoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _listProduct(Item item) => Obx(
-    () => _ProductListCard(
-      item: item,
-      isInCart: shopController.containsItem(item),
-      requiresOptions: item.itemSizes.isNotEmpty,
-      onOpen: () => productController.getCategoryById(itemId: item.productId),
-      onAdd:
-          item.itemSizes.isNotEmpty
-              ? () => productController.getCategoryById(itemId: item.productId)
-              : () => shopController.addToCart(item),
-    ),
-  );
-
-  Widget _gridProduct(Item item) => Obx(
-    () => StoreProductCard(
+  Widget _listProduct(Item item) => Obx(() {
+    favoritesController?.listingIds.length;
+    shopController.cartLines.length;
+    return StoreProductListCard(
       name: _name(item),
       price: item.normailPrice,
       originalPrice: item.oldPrice,
-      discountPercent: item.discount > 0 ? item.discount : null,
+      discountPercent: item.discount,
+      rating: item.rate,
+      reviewCount: item.reviewCount,
       inStock: item.available && item.purchasable,
+      isFavorite: favoritesController?.contains(item.listingId) ?? false,
       isInCart: shopController.containsItem(item),
       media: StoreNetworkMedia(
         url: _mainMedia(item),
@@ -173,13 +170,53 @@ class CategoryScreen extends StatelessWidget {
         fit: BoxFit.contain,
       ),
       onTap: () => productController.getCategoryById(itemId: item.productId),
+      onFavorite:
+          favoritesController == null ? null : () => _requestFavorite(item),
+      onAddToCart:
+          item.itemSizes.isNotEmpty
+              ? () => productController.getCategoryById(itemId: item.productId)
+              : () => shopController.addToCart(item),
+    );
+  });
+
+  Widget _gridProduct(Item item) => Obx(() {
+    favoritesController?.listingIds.length;
+    shopController.cartLines.length;
+    return StoreProductCard(
+      name: _name(item),
+      price: item.normailPrice,
+      originalPrice: item.oldPrice,
+      discountPercent: item.discount > 0 ? item.discount : null,
+      rating: item.rate,
+      reviewCount: item.reviewCount,
+      inStock: item.available && item.purchasable,
+      isFavorite: favoritesController?.contains(item.listingId) ?? false,
+      isInCart: shopController.containsItem(item),
+      media: StoreNetworkMedia(
+        url: _mainMedia(item),
+        semanticLabel: _name(item),
+        fit: BoxFit.contain,
+      ),
+      onTap: () => productController.getCategoryById(itemId: item.productId),
+      onFavorite:
+          favoritesController == null ? null : () => _requestFavorite(item),
       onAddToCart:
           item.itemSizes.isNotEmpty
               ? () => productController.getCategoryById(itemId: item.productId)
               : () => shopController.addToCart(item),
       compact: true,
-    ),
-  );
+    );
+  });
+
+  Future<void> _requestFavorite(Item item) async {
+    final favorites = favoritesController;
+    if (favorites == null) return;
+    final outcome = await favorites.requestToggle(
+      listingId: item.listingId,
+      productId: item.productId,
+    );
+    showFavoriteFeedback(outcome);
+  }
 
   Widget _catalogHeader(BuildContext context, int count) => Padding(
     padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 10),
@@ -326,198 +363,6 @@ class _CatalogControl extends StatelessWidget {
   );
 }
 
-class _ProductListCard extends StatelessWidget {
-  const _ProductListCard({
-    required this.item,
-    required this.requiresOptions,
-    required this.onOpen,
-    required this.onAdd,
-    required this.isInCart,
-  });
-
-  final Item item;
-  final bool requiresOptions;
-  final VoidCallback onOpen;
-  final VoidCallback onAdd;
-  final bool isInCart;
-
-  @override
-  Widget build(BuildContext context) {
-    final discount = item.discount.clamp(0, 100);
-    final hasDiscount = discount > 0;
-    final currentPrice =
-        item.normailPrice * (1 - (hasDiscount ? discount / 100 : 0));
-    return SizedBox(
-      height: 184,
-      child: Material(
-        color: StorePalette.surface,
-        borderRadius: BorderRadius.circular(StoreRadii.lg),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onOpen,
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              border: Border.all(color: StorePalette.border),
-              borderRadius: BorderRadius.circular(StoreRadii.lg),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(
-                  width: 118,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      StoreNetworkMedia(
-                        url: _mainMedia(item),
-                        semanticLabel: _name(item),
-                        fit: BoxFit.contain,
-                      ),
-                      if (hasDiscount)
-                        PositionedDirectional(
-                          top: 0,
-                          end: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: StorePalette.error,
-                              borderRadius: BorderRadius.circular(
-                                StoreRadii.sm,
-                              ),
-                            ),
-                            child: Text(
-                              'خصم ${_number(discount)}%',
-                              style: StoreTypography.caption.copyWith(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: StoreTypography.semiBold,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: _AvailabilityBadge(available: item.available),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _name(item),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: StoreTypography.bodyMedium.copyWith(
-                          height: 1.35,
-                        ),
-                      ),
-                      if (item.model.trim().isNotEmpty)
-                        Text(
-                          'موديل ${item.model}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: StoreTypography.caption,
-                        ),
-                      const Spacer(),
-                      Wrap(
-                        spacing: 6,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            '${_price(currentPrice)} ₪',
-                            style: StoreTypography.title.copyWith(
-                              color: StorePalette.navy,
-                              fontSize: 16,
-                            ),
-                          ),
-                          if (hasDiscount)
-                            Text(
-                              '${_price(item.normailPrice)} ₪',
-                              style: StoreTypography.caption.copyWith(
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: Tooltip(
-                          message:
-                              requiresOptions
-                                  ? 'اختر الخيارات'
-                                  : isInCart
-                                  ? 'تمت الإضافة للسلة'
-                                  : 'أضف للسلة',
-                          child: IconButton.filled(
-                            onPressed: item.purchasable ? onAdd : null,
-                            style: IconButton.styleFrom(
-                              backgroundColor:
-                                  isInCart
-                                      ? StorePalette.success
-                                      : StorePalette.purple,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: StorePalette.border,
-                              minimumSize: const Size.square(36),
-                              padding: EdgeInsets.zero,
-                            ),
-                            icon: Icon(
-                              requiresOptions
-                                  ? Icons.tune_rounded
-                                  : isInCart
-                                  ? Icons.shopping_cart_rounded
-                                  : Icons.add_shopping_cart_rounded,
-                              size: 19,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AvailabilityBadge extends StatelessWidget {
-  const _AvailabilityBadge({required this.available});
-  final bool available;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-    decoration: BoxDecoration(
-      color:
-          available
-              ? StorePalette.derivedSuccessSurface
-              : StorePalette.derivedErrorSurface,
-      borderRadius: BorderRadius.circular(StoreRadii.pill),
-    ),
-    child: Text(
-      available ? 'متوفر' : 'غير متوفر',
-      style: StoreTypography.caption.copyWith(
-        color: available ? StorePalette.success : StorePalette.error,
-        fontSize: 10,
-        fontWeight: StoreTypography.semiBold,
-      ),
-    ),
-  );
-}
-
 class _CatalogMessage extends StatelessWidget {
   const _CatalogMessage({
     required this.message,
@@ -571,9 +416,3 @@ String? _mainMedia(Item item) {
       )
       .path;
 }
-
-String _number(num value) =>
-    value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(1);
-
-String _price(num value) =>
-    intl.NumberFormat('#,##0.##', 'en_US').format(value);

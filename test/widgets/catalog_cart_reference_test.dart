@@ -113,8 +113,8 @@ void main() {
 
       expect(find.text('قائمة المنتجات'), findsOneWidget);
       expect(find.text('تصفية (0)'), findsOneWidget);
-      expect(find.text('أضف للسلة'), findsWidgets);
-      expect(find.text('خصم 10%'), findsOneWidget);
+      expect(find.byIcon(Icons.add_shopping_cart_rounded), findsWidgets);
+      expect(find.text('-10.0%'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

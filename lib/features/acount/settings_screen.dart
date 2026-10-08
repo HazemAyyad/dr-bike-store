@@ -27,13 +27,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               setState(() => dark = !dark);
             },
           ),
-          const Divider(),
-          const ListTile(
-            title: Text('إعدادات المتجر'),
-            subtitle: Text(
-              'حالة تشغيل المتجر تُدار من الخادم وليست تفضيلًا للمستخدم.',
-            ),
-          ),
         ],
       ),
     ),

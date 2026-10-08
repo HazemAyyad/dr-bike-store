@@ -13,15 +13,19 @@ void main() {
         ..count = 3
         ..itemSizeId = 7
         ..itemSizeColorId = 8;
-  Map<String, dynamic> payload({String role = 'customer', String? coupon}) =>
-      buildNativeCheckoutPayload(
-        items: [item],
-        accountRole: role,
-        customerAddress: 'Ramallah',
-        shiplyCityId: 10,
-        shiplyVillageId: 20,
-        couponCode: coupon,
-      );
+  Map<String, dynamic> payload({
+    String role = 'customer',
+    String? coupon,
+    int? partnerAddressId,
+  }) => buildNativeCheckoutPayload(
+    items: [item],
+    accountRole: role,
+    customerAddress: 'Ramallah',
+    shiplyCityId: 10,
+    shiplyVillageId: 20,
+    partnerAddressId: partnerAddressId,
+    couponCode: coupon,
+  );
 
   test(
     'valid cash checkout',
@@ -115,6 +119,20 @@ void main() {
   test(
     'Shiply village mapped',
     () => expect((payload()['delivery'] as Map)['shiply_village_id'], 20),
+  );
+  test(
+    'saved address identity is preserved for authoritative checkout',
+    () => expect(
+      (payload(partnerAddressId: 44)['delivery'] as Map)['partner_address_id'],
+      44,
+    ),
+  );
+  test(
+    'manual address omits saved address identity',
+    () => expect(
+      payload()['delivery'] as Map,
+      isNot(contains('partner_address_id')),
+    ),
   );
   test(
     'coupon omitted when empty',

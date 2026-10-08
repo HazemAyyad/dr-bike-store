@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../controller/account/account_controller.dart';
+import '../../core/model/city_model.dart';
 import '../../core/model/store_address_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
+import '../../core/widget/store_skeletons.dart';
 import '../../core/widget/store_states.dart';
 
 class AddressesScreen extends StatefulWidget {
@@ -59,7 +61,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
   Widget _body(BuildContext context, AccountControllerImp controller) {
     if (controller.addressesLoading && controller.addresses.isEmpty) {
-      return const StoreSkeletonList(itemCount: 3);
+      return const StoreAddressesSkeleton(itemCount: 3);
     }
     if (controller.addressesMessage != null && controller.addresses.isEmpty) {
       return StoreMessageState(
@@ -114,6 +116,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
     AccountControllerImp controller, {
     StoreAddress? current,
   }) async {
+    await controller.prepareAddressOptions(current: current);
+    if (!context.mounted) return;
     final label = TextEditingController(text: current?.label ?? 'المنزل');
     final street = TextEditingController(
       text: current?.streetAddress ?? controller.profile?.address ?? '',
@@ -121,6 +125,12 @@ class _AddressesScreenState extends State<AddressesScreen> {
     final phone = TextEditingController(
       text: current?.phone ?? controller.profile?.phoneNumber ?? '',
     );
+    final initialCityId = current?.shiplyCityId;
+    Citys? selectedCity = controller.cities.firstWhereOrNull(
+      (city) => city.id == initialCityId,
+    );
+    ShiplyVillage? selectedVillage = controller.addressVillages
+        .firstWhereOrNull((village) => village.id == current?.shiplyVillageId);
     var isDefault = current?.isDefault ?? controller.addresses.isEmpty;
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -171,6 +181,72 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
+                        DropdownButtonFormField<Citys>(
+                          value: selectedCity,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'المدينة',
+                            prefixIcon: Icon(Icons.location_city_outlined),
+                          ),
+                          items: controller.cities
+                              .map(
+                                (city) => DropdownMenuItem(
+                                  value: city,
+                                  child: Text(city.cityNameAr),
+                                ),
+                              )
+                              .toList(growable: false),
+                          onChanged: (city) async {
+                            if (city == null) return;
+                            setSheetState(() {
+                              selectedCity = city;
+                              selectedVillage = null;
+                            });
+                            await controller.loadAddressVillages(city.id);
+                            if (sheetContext.mounted) setSheetState(() {});
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<ShiplyVillage>(
+                          value:
+                              controller.addressVillages.contains(
+                                    selectedVillage,
+                                  )
+                                  ? selectedVillage
+                                  : null,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'القرية أو منطقة التوصيل',
+                            prefixIcon: const Icon(Icons.map_outlined),
+                            suffixIcon:
+                                controller.addressOptionsLoading
+                                    ? const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: SizedBox.square(
+                                        dimension: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    )
+                                    : null,
+                          ),
+                          items: controller.addressVillages
+                              .map(
+                                (village) => DropdownMenuItem(
+                                  value: village,
+                                  child: Text(village.name),
+                                ),
+                              )
+                              .toList(growable: false),
+                          onChanged:
+                              selectedCity == null
+                                  ? null
+                                  : (village) => setSheetState(
+                                    () => selectedVillage = village,
+                                  ),
+                        ),
+                        const SizedBox(height: 10),
                         TextField(
                           controller: street,
                           minLines: 2,
@@ -202,10 +278,21 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           label:
                               current == null ? 'حفظ العنوان' : 'حفظ التعديلات',
                           onPressed: () async {
+                            if (selectedCity == null ||
+                                selectedVillage == null) {
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                const SnackBar(
+                                  content: Text('حدد المدينة ومنطقة التوصيل.'),
+                                ),
+                              );
+                              return;
+                            }
                             final ok = await controller.saveAddress(
                               current: current,
                               label: label.text,
                               streetAddress: street.text,
+                              city: selectedCity!,
+                              village: selectedVillage!,
                               phone: phone.text,
                               isDefault: isDefault,
                             );
@@ -316,6 +403,24 @@ class _AddressCard extends StatelessWidget {
                         'افتراضي',
                         style: StoreTypography.caption.copyWith(
                           color: StorePalette.success,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  if (!address.isDeliveryReady)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: StorePalette.derivedWarningSurface,
+                        borderRadius: BorderRadius.circular(StoreRadii.pill),
+                      ),
+                      child: Text(
+                        'غير مكتمل للشحن',
+                        style: StoreTypography.caption.copyWith(
+                          color: StorePalette.warning,
                           fontSize: 10,
                         ),
                       ),

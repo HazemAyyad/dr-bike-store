@@ -104,6 +104,8 @@ class AccountControllerImp extends AccountController {
   List<StoreAddress> addresses = const [];
   bool addressesLoading = false;
   String? addressesMessage;
+  List<ShiplyVillage> addressVillages = const [];
+  bool addressOptionsLoading = false;
   final AuthRepository authRepository;
   final ConnectivityChecker connectivityChecker;
   late StatusRequest statusRequest;
@@ -385,13 +387,18 @@ class AccountControllerImp extends AccountController {
     StoreAddress? current,
     required String label,
     required String streetAddress,
+    required Citys city,
+    required ShiplyVillage village,
     String? phone,
     bool isDefault = false,
   }) async {
     final cleanLabel = label.trim();
     final cleanStreet = streetAddress.trim();
-    if (cleanLabel.isEmpty || cleanStreet.isEmpty) {
-      addressesMessage = 'اسم العنوان وتفاصيله مطلوبان.';
+    if (cleanLabel.isEmpty ||
+        cleanStreet.isEmpty ||
+        city.id <= 0 ||
+        village.id <= 0) {
+      addressesMessage = 'اسم العنوان وتفاصيله ومنطقة التوصيل مطلوبة.';
       update();
       return false;
     }
@@ -404,11 +411,11 @@ class AccountControllerImp extends AccountController {
         'label': cleanLabel,
         'street_address': cleanStreet,
         'phone': phone?.trim().isEmpty == true ? null : phone?.trim(),
-        'city_id': current?.cityId ?? userModel?.cityId,
-        'shiply_city_id': current?.shiplyCityId,
-        'shiply_village_id': current?.shiplyVillageId,
-        'shiply_city_name': current?.shiplyCityName,
-        'shiply_village_name': current?.shiplyVillageName,
+        'city_id': current?.cityId,
+        'shiply_city_id': city.id,
+        'shiply_village_id': village.id,
+        'shiply_city_name': city.cityNameAr,
+        'shiply_village_name': village.name,
         'delivery_notes': current?.deliveryNotes,
         'is_default': isDefault,
       };
@@ -442,13 +449,89 @@ class AccountControllerImp extends AccountController {
     }
   }
 
-  Future<bool> makeDefaultAddress(StoreAddress address) => saveAddress(
-    current: address,
-    label: address.label,
-    streetAddress: address.streetAddress,
-    phone: address.phone,
-    isDefault: true,
-  );
+  Future<bool> makeDefaultAddress(StoreAddress address) async {
+    if (!address.isDeliveryReady) {
+      addressesMessage = 'عدّل العنوان وحدد المدينة والقرية قبل اعتماده.';
+      update();
+      showCustomSnackBar(addressesMessage, isError: true);
+      return false;
+    }
+    return saveAddress(
+      current: address,
+      label: address.label,
+      streetAddress: address.streetAddress,
+      city: Citys(
+        id: address.shiplyCityId!,
+        cityNameAr: address.shiplyCityName!,
+        cityNameEng: address.shiplyCityName!,
+        cityNameAbree: address.shiplyCityName!,
+        deliver: 0,
+        isShow: true,
+        dateAdd: '',
+        dateUpdate: '',
+      ),
+      village: ShiplyVillage(
+        id: address.shiplyVillageId!,
+        name: address.shiplyVillageName!,
+        isClosed: false,
+      ),
+      phone: address.phone,
+      isDefault: true,
+    );
+  }
+
+  Future<void> prepareAddressOptions({StoreAddress? current}) async {
+    addressOptionsLoading = true;
+    addressesMessage = null;
+    update();
+    try {
+      if (cities.isEmpty) {
+        final response = await authRepository.getCity();
+        if (response.statusCode != 200 ||
+            response.body is! Map<String, dynamic>) {
+          throw const FormatException('store cities');
+        }
+        citiesResponse = CitiesResponse.fromJson(response.body);
+        createListCity();
+      }
+      final cityId = current?.shiplyCityId;
+      if (cityId != null && cityId > 0) {
+        await loadAddressVillages(cityId, notify: false);
+      } else {
+        addressVillages = const [];
+      }
+    } catch (_) {
+      addressesMessage = 'تعذر تحميل مناطق التوصيل.';
+    } finally {
+      addressOptionsLoading = false;
+      update();
+    }
+  }
+
+  Future<void> loadAddressVillages(int cityId, {bool notify = true}) async {
+    if (notify) {
+      addressOptionsLoading = true;
+      update();
+    }
+    try {
+      final response = await authRepository.getStoreVillagesByCityId(cityId);
+      if (response.statusCode != 200 ||
+          response.body is! Map<String, dynamic>) {
+        throw const FormatException('store villages');
+      }
+      addressVillages = VillagesResponse.fromJson(
+        response.body,
+      ).rows.where((village) => !village.isClosed).toList(growable: false);
+    } catch (_) {
+      addressVillages = const [];
+      addressesMessage = 'تعذر تحميل قرى التوصيل.';
+    } finally {
+      if (notify) {
+        addressOptionsLoading = false;
+        update();
+      }
+    }
+  }
 
   Future<bool> deleteAddress(StoreAddress address) async {
     addressesLoading = true;

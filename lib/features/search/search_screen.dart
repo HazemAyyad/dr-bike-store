@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../controller/home/home_controller.dart';
+import '../../controller/favorites/favorites_controller.dart';
 import '../../controller/product/product_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../core/classes/store_view_state.dart';
@@ -13,6 +14,7 @@ import '../../core/widget/store_buttons.dart';
 import '../../core/widget/store_cards.dart';
 import '../../core/widget/store_chips.dart';
 import '../../core/widget/store_fields.dart';
+import '../../core/widget/favorite_feedback.dart';
 import '../../core/widget/store_media.dart';
 import '../../core/widget/store_product_layout_toggle.dart';
 import '../../core/widget/store_states.dart';
@@ -398,6 +400,10 @@ class _SearchProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final shop =
         Get.isRegistered<ShopController>() ? Get.find<ShopController>() : null;
+    final favorites =
+        Get.isRegistered<FavoritesController>()
+            ? Get.find<FavoritesController>()
+            : null;
     Widget card() {
       final inCart = shop?.containsItem(item) ?? false;
       final media = StoreNetworkMedia(
@@ -406,15 +412,29 @@ class _SearchProductCard extends StatelessWidget {
         fit: BoxFit.contain,
       );
       void add() => (onAddToCart ?? _runtimeAddToCart).call(item);
+      Future<void> favorite() async {
+        if (favorites == null) return;
+        final outcome = await favorites.requestToggle(
+          listingId: item.listingId,
+          productId: item.productId,
+        );
+        showFavoriteFeedback(outcome);
+      }
+
       if (!grid) {
         return StoreProductListCard(
           name: _itemName(item),
           price: price,
           originalPrice: item.oldPrice,
+          discountPercent: item.discount,
+          rating: item.rate,
+          reviewCount: item.reviewCount,
           inStock: item.available && item.purchasable,
+          isFavorite: favorites?.contains(item.listingId) ?? false,
           isInCart: inCart,
           media: media,
           onTap: () => _openProduct(item),
+          onFavorite: favorites == null ? null : favorite,
           onAddToCart: add,
         );
       }
@@ -423,18 +443,23 @@ class _SearchProductCard extends StatelessWidget {
         price: price,
         originalPrice: item.oldPrice,
         discountPercent: item.discount > 0 ? item.discount : null,
+        rating: item.rate,
+        reviewCount: item.reviewCount,
         inStock: item.available && item.purchasable,
+        isFavorite: favorites?.contains(item.listingId) ?? false,
         isInCart: inCart,
         media: media,
         onTap: () => _openProduct(item),
+        onFavorite: favorites == null ? null : favorite,
         onAddToCart: add,
         compact: true,
       );
     }
 
-    if (shop == null) return card();
+    if (shop == null && favorites == null) return card();
     return Obx(() {
-      shop.cartLines.length;
+      shop?.cartLines.length;
+      favorites?.listingIds.length;
       return card();
     });
   }

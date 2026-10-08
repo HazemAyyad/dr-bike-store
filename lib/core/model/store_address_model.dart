@@ -25,6 +25,14 @@ class StoreAddress {
   final String? shiplyVillageName;
   final String? deliveryNotes;
 
+  bool get isDeliveryReady =>
+      shiplyCityId != null &&
+      shiplyCityId! > 0 &&
+      shiplyVillageId != null &&
+      shiplyVillageId! > 0 &&
+      shiplyCityName?.trim().isNotEmpty == true &&
+      shiplyVillageName?.trim().isNotEmpty == true;
+
   String get locationLabel => [
     shiplyVillageName,
     shiplyCityName,

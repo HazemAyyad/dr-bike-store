@@ -90,8 +90,8 @@ abstract final class StoreCalibration {
   static const homeQuickCategoryHeight = 108.0;
   static const homeStoreCategoryWidth = 108.0;
   static const homeStoreCategoryHeight = 136.0;
-  static const homeProductCardWidth = 112.0;
-  static const homeProductCardHeight = 236.0;
+  static const homeProductCardWidth = 148.0;
+  static const homeProductCardHeight = 232.0;
   static const searchResultCardHeight = 140.0;
   static const outlineWidth = 1.0;
   static const authContentMaxWidth = 420.0;

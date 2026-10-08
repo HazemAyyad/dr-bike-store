@@ -23,6 +23,14 @@ class ShopRepository extends GetxService {
   Future<Response> submitNativeCheckout(Map<String, dynamic> request) =>
       createOrder(body: request);
 
+  Future<Response> getStoreAddresses() async => apiClient.getData(
+    '/OnlineStore/Addresses',
+    headers: {
+      'Content-Type': 'application/json',
+      'authorization': 'Bearer ${await AppUsageService.getToken()}',
+    },
+  );
+
   Future<Response> getUser() async {
     String? id = await AppUsageService.getUserId();
     return await apiClient.postData(

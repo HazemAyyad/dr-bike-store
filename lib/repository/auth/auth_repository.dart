@@ -401,6 +401,16 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
     headers: await _storeHeaders(),
   );
 
+  Future<Response> getStoreVillagesByCityId(int cityId) async =>
+      apiClient.postData(
+        '/Cities/GetVillagesByCityId?cityId=$cityId',
+        headers: await _storeHeaders(),
+        body: {
+          'cityId': cityId,
+          'paginationInfo': {'pageIndex': 0, 'pageSize': 0},
+        },
+      );
+
   Future<Response> createStoreAddress(Map<String, dynamic> body) async =>
       apiClient.postData(
         '/OnlineStore/Addresses',
