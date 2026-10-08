@@ -134,7 +134,8 @@ class StoreProductCard extends StatelessWidget {
                       SizedBox(
                         height: compact ? StoreSpacing.xxs : StoreSpacing.xs,
                       ),
-                      if (compact && rating != null) ...[
+                      if (compact &&
+                          _hasPublishedRating(rating, reviewCount)) ...[
                         StoreRating(value: rating!, count: reviewCount),
                         const SizedBox(height: StoreSpacing.xxs),
                       ],
@@ -208,7 +209,7 @@ class StoreProductCard extends StatelessWidget {
                         Row(
                           children: [
                             StoreAvailabilityChip(inStock: inStock),
-                            if (rating != null) ...[
+                            if (_hasPublishedRating(rating, reviewCount)) ...[
                               const Spacer(),
                               StoreRating(value: rating!, count: reviewCount),
                             ],
@@ -322,7 +323,7 @@ class StoreProductListCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      if (rating != null) ...[
+                      if (_hasPublishedRating(rating, reviewCount)) ...[
                         const SizedBox(height: StoreSpacing.xxs),
                         StoreRating(value: rating!, count: reviewCount),
                       ],
@@ -363,6 +364,13 @@ class StoreProductListCard extends StatelessWidget {
     ),
   );
 }
+
+bool _hasPublishedRating(double? rating, int? reviewCount) =>
+    rating != null &&
+    rating.isFinite &&
+    rating >= 1 &&
+    rating <= 5 &&
+    (reviewCount ?? 0) > 0;
 
 class StoreCategoryCard extends StatelessWidget {
   const StoreCategoryCard({

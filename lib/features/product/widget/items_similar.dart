@@ -59,8 +59,9 @@ class SimilarItemsSection extends StatelessWidget {
                     compact: true,
                     name: _name(item),
                     price: item.normailPrice,
-                    rating: item.rate,
-                    reviewCount: item.reviewCount,
+                    rating: item.hasPublishedRating ? item.rate : null,
+                    reviewCount:
+                        item.hasPublishedRating ? item.reviewCount : null,
                     inStock: item.available,
                     discountPercent: item.discount > 0 ? item.discount : null,
                     media: StoreNetworkMedia(

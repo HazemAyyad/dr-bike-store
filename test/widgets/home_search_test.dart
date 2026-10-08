@@ -9,6 +9,7 @@ import 'package:doctor_bike/core/model/online_store_home_model.dart';
 import 'package:doctor_bike/core/theme/light.dart';
 import 'package:doctor_bike/core/theme/store_typography.dart';
 import 'package:doctor_bike/core/widget/store_bottom_navigation.dart';
+import 'package:doctor_bike/core/widget/store_chips.dart';
 import 'package:doctor_bike/features/home_screen/home_page.dart';
 import 'package:doctor_bike/features/home_screen/home_screen.dart';
 import 'package:doctor_bike/features/search/search_screen.dart';
@@ -184,6 +185,65 @@ void main() {
     expect(find.text('عروض خاصة'), findsOneWidget);
     expect(find.text('وصل حديثًا'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Home shows authoritative rating and hides zero-review rating', (
+    tester,
+  ) async {
+    final controller = await _loadedController();
+    controller.itemList.assignAll([
+      _item(1, 'منتج مقيّم', price: 150, reviewCount: 8),
+      _item(2, 'منتج بلا مراجعات', price: 90),
+    ]);
+    controller.productsState.value = StoreContent(controller.itemList.toList());
+
+    await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text('منتج مقيّم'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.byType(StoreRating), findsOneWidget);
+    expect(find.text('4.5'), findsOneWidget);
+    expect(find.text(' (8)'), findsOneWidget);
+    expect(find.text('0.0'), findsNothing);
+  });
+
+  testWidgets('configured banner without destination hides shop action', (
+    tester,
+  ) async {
+    final controller = await _loadedController();
+    final sections = <OnlineStoreHomeSection>[
+      const OnlineStoreHomeSection(
+        id: 1,
+        key: 'hero',
+        type: 'hero',
+        titles: {'ar': 'البانر'},
+        items: [
+          OnlineStoreHomeItem(
+            banner: OnlineStoreHomeBanner(
+              id: 5,
+              imagePath: '',
+              titles: {'ar': 'عرض بدون انتقال'},
+              contents: {'ar': 'محتوى العرض'},
+              actionType: 'none',
+            ),
+          ),
+        ],
+        config: {},
+      ),
+    ];
+    controller.homeSections.assignAll(sections);
+    controller.homeSectionsState.value = StoreContent(sections);
+
+    await tester.pumpWidget(_TestApp(child: _goldenShell(controller)));
+    await tester.pump();
+
+    expect(find.text('عرض بدون انتقال'), findsOneWidget);
+    expect(find.text('تسوّق الآن'), findsNothing);
   });
 
   testWidgets('Home skeleton is distinct from loaded content', (tester) async {
@@ -482,6 +542,7 @@ Item _item(
   required double price,
   double discount = 0,
   bool isNew = false,
+  int reviewCount = 0,
 }) => Item(
   id: id,
   productId: id,
@@ -513,6 +574,7 @@ Item _item(
   isNewItem: isNew,
   isMoreSales: true,
   rate: 4.5,
+  reviewCount: reviewCount,
   discount: discount,
   supCategory: const <SupCategory>[],
   normalImagesItems: const <NormalImageItem>[],

@@ -313,18 +313,13 @@ class _ConfiguredHeroSection extends StatelessWidget {
             onPageChanged: (index) => controller.currentPage.value = index,
             itemBuilder: (context, index) {
               final banner = banners[index];
+              final action = _actionFor(banner, language);
               return PromoCard(
                 imageUrl: banner.imagePath,
                 title: banner.title(language),
                 description: banner.content(language),
-                buttonText: 'storeShopNow'.tr,
-                onPressed: () {
-                  unawaited(controller.recordBannerClick(banner.id));
-                  if (banner.actionType == 'url' &&
-                      banner.actionUrl?.trim().isNotEmpty == true) {
-                    controller.openWeb(banner.actionUrl!);
-                  }
-                },
+                buttonText: action == null ? null : 'storeShopNow'.tr,
+                onPressed: action,
               );
             },
           ),
@@ -358,6 +353,43 @@ class _ConfiguredHeroSection extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  VoidCallback? _actionFor(OnlineStoreHomeBanner banner, String language) {
+    if (!banner.hasSupportedDestination) return null;
+    switch (banner.actionType) {
+      case 'url':
+        return () {
+          unawaited(controller.recordBannerClick(banner.id));
+          unawaited(controller.openWeb(banner.actionUrl!));
+        };
+      case 'listing':
+        if (!Get.isRegistered<ProductControllerImp>()) return null;
+        return () {
+          unawaited(controller.recordBannerClick(banner.id));
+          unawaited(
+            Get.find<ProductControllerImp>().getCategoryById(
+              itemId: banner.actionProductId!,
+            ),
+          );
+        };
+      case 'category':
+        if (!Get.isRegistered<CategoresControllerImp>()) return null;
+        return () {
+          unawaited(controller.recordBannerClick(banner.id));
+          final categoryController = Get.find<CategoresControllerImp>();
+          categoryController
+            ..mainCategoresId = banner.actionTargetId!
+            ..titleMain = banner.title(language);
+          unawaited(
+            categoryController.getProductsByOnlineStoreCategory(
+              banner.actionTargetId!,
+            ),
+          );
+        };
+      default:
+        return null;
+    }
   }
 }
 
@@ -451,6 +483,10 @@ class _HeroSection extends StatelessWidget {
     if (state case StoreContent<List<Ad>>(data: final ads)) {
       if (ads.isEmpty) return const SizedBox.shrink();
       final ad = ads.first;
+      final action =
+          _isSafeHttpAction(ad.urlAds)
+              ? () => controller.openWeb(ad.urlAds)
+              : null;
       return SizedBox(
         key: const ValueKey('home-hero'),
         height: StoreCalibration.homeHeroHeight,
@@ -458,10 +494,8 @@ class _HeroSection extends StatelessWidget {
           imageUrl: ad.imgUrl,
           title: ad.title,
           description: ad.description,
-          buttonText: 'storeShopNow'.tr,
-          onPressed: () {
-            if (ad.urlAds.trim().isNotEmpty) controller.openWeb(ad.urlAds);
-          },
+          buttonText: action == null ? null : 'storeShopNow'.tr,
+          onPressed: action,
         ),
       );
     }
@@ -475,6 +509,13 @@ class _HeroSection extends StatelessWidget {
     // unavailable instead of inventing a local campaign.
     return const SizedBox.shrink();
   }
+}
+
+bool _isSafeHttpAction(String value) {
+  final uri = Uri.tryParse(value.trim());
+  return uri != null &&
+      uri.hasAuthority &&
+      (uri.scheme == 'http' || uri.scheme == 'https');
 }
 
 class _CategorySection extends StatelessWidget {
@@ -622,8 +663,8 @@ class _ProductSection extends StatelessWidget {
                 name: _itemName(item, Get.locale?.languageCode ?? 'ar'),
                 price: controller.displayPriceFor(item),
                 discountPercent: item.discount > 0 ? item.discount : null,
-                rating: item.rate,
-                reviewCount: item.reviewCount,
+                rating: item.hasPublishedRating ? item.rate : null,
+                reviewCount: item.hasPublishedRating ? item.reviewCount : null,
                 inStock: item.available && item.purchasable,
                 isFavorite: favorites?.contains(item.listingId) ?? false,
                 isInCart: shop?.containsItem(item) ?? false,

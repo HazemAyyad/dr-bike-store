@@ -75,17 +75,14 @@ class _ViewImageAndVideoState extends State<ViewImageAndVideo> {
                       ),
                     ),
                     if (multiple) ...[
-                      PositionedDirectional(
-                        start: StoreSpacing.xs,
+                      Positioned(
+                        left: StoreSpacing.xs,
                         top: 0,
                         bottom: 0,
                         child: Center(
                           child: _MediaArrow(
                             key: const Key('product-media-previous'),
-                            icon:
-                                Directionality.of(context) == TextDirection.rtl
-                                    ? Icons.chevron_right
-                                    : Icons.chevron_left,
+                            icon: Icons.chevron_left,
                             onPressed:
                                 widget.controllerScreen.selectedMediaIndex > 0
                                     ? () => _goTo(
@@ -98,17 +95,14 @@ class _ViewImageAndVideoState extends State<ViewImageAndVideo> {
                           ),
                         ),
                       ),
-                      PositionedDirectional(
-                        end: StoreSpacing.xs,
+                      Positioned(
+                        right: StoreSpacing.xs,
                         top: 0,
                         bottom: 0,
                         child: Center(
                           child: _MediaArrow(
                             key: const Key('product-media-next'),
-                            icon:
-                                Directionality.of(context) == TextDirection.rtl
-                                    ? Icons.chevron_left
-                                    : Icons.chevron_right,
+                            icon: Icons.chevron_right,
                             onPressed:
                                 widget.controllerScreen.selectedMediaIndex <
                                         media.length - 1

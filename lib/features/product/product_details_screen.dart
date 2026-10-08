@@ -12,8 +12,8 @@ import '../../core/model/get_all_item_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
+import '../../core/widget/store_chips.dart';
 import '../../core/widget/favorite_feedback.dart';
-import '../../core/widget/store_navigation_icons.dart';
 import '../../core/widget/store_skeletons.dart';
 import '../shop/shop_car_screen.dart';
 import 'review_screen.dart';
@@ -89,7 +89,7 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         children: [
           StoreIconButton(
-            icon: storeBackIcon(context),
+            icon: Icons.arrow_back_ios_new_rounded,
             semanticLabel: _label(context, 'رجوع', 'Back'),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
@@ -262,12 +262,19 @@ class _ProductIdentity extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loadedReviewCount = switch (controller.reviewsState) {
-      StoreContent<List<Review>>(:final data) => data.length,
-      _ => 0,
+    final loadedReviews = switch (controller.reviewsState) {
+      StoreContent<List<Review>>(:final data) => data,
+      _ => const <Review>[],
     };
     final reviewCount =
-        item.reviewCount > 0 ? item.reviewCount : loadedReviewCount;
+        item.hasPublishedRating ? item.reviewCount : loadedReviews.length;
+    final rating =
+        item.hasPublishedRating
+            ? item.rate
+            : loadedReviews.isEmpty
+            ? null
+            : loadedReviews.fold<int>(0, (sum, review) => sum + review.rate) /
+                loadedReviews.length;
     final selectedPrice = item.itemSizeColorsprice ?? item.normailPrice;
     final selectedDiscount = item.itemSizediscount ?? item.discount;
     final oldPrice =
@@ -339,11 +346,8 @@ class _ProductIdentity extends StatelessWidget {
                 ),
               ),
             if (selectedDiscount > 0) _DiscountBadge(percent: selectedDiscount),
-            if (item.rate > 0)
-              _Rating(
-                rate: item.rate,
-                reviewCount: reviewCount > 0 ? reviewCount : null,
-              ),
+            if (rating != null && reviewCount > 0)
+              StoreRating(value: rating, count: reviewCount),
           ],
         ),
       ],
@@ -378,31 +382,6 @@ class _DiscountBadge extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Rating extends StatelessWidget {
-  const _Rating({required this.rate, required this.reviewCount});
-
-  final double rate;
-  final int? reviewCount;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      const Icon(Icons.star_rounded, color: StorePalette.warning, size: 20),
-      const SizedBox(width: StoreSpacing.xxs),
-      Text(
-        rate.toStringAsFixed(1),
-        style: StoreTypography.label,
-        textDirection: TextDirection.ltr,
-      ),
-      if (reviewCount != null) ...[
-        const SizedBox(width: StoreSpacing.xxs),
-        Text('($reviewCount)', style: StoreTypography.caption),
-      ],
-    ],
-  );
 }
 
 class _QuickSpecifications extends StatelessWidget {

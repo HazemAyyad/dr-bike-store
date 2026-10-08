@@ -69,8 +69,27 @@ void main() {
         );
         expect(item.normailPrice, 125);
         expect(item.available, isTrue);
+        expect(item.hasPublishedRating, isFalse);
       },
     );
+
+    test('shows ratings only with an authoritative published review count', () {
+      final rated = Item.fromJson(
+        _listing()
+          ..['rate'] = '4.25'
+          ..['review_count'] = 8,
+      );
+      final unrated = Item.fromJson(
+        _listing()
+          ..['rate'] = 4.9
+          ..['reviewCount'] = 0,
+      );
+
+      expect(rated.rate, 4.25);
+      expect(rated.reviewCount, 8);
+      expect(rated.hasPublishedRating, isTrue);
+      expect(unrated.hasPublishedRating, isFalse);
+    });
 
     test(
       'rejects malformed identity, eligibility, price, availability, and media',

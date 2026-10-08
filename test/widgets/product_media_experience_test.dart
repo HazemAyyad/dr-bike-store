@@ -107,6 +107,37 @@ void main() {
     expect(find.text('2/4'), findsOneWidget);
   });
 
+  testWidgets('RTL product media arrows keep previous left and next right', (
+    tester,
+  ) async {
+    final controller = _controller(preferences, [
+      _image(id: 1, main: true),
+      _image(id: 2),
+      _image(id: 3),
+    ]);
+
+    await tester.pumpWidget(
+      _app(ViewImageAndVideo(controllerScreen: controller)),
+    );
+    await tester.pump();
+
+    final previous = find.byKey(const Key('product-media-previous'));
+    final next = find.byKey(const Key('product-media-next'));
+    expect(tester.getCenter(previous).dx, lessThan(tester.getCenter(next).dx));
+    expect(
+      find.descendant(of: previous, matching: find.byIcon(Icons.chevron_left)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: next, matching: find.byIcon(Icons.chevron_right)),
+      findsOneWidget,
+    );
+
+    await tester.tap(next);
+    await tester.pumpAndSettle(const Duration(milliseconds: 50));
+    expect(controller.selectedMediaIndex, 1);
+  });
+
   testWidgets('full viewer keeps all media and highlights selection', (
     tester,
   ) async {
@@ -133,6 +164,17 @@ void main() {
     expect(find.byKey(const Key('fullscreen-media-close')), findsOneWidget);
     expect(find.byKey(const Key('gallery-previous')), findsOneWidget);
     expect(find.byKey(const Key('gallery-next')), findsOneWidget);
+    expect(
+      tester.getCenter(find.byKey(const Key('gallery-previous'))).dx,
+      lessThan(tester.getCenter(find.byKey(const Key('gallery-next'))).dx),
+    );
+    expect(find.text('إغلاق'), findsOneWidget);
+    expect(
+      tester.getCenter(find.byKey(const Key('fullscreen-media-close'))).dx,
+      lessThan(
+        tester.getCenter(find.byKey(const Key('fullscreen-media-toggle'))).dx,
+      ),
+    );
 
     await tester.tap(find.byKey(const Key('gallery-next')));
     await tester.pumpAndSettle(const Duration(milliseconds: 50));
@@ -183,6 +225,7 @@ void main() {
         await tester.pumpWidget(_app(const ProductDetailsScreen()));
         await tester.pump();
 
+        expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
         expect(find.byKey(const Key('product-media-counter')), findsOneWidget);
         await tester.scrollUntilVisible(
           find.byKey(const Key('product-quick-specifications')),
