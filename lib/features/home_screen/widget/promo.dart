@@ -9,8 +9,8 @@ class PromoCard extends StatelessWidget {
   const PromoCard({
     required this.imageUrl,
     required this.title,
-    required this.buttonText,
-    required this.onPressed,
+    this.buttonText,
+    this.onPressed,
     this.description,
     super.key,
   });
@@ -18,12 +18,12 @@ class PromoCard extends StatelessWidget {
   final String imageUrl;
   final String title;
   final String? description;
-  final String buttonText;
-  final VoidCallback onPressed;
+  final String? buttonText;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) => Semantics(
-    button: true,
+    button: onPressed != null,
     label: title,
     child: Material(
       color: StorePalette.lightPurple,
@@ -74,14 +74,18 @@ class PromoCard extends StatelessWidget {
                                     style: StoreTypography.caption,
                                   ),
                                 ],
-                                const SizedBox(height: StoreSpacing.sm),
-                                StoreButton(
-                                  label: buttonText,
-                                  onPressed: onPressed,
-                                  expand: false,
-                                  height: StoreCalibration.compactControlHeight,
-                                  variant: StoreButtonVariant.secondary,
-                                ),
+                                if (onPressed != null &&
+                                    buttonText?.trim().isNotEmpty == true) ...[
+                                  const SizedBox(height: StoreSpacing.sm),
+                                  StoreButton(
+                                    label: buttonText!,
+                                    onPressed: onPressed,
+                                    expand: false,
+                                    height:
+                                        StoreCalibration.compactControlHeight,
+                                    variant: StoreButtonVariant.secondary,
+                                  ),
+                                ],
                               ],
                             ),
                           ),

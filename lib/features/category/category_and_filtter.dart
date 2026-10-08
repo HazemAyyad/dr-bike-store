@@ -366,13 +366,15 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Text(
-                    "⭐ ${item.rate}",
-                    style: robotoRegular.copyWith(
-                      fontSize: Dimensions.fontSizeExtraSmall,
-                      color: Theme.of(context).hoverColor,
+                  if (item.hasPublishedRating)
+                    Text(
+                      "⭐ ${item.rate.toStringAsFixed(1)} (${item.reviewCount})",
+                      textDirection: TextDirection.ltr,
+                      style: robotoRegular.copyWith(
+                        fontSize: Dimensions.fontSizeExtraSmall,
+                        color: Theme.of(context).hoverColor,
+                      ),
                     ),
-                  ),
                 ],
               ),
               Flexible(
@@ -489,13 +491,15 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Text(
-                    "⭐ ${item.rate}",
-                    style: robotoRegular.copyWith(
-                      fontSize: Dimensions.fontSizeSmall,
-                      color: Theme.of(context).hoverColor,
+                  if (item.hasPublishedRating)
+                    Text(
+                      "⭐ ${item.rate.toStringAsFixed(1)} (${item.reviewCount})",
+                      textDirection: TextDirection.ltr,
+                      style: robotoRegular.copyWith(
+                        fontSize: Dimensions.fontSizeSmall,
+                        color: Theme.of(context).hoverColor,
+                      ),
                     ),
-                  ),
                 ],
               ),
               Flexible(

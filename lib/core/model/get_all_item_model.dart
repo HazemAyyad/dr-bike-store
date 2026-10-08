@@ -130,6 +130,9 @@ class Item {
     this.itemSizeSelect,
   }) : productId = productId ?? id;
 
+  bool get hasPublishedRating =>
+      reviewCount > 0 && rate.isFinite && rate >= 1 && rate <= 5;
+
   factory Item.fromJson(Map<String, dynamic> json) {
     final availability =
         json['availability'] is Map
@@ -205,8 +208,8 @@ class Item {
           storefront
               ? _requiredBool(json, 'isMoreSales')
               : json['isMoreSales'] == true,
-      rate: (json['rate'] ?? 0.0).toDouble(),
-      reviewCount: int.tryParse('${json['reviewCount'] ?? 0}') ?? 0,
+      rate: _ratingValue(json),
+      reviewCount: _reviewCountValue(json),
       manufactureYear: json['manufactureYear'],
       discount: (json['discount'] ?? 0.0).toDouble(),
       storePresentation:
@@ -278,8 +281,8 @@ class Item {
       model: json['model'] ?? "",
       isNewItem: json['isNewItem'],
       isMoreSales: json['isMoreSales'],
-      rate: (json['rate'] ?? 0.0).toDouble(),
-      reviewCount: int.tryParse('${json['reviewCount'] ?? 0}') ?? 0,
+      rate: _ratingValue(json),
+      reviewCount: _reviewCountValue(json),
       manufactureYear: json['manufactureYear'],
       discount: (json['discount'] ?? 0.0).toDouble(),
       storePresentation:
@@ -423,6 +426,20 @@ List<ProductMedia> _mediaList(dynamic value) {
     ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
   return result;
 }
+
+double _ratingValue(Map<String, dynamic> json) {
+  final value =
+      json['rate'] ?? json['averageRating'] ?? json['average_rating'] ?? 0;
+  return value is num
+      ? value.toDouble()
+      : double.tryParse(value.toString()) ?? 0;
+}
+
+int _reviewCountValue(Map<String, dynamic> json) =>
+    int.tryParse(
+      '${json['reviewCount'] ?? json['review_count'] ?? json['reviews_count'] ?? 0}',
+    ) ??
+    0;
 
 int _requiredPositiveInt(Map<String, dynamic> json, String key) {
   final value = json[key];

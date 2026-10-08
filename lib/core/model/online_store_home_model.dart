@@ -114,6 +114,7 @@ class OnlineStoreHomeBanner {
     required this.contents,
     required this.actionType,
     this.actionTargetId,
+    this.actionProductId,
     this.actionUrl,
   });
 
@@ -123,6 +124,7 @@ class OnlineStoreHomeBanner {
   final Map<String, String> contents;
   final String actionType;
   final int? actionTargetId;
+  final int? actionProductId;
   final String? actionUrl;
 
   factory OnlineStoreHomeBanner.fromJson(Map<String, dynamic> json) =>
@@ -133,13 +135,28 @@ class OnlineStoreHomeBanner {
         contents: _strings(json['content_translations']),
         actionType: json['action_type']?.toString() ?? 'none',
         actionTargetId: int.tryParse('${json['action_target_id'] ?? ''}'),
+        actionProductId: int.tryParse('${json['action_product_id'] ?? ''}'),
         actionUrl: json['action_url']?.toString(),
       );
+
+  bool get hasSupportedDestination => switch (actionType) {
+    'url' => _isSafeHttpUrl(actionUrl),
+    'listing' => (actionProductId ?? 0) > 0,
+    'category' => (actionTargetId ?? 0) > 0,
+    _ => false,
+  };
 
   String title(String languageCode) =>
       titles[languageCode] ?? titles['ar'] ?? titles['en'] ?? '';
   String content(String languageCode) =>
       contents[languageCode] ?? contents['ar'] ?? contents['en'] ?? '';
+}
+
+bool _isSafeHttpUrl(String? value) {
+  final uri = Uri.tryParse(value?.trim() ?? '');
+  return uri != null &&
+      uri.hasAuthority &&
+      (uri.scheme == 'http' || uri.scheme == 'https');
 }
 
 Map<String, String> _strings(dynamic value) {

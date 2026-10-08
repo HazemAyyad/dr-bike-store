@@ -92,25 +92,19 @@ class _ProductMediaViewerState extends State<ProductMediaViewer> {
                             _mediaPage(context, widget.media[index]),
                   ),
                   if (multiple) ...[
-                    PositionedDirectional(
-                      start: StoreSpacing.sm,
+                    Positioned(
+                      left: StoreSpacing.sm,
                       child: _GalleryArrow(
                         key: const Key('gallery-previous'),
-                        icon:
-                            Directionality.of(context) == TextDirection.rtl
-                                ? Icons.chevron_right
-                                : Icons.chevron_left,
+                        icon: Icons.chevron_left,
                         onPressed: _index > 0 ? () => _move(-1) : null,
                       ),
                     ),
-                    PositionedDirectional(
-                      end: StoreSpacing.sm,
+                    Positioned(
+                      right: StoreSpacing.sm,
                       child: _GalleryArrow(
                         key: const Key('gallery-next'),
-                        icon:
-                            Directionality.of(context) == TextDirection.rtl
-                                ? Icons.chevron_left
-                                : Icons.chevron_right,
+                        icon: Icons.chevron_right,
                         onPressed:
                             _index < widget.media.length - 1
                                 ? () => _move(1)
@@ -245,54 +239,69 @@ class _ViewerHeader extends StatelessWidget {
   final VoidCallback onFullscreen;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 54,
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        Text(
-          '${index + 1}/$total',
-          key: const Key('fullscreen-media-counter'),
-          textDirection: TextDirection.ltr,
-          style: StoreTypography.label.copyWith(color: Colors.white),
-        ),
-        PositionedDirectional(
-          start: StoreSpacing.xs,
-          child: IconButton.filled(
-            key: const Key('fullscreen-media-close'),
-            tooltip:
-                (Get.locale?.languageCode ??
-                            Localizations.localeOf(context).languageCode) ==
-                        'ar'
-                    ? 'إغلاق'
-                    : 'Close',
-            onPressed: onClose,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF111318),
-              minimumSize: const Size(42, 42),
+  Widget build(BuildContext context) {
+    final closeLabel =
+        (Get.locale?.languageCode ??
+                    Localizations.localeOf(context).languageCode) ==
+                'ar'
+            ? 'إغلاق'
+            : 'Close';
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Text(
+            '${index + 1}/$total',
+            key: const Key('fullscreen-media-counter'),
+            textDirection: TextDirection.ltr,
+            style: StoreTypography.label.copyWith(color: Colors.white),
+          ),
+          Positioned(
+            left: StoreSpacing.sm,
+            child: Tooltip(
+              message: closeLabel,
+              child: FilledButton.icon(
+                key: const Key('fullscreen-media-close'),
+                onPressed: onClose,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF111318),
+                  minimumSize: const Size(0, 42),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: const StadiumBorder(),
+                  side: const BorderSide(color: Colors.white70),
+                ),
+                icon: const Icon(Icons.close_rounded, size: 23),
+                label: Text(
+                  closeLabel,
+                  style: StoreTypography.label.copyWith(
+                    color: const Color(0xFF111318),
+                  ),
+                ),
+              ),
             ),
-            icon: const Icon(Icons.close_rounded, size: 24),
           ),
-        ),
-        PositionedDirectional(
-          end: StoreSpacing.xs,
-          child: IconButton(
-            key: const Key('fullscreen-media-toggle'),
-            tooltip:
-                (Get.locale?.languageCode ??
-                            Localizations.localeOf(context).languageCode) ==
-                        'ar'
-                    ? 'ملء الشاشة'
-                    : 'Fullscreen',
-            onPressed: onFullscreen,
-            color: Colors.white,
-            icon: Icon(immersive ? Icons.fullscreen_exit : Icons.fullscreen),
+          Positioned(
+            right: StoreSpacing.sm,
+            child: IconButton(
+              key: const Key('fullscreen-media-toggle'),
+              tooltip:
+                  (Get.locale?.languageCode ??
+                              Localizations.localeOf(context).languageCode) ==
+                          'ar'
+                      ? 'ملء الشاشة'
+                      : 'Fullscreen',
+              onPressed: onFullscreen,
+              color: Colors.white,
+              icon: Icon(immersive ? Icons.fullscreen_exit : Icons.fullscreen),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _GalleryArrow extends StatelessWidget {
