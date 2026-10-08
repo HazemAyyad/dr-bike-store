@@ -15,6 +15,7 @@ abstract interface class HomeDataSource {
 
 abstract interface class StoreHomeDataSource {
   Future<Response> getStoreHome();
+  Future<Response> recordBannerClick(int bannerId);
 }
 
 class HomeRepository extends GetxService
@@ -31,6 +32,10 @@ class HomeRepository extends GetxService
 
   @override
   Future<Response> getStoreHome() => apiClient.getData('/OnlineStore/Home');
+
+  @override
+  Future<Response> recordBannerClick(int bannerId) =>
+      apiClient.postData('/OnlineStore/Banners/$bannerId/Click');
 
   @override
   Future<Response> getMainCategories() async {
