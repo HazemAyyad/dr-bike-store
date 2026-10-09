@@ -26,6 +26,7 @@ import '../../features/product/product_details_screen.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/shop/check_out_done.dart';
 import '../../features/shop/check_out_screen.dart';
+import '../../features/shop/shop_car_screen.dart';
 import '../../features/splash/splash.dart';
 import '../../features/splash/store_unavailable_screen.dart';
 import '../../features/splash/update_required_screen.dart';
@@ -44,6 +45,7 @@ class RouteHelper {
   static const String homePage = '/HomePage';
   static const String categoreyPage = '/CategoreyPage';
   static const String checkOutScreen = '/CheckOutScreen';
+  static const String cartScreen = '/CartScreen';
   static const String checkOutDone = '/CheckOutDone';
   static const String notificationScreen = '/NotificationScreen';
   static const String filterPage = '/FilterPage';
@@ -107,6 +109,7 @@ class RouteHelper {
       transition: Transition.fadeIn,
     ),
     GetPage(name: checkOutScreen, page: () => const CheckOutScreen()),
+    GetPage(name: cartScreen, page: () => const ShopCarScreen()),
     GetPage(name: checkOutDone, page: () => const CheckOutDone()),
 
     GetPage(name: notificationScreen, page: () => NotificationScreen()),
