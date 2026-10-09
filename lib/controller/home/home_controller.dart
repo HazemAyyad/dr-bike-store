@@ -182,9 +182,13 @@ class HomeControllerImp extends HomeController {
   }
 
   void closeSearch({bool clearQuery = true}) {
+    _searchDebounce?.cancel();
+    _searchRequest++;
+    isLoadingSearch.value = false;
     isSearchExpanded.value = false;
     if (clearQuery) {
       search.clear();
+      itemListSearch.clear();
       searchState.value = const StoreInitial();
     }
     update();

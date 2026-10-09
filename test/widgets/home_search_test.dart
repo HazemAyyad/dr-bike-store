@@ -1,4 +1,6 @@
 import 'package:doctor_bike/controller/home/home_controller.dart';
+import 'package:doctor_bike/controller/product/product_controller.dart';
+import 'package:doctor_bike/core/api_client.dart';
 import 'package:doctor_bike/core/classes/store_view_state.dart';
 import 'package:doctor_bike/core/helper/search_history_store.dart';
 import 'package:doctor_bike/core/locale/locale.dart';
@@ -10,10 +12,13 @@ import 'package:doctor_bike/core/theme/light.dart';
 import 'package:doctor_bike/core/theme/store_typography.dart';
 import 'package:doctor_bike/core/widget/store_bottom_navigation.dart';
 import 'package:doctor_bike/core/widget/store_chips.dart';
+import 'package:doctor_bike/core/widget/store_cards.dart';
+import 'package:doctor_bike/core/widget/store_media.dart';
 import 'package:doctor_bike/features/home_screen/home_page.dart';
 import 'package:doctor_bike/features/home_screen/home_screen.dart';
 import 'package:doctor_bike/features/search/search_screen.dart';
 import 'package:doctor_bike/repository/home/home_repository.dart';
+import 'package:doctor_bike/repository/categories/categories_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -368,6 +373,47 @@ void main() {
     expect(find.text('لا توجد نتائج'), findsNothing);
   });
 
+  testWidgets('search result uses storefront media and productId for details', (
+    tester,
+  ) async {
+    final controller = await _controller(authenticated: false);
+    final item = _item(11, 'سكوتر البحث', productId: 77, price: 450);
+    controller.searchState.value = StoreContent<List<Item>>([item]);
+    int? requestedProductId;
+    final preferences = Get.find<SharedPreferences>();
+    Get.put(
+      ProductControllerImp(
+        categoriesRepository: CategoriesRepository(
+          apiClient: ApiClient(sharedPreferences: preferences),
+        ),
+        connectivityCheck: () async => true,
+        detailLoader: (productId) async {
+          requestedProductId = productId;
+          return const Response(statusCode: 404);
+        },
+      ),
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: Scaffold(
+          body: SearchScreen(controller: controller, showSearchField: false),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final media = tester.widget<StoreNetworkMedia>(
+      find.byType(StoreNetworkMedia),
+    );
+    expect(media.url, 'fixture.jpg');
+
+    await tester.tap(find.byType(StoreProductListCard));
+    await tester.pump();
+
+    expect(requestedProductId, 77);
+  });
+
   testWidgets('Phase 5 loaded Home golden at the approved viewport', (
     tester,
   ) async {
@@ -539,13 +585,14 @@ Category _category(int id, String name) => Category(
 Item _item(
   int id,
   String name, {
+  int? productId,
   required double price,
   double discount = 0,
   bool isNew = false,
   int reviewCount = 0,
 }) => Item(
   id: id,
-  productId: id,
+  productId: productId ?? id,
   listingId: id + 100,
   listingStatus: 'published',
   readinessState: 'complete',

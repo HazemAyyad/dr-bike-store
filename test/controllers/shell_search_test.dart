@@ -210,6 +210,64 @@ void main() {
     },
   );
 
+  test('closing search cancels a pending debounced query', () async {
+    final dataSource = _FakeHomeDataSource();
+    final controller = HomeControllerImp(
+      homeRepository: dataSource,
+      searchHistoryStore: SearchHistoryStore(preferences: preferences),
+      connectivityCheck: () async => true,
+      tokenLoader: () async => null,
+    );
+
+    controller.openSearch();
+    controller.searchAsYouType('بطارية');
+    controller.closeSearch();
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+
+    expect(dataSource.searchQueries, isEmpty);
+    expect(controller.search.text, isEmpty);
+    expect(controller.itemListSearch, isEmpty);
+    expect(controller.searchState.value, isA<StoreInitial<List<Item>>>());
+    expect(controller.isLoadingSearch.value, isFalse);
+  });
+
+  test('closing search ignores a response already in flight', () async {
+    final response = Completer<Response>();
+    final requestStarted = Completer<void>();
+    final dataSource = _FakeHomeDataSource(
+      searchHandler: (query) {
+        if (!requestStarted.isCompleted) requestStarted.complete();
+        return response.future;
+      },
+    );
+    final controller = HomeControllerImp(
+      homeRepository: dataSource,
+      searchHistoryStore: SearchHistoryStore(preferences: preferences),
+      connectivityCheck: () async => true,
+      tokenLoader: () async => null,
+    );
+
+    controller.openSearch();
+    final search = controller.submitSearch('سكوتر');
+    await requestStarted.future;
+    expect(controller.searchState.value, isA<StoreLoading<List<Item>>>());
+
+    controller.closeSearch();
+    response.complete(
+      const Response(
+        statusCode: 200,
+        body: <String, Object>{'rows': <Object>[]},
+      ),
+    );
+    await search;
+
+    expect(controller.isSearchExpanded.value, isFalse);
+    expect(controller.search.text, isEmpty);
+    expect(controller.itemListSearch, isEmpty);
+    expect(controller.searchState.value, isA<StoreInitial<List<Item>>>());
+    expect(controller.isLoadingSearch.value, isFalse);
+  });
+
   test(
     'pull refresh exposes progress and preserves retained Home content on failure',
     () async {
@@ -295,10 +353,11 @@ Item _item({required double retailPrice, required double wholesalePrice}) =>
     );
 
 class _FakeHomeDataSource implements HomeDataSource {
-  _FakeHomeDataSource({List<Response>? searchResponses})
+  _FakeHomeDataSource({List<Response>? searchResponses, this.searchHandler})
     : _searchResponses = searchResponses ?? <Response>[];
 
   final List<Response> _searchResponses;
+  final Future<Response> Function(String query)? searchHandler;
   final List<String> searchQueries = <String>[];
 
   @override
@@ -331,7 +390,9 @@ class _FakeHomeDataSource implements HomeDataSource {
 
   @override
   Future<Response> search(dynamic name, dynamic lang) async {
-    searchQueries.add(name.toString());
+    final query = name.toString();
+    searchQueries.add(query);
+    if (searchHandler != null) return searchHandler!(query);
     return _searchResponses.removeAt(0);
   }
 }

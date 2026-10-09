@@ -484,7 +484,9 @@ class _SearchLoading extends StatelessWidget {
 
 Future<void> _openProduct(Item item) async {
   if (!Get.isRegistered<ProductControllerImp>()) return;
-  await Get.find<ProductControllerImp>().getCategoryById(itemId: item.id);
+  await Get.find<ProductControllerImp>().getCategoryById(
+    itemId: item.productId,
+  );
 }
 
 void _runtimeAddToCart(Item item) {
@@ -512,6 +514,16 @@ String _itemName(Item item) {
 }
 
 String? _itemImage(Item item) {
+  if (item.storefrontMedia.isNotEmpty) {
+    final media = item.storefrontMedia.firstWhere(
+      (media) => media.isMain,
+      orElse: () => item.storefrontMedia.first,
+    );
+    final poster = media.posterPath?.trim();
+    if (poster?.isNotEmpty == true) return poster;
+    final path = media.path.trim();
+    if (path.isNotEmpty) return path;
+  }
   if (item.viewImagesItems.isNotEmpty) {
     final value = item.viewImagesItems.first.imageUrl.trim();
     if (value.isNotEmpty) return value;
