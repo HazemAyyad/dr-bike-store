@@ -90,6 +90,7 @@ class HomeControllerImp extends HomeController {
   final adsResponse = <Ad>[].obs;
   final itemList = <Item>[].obs;
   final homeSections = <OnlineStoreHomeSection>[].obs;
+  OnlineStorePopupCampaign? _pendingPopupCampaign;
   final itemListSearch = <Item>[].obs;
   final notificationIsNotRead = <int>[].obs;
   final isNotificationNotRead = false.obs;
@@ -257,6 +258,13 @@ class HomeControllerImp extends HomeController {
             );
           })
           .toList(growable: false);
+      final popup = data['popup_campaign'];
+      _pendingPopupCampaign =
+          popup is Map
+              ? OnlineStorePopupCampaign.fromJson(
+                Map<String, dynamic>.from(popup),
+              )
+              : null;
       homeSections.assignAll(sections);
       homeSectionsState.value =
           sections.isEmpty
@@ -276,6 +284,25 @@ class HomeControllerImp extends HomeController {
     final source = homeRepository;
     if (source is! StoreHomeDataSource || bannerId <= 0) return;
     await (source as StoreHomeDataSource).recordBannerClick(bannerId);
+  }
+
+  OnlineStorePopupCampaign? takePopupCampaign() {
+    final campaign = _pendingPopupCampaign;
+    _pendingPopupCampaign = null;
+    return campaign;
+  }
+
+  Future<void> recordPopupEvent(int campaignId, String eventType) async {
+    final source = homeRepository;
+    if (source is! StoreHomeDataSource || campaignId <= 0) return;
+    try {
+      await (source as StoreHomeDataSource).recordPopupEvent(
+        campaignId,
+        eventType,
+      );
+    } catch (_) {
+      // Analytics must never block the customer journey.
+    }
   }
 
   void _setHomeOffline() {

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:get/get.dart';
 
 import '../../controller/LocalizationController.dart';
@@ -16,6 +18,7 @@ abstract interface class HomeDataSource {
 abstract interface class StoreHomeDataSource {
   Future<Response> getStoreHome();
   Future<Response> recordBannerClick(int bannerId);
+  Future<Response> recordPopupEvent(int campaignId, String eventType);
 }
 
 class HomeRepository extends GetxService
@@ -27,15 +30,46 @@ class HomeRepository extends GetxService
   // String token =
   //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJhMjk2YWE0Ni1jNmIxLTRkNzEtYjk4YS1iZjMwYjQzYzk4ODkiLCJlbWFpbCI6IndhbGVlZDFAZ21haWwuY29tIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3NDkxNDI0MTYsImV4cCI6MTc4MDY3ODQxNiwiaWF0IjoxNzQ5MTQyNDE2LCJpc3MiOiJTZWN1cmVBcGkiLCJhdWQiOiJTZWN1cmVBcGlVc2VyIn0.FRbzifVW8Ra7iFd_oFxF9uJ7yey0HXJc1bth2amMXbc";
 
-  HomeRepository({required this.apiClient});
+  HomeRepository({required this.apiClient})
+    : _sessionId = _randomIdentity('session');
   String tok = AppUsageService.getToken().toString();
+  static const _visitorKey = 'online_store_popup_visitor_id';
+  final String _sessionId;
+
+  static String _randomIdentity(String prefix) {
+    final random = Random.secure();
+    return '$prefix-${DateTime.now().microsecondsSinceEpoch}-${random.nextInt(1 << 32)}';
+  }
+
+  Future<Map<String, String>> _storeHeaders() async {
+    var visitor = apiClient.sharedPreferences.getString(_visitorKey);
+    if (visitor == null || visitor.isEmpty) {
+      visitor = _randomIdentity('visitor');
+      await apiClient.sharedPreferences.setString(_visitorKey, visitor);
+    }
+    final token = (await AppUsageService.getToken())?.trim();
+    return {
+      'X-Store-Visitor-ID': visitor,
+      'X-Store-Session-ID': _sessionId,
+      if (token?.isNotEmpty == true) 'authorization': 'Bearer $token',
+    };
+  }
 
   @override
-  Future<Response> getStoreHome() => apiClient.getData('/OnlineStore/Home');
+  Future<Response> getStoreHome() async =>
+      apiClient.getData('/OnlineStore/Home', headers: await _storeHeaders());
 
   @override
   Future<Response> recordBannerClick(int bannerId) =>
       apiClient.postData('/OnlineStore/Banners/$bannerId/Click');
+
+  @override
+  Future<Response> recordPopupEvent(int campaignId, String eventType) async =>
+      apiClient.postData(
+        '/OnlineStore/PopupCampaigns/$campaignId/Event',
+        headers: await _storeHeaders(),
+        body: {'event_type': eventType},
+      );
 
   @override
   Future<Response> getMainCategories() async {

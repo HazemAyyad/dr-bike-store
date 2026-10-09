@@ -7,6 +7,7 @@ import '../../controller/favorites/favorites_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../controller/order/order_controller.dart';
 import '../../controller/notification/notification_controller.dart';
+import '../../controller/product/product_controller.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
@@ -24,6 +25,7 @@ import '../shop/shop_car_screen.dart';
 import '../order/order_screen.dart';
 import 'home_page.dart';
 import 'widget/main_categorys.dart';
+import 'widget/store_popup_campaign_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -58,8 +60,62 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await controller.initializeShell();
-      if (widget.loadOnStart) await controller.loadHome();
+      if (widget.loadOnStart) {
+        await controller.loadHome();
+        if (mounted) await _showPopupCampaign();
+      }
     });
+  }
+
+  Future<void> _showPopupCampaign() async {
+    final campaign = controller.takePopupCampaign();
+    if (campaign == null || campaign.id <= 0 || !mounted) return;
+    await controller.recordPopupEvent(campaign.id, 'impression');
+    if (!mounted) return;
+    final result = await showStorePopupCampaignDialog(context, campaign);
+    if (!mounted) return;
+    if (result == StorePopupCampaignResult.dismiss) {
+      await controller.recordPopupEvent(campaign.id, 'dismiss');
+      return;
+    }
+    await controller.recordPopupEvent(campaign.id, 'click');
+    switch (campaign.actionType) {
+      case 'listing':
+        final productId = campaign.actionProductId;
+        if (productId != null &&
+            productId > 0 &&
+            Get.isRegistered<ProductControllerImp>()) {
+          await Get.find<ProductControllerImp>().getCategoryById(
+            itemId: productId,
+          );
+        }
+        break;
+      case 'category':
+        final categoryId = campaign.actionTargetId;
+        if (categoryId != null &&
+            categoryId > 0 &&
+            Get.isRegistered<CategoresControllerImp>()) {
+          final categories = Get.find<CategoresControllerImp>();
+          categories
+            ..mainCategoresId = categoryId
+            ..titleMain = campaign.title(Get.locale?.languageCode ?? 'ar');
+          await categories.getProductsByOnlineStoreCategory(categoryId);
+        }
+        break;
+      case 'coupon':
+        final code = campaign.couponCode?.trim();
+        if (code?.isNotEmpty == true && Get.isRegistered<ShopController>()) {
+          Get.find<ShopController>().retainCouponIntent(code!);
+          await Get.to(() => const ShopCarScreen());
+        }
+        break;
+      case 'url':
+        final url = campaign.actionUrl?.trim();
+        if (url?.isNotEmpty == true) await controller.openWeb(url!);
+        break;
+      case 'none':
+        break;
+    }
   }
 
   Widget _defaultPage(StoreDestination destination) => switch (destination) {

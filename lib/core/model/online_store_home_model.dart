@@ -1,6 +1,63 @@
 import 'get_all_item_model.dart';
 import 'main_categores_model.dart';
 
+class OnlineStorePopupCampaign {
+  const OnlineStorePopupCampaign({
+    required this.id,
+    required this.imagePath,
+    required this.titles,
+    required this.contents,
+    required this.buttons,
+    required this.theme,
+    required this.actionType,
+    this.actionTargetId,
+    this.actionProductId,
+    this.actionUrl,
+    this.couponCode,
+  });
+
+  final int id;
+  final String imagePath;
+  final Map<String, String> titles;
+  final Map<String, String> contents;
+  final Map<String, String> buttons;
+  final String theme;
+  final String actionType;
+  final int? actionTargetId;
+  final int? actionProductId;
+  final String? actionUrl;
+  final String? couponCode;
+
+  factory OnlineStorePopupCampaign.fromJson(Map<String, dynamic> json) =>
+      OnlineStorePopupCampaign(
+        id: int.tryParse('${json['id']}') ?? 0,
+        imagePath: json['image_path']?.toString() ?? '',
+        titles: _strings(json['title_translations']),
+        contents: _strings(json['content_translations']),
+        buttons: _strings(json['button_translations']),
+        theme: json['theme']?.toString() ?? 'brand',
+        actionType: json['action_type']?.toString() ?? 'none',
+        actionTargetId: int.tryParse('${json['action_target_id'] ?? ''}'),
+        actionProductId: int.tryParse('${json['action_product_id'] ?? ''}'),
+        actionUrl: json['action_url']?.toString(),
+        couponCode: json['coupon_code']?.toString(),
+      );
+
+  String _localized(Map<String, String> values, String languageCode) =>
+      values[languageCode]?.trim().isNotEmpty == true
+          ? values[languageCode]!
+          : values['ar'] ?? values['en'] ?? values['he'] ?? '';
+
+  String title(String languageCode) => _localized(titles, languageCode);
+  String content(String languageCode) => _localized(contents, languageCode);
+  String button(String languageCode) {
+    final value = _localized(buttons, languageCode);
+    return value.isEmpty
+        ? (languageCode == 'en' ? 'Explore now' : 'اكتشف الآن')
+        : value;
+  }
+}
+
 class OnlineStoreHomeSection {
   const OnlineStoreHomeSection({
     required this.id,
