@@ -21,8 +21,12 @@ abstract interface class StoreHomeDataSource {
   Future<Response> recordPopupEvent(int campaignId, String eventType);
 }
 
+abstract interface class StorePushDataSource {
+  Future<Response> updateFcmToken(String token);
+}
+
 class HomeRepository extends GetxService
-    implements HomeDataSource, StoreHomeDataSource {
+    implements HomeDataSource, StoreHomeDataSource, StorePushDataSource {
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
@@ -70,6 +74,13 @@ class HomeRepository extends GetxService
         headers: await _storeHeaders(),
         body: {'event_type': eventType},
       );
+
+  @override
+  Future<Response> updateFcmToken(String token) async => apiClient.postData(
+    '/Users/FcmToken',
+    headers: await _storeHeaders(),
+    body: {'fcm_token': token},
+  );
 
   @override
   Future<Response> getMainCategories() async {

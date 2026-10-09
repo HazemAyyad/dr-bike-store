@@ -77,6 +77,7 @@ abstract interface class StoreAuthGateway {
     required String password,
     required String passwordConfirmation,
     required DateTime timestamp,
+    String notificationToken = '',
   });
 
   Future<AuthResult<ForgotPasswordResponse>> requestPasswordReset({
@@ -168,6 +169,7 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
     required String password,
     required String passwordConfirmation,
     required DateTime timestamp,
+    String notificationToken = '',
   }) async {
     final response = await register(
       email: email,
@@ -175,6 +177,7 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
       password: password,
       passwordConfirmation: passwordConfirmation,
       date: timestamp.toUtc().toIso8601String(),
+      userToken: notificationToken,
     );
     if (response.statusCode == 200) return const AuthSuccess(true);
     return _failureFromResponse(
@@ -325,6 +328,7 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
     required password,
     required passwordConfirmation,
     required date,
+    String userToken = '',
   }) async {
     return await apiClient.postData(
       '/Users/Register',
@@ -336,6 +340,7 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
         "dateAdd": date,
         "userUpdate": "0",
         "dateUpdate": date,
+        "userToken": userToken,
       },
     );
   }
@@ -579,6 +584,12 @@ class AuthRepository extends GetxService implements StoreAuthGateway {
       },
     );
   }
+
+  Future<Response> updateFcmToken(String token) async => apiClient.postData(
+    '/Users/FcmToken',
+    headers: await _storeHeaders(),
+    body: {'fcm_token': token},
+  );
 
   Future<Response> checkSettingAndConactUs() async {
     return await apiClient.postData('/Settings/CheckSetting');
