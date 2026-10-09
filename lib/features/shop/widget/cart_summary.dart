@@ -6,16 +6,36 @@ import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
 
 class CartSummary extends StatelessWidget {
-  const CartSummary({required this.controller, super.key});
+  const CartSummary({
+    required this.controller,
+    this.forCheckout = false,
+    super.key,
+  });
   final ShopController controller;
+  final bool forCheckout;
 
   @override
   Widget build(BuildContext context) {
-    final productDiscount = controller.cartSubtotal - controller.cartTotal;
-    final couponDiscount = controller.appliedCouponDiscount;
+    final subtotal =
+        forCheckout ? controller.checkoutSubtotal : controller.cartSubtotal;
+    final productsTotal =
+        forCheckout ? controller.checkoutTotal : controller.cartTotal;
+    final couponDiscount =
+        forCheckout
+            ? controller.checkoutAppliedCouponDiscount
+            : controller.appliedCouponDiscount;
+    final totalAfterCoupon =
+        forCheckout
+            ? controller.checkoutTotalAfterCoupon
+            : controller.cartTotalAfterCoupon;
+    final showsCoupon =
+        forCheckout
+            ? controller.checkoutHasCoupon
+            : controller.activeCode == true && controller.couponModel != null;
+    final productDiscount = subtotal - productsTotal;
     final shipping = controller.selectedCityPrice;
     final total =
-        controller.cartTotalAfterCoupon +
+        totalAfterCoupon +
         (controller.hasAuthoritativeDeliveryQuote ? shipping : 0);
     return Container(
       padding: const EdgeInsets.all(14),
@@ -26,14 +46,14 @@ class CartSummary extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _valueRow('المجموع الفرعي', controller.cartSubtotal),
+          _valueRow('المجموع الفرعي', subtotal),
           if (productDiscount > 0)
             _valueRow(
               'خصم المنتجات',
               -productDiscount,
               valueColor: StorePalette.error,
             ),
-          if (controller.activeCode == true && controller.couponModel != null)
+          if (showsCoupon)
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Row(

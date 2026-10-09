@@ -39,7 +39,11 @@ class ShopController extends GetxController {
   final GetStorage box;
   final RxList<CartLine> cartLines = <CartLine>[].obs;
   final RxList<Item> items = <Item>[].obs;
+  List<CartLine>? _buyNowCheckoutLines;
   RxList<Item> get cartItems => items;
+  bool get isBuyNowCheckout => _buyNowCheckoutLines != null;
+  List<CartLine> get checkoutLines =>
+      List<CartLine>.unmodifiable(_buyNowCheckoutLines ?? cartLines);
   late bool isNormail;
   String? token;
   String couponIntent = '';
@@ -182,7 +186,37 @@ class ShopController extends GetxController {
   String? OrderId;
   ShopController({required this.shopRepository, GetStorage? storage})
     : box = storage ?? GetStorage();
-  getUserById() async {
+
+  Future<void> getUserById() async {
+    _buyNowCheckoutLines = null;
+    await _openCheckout();
+  }
+
+  bool prepareBuyNowCheckout(Item item) {
+    try {
+      _buyNowCheckoutLines = <CartLine>[CartLine.fromItem(item)];
+      _invalidateDeliveryQuote();
+      update();
+      return true;
+    } on FormatException {
+      showCustomSnackBar('storeCartInvalidListing'.tr, isError: true);
+      return false;
+    }
+  }
+
+  bool startBuyNowCheckout(Item item) {
+    if (!prepareBuyNowCheckout(item)) return false;
+    unawaited(_openPreparedBuyNowCheckout());
+    return true;
+  }
+
+  Future<void> _openPreparedBuyNowCheckout() async {
+    if (await _openCheckout()) return;
+    _buyNowCheckoutLines = null;
+    update();
+  }
+
+  Future<bool> _openCheckout() async {
     checkoutAddresses = const [];
     selectedStoreAddress = null;
     checkoutAddressesMessage = null;
@@ -243,6 +277,7 @@ class ShopController extends GetxController {
           availableRoles: resolution.availableRoles,
         );
         Get.toNamed(RouteHelper.checkOutScreen);
+        return true;
       } catch (e, stackTrace) {
         checkoutState = const CheckoutFlowState(stage: CheckoutStage.error);
         debugPrint('[STORE_CHECKOUT] getUserById error=$e');
@@ -251,12 +286,14 @@ class ShopController extends GetxController {
           'An error occurred. Please try again.'.tr,
           isError: true,
         );
+        return false;
       } finally {
         OverlayLoadingProgress.stop();
       }
     } else {
       OverlayLoadingProgress.stop();
       showCustomSnackBar('Check the internet connection'.tr, isError: true);
+      return false;
     }
   }
   // getUserById() async {
@@ -591,7 +628,7 @@ class ShopController extends GetxController {
   }
 
   double deliveryQuotePrice() {
-    return cartTotal;
+    return checkoutTotal;
   }
 
   int get cartQuantity =>
@@ -606,6 +643,28 @@ class ShopController extends GetxController {
     final payable = cartTotal - appliedCouponDiscount;
     return payable < 0 ? 0 : payable;
   }
+
+  int get checkoutQuantity =>
+      checkoutLines.fold(0, (total, line) => total + line.quantity);
+  double get checkoutSubtotal =>
+      checkoutLines.fold(0, (total, line) => total + line.subtotal);
+  double get checkoutTotal =>
+      checkoutLines.fold(0, (total, line) => total + line.total);
+  bool get checkoutHasCoupon =>
+      !isBuyNowCheckout && activeCode == true && couponModel != null;
+  double get checkoutAppliedCouponDiscount =>
+      checkoutHasCoupon ? couponModel?.discountAmount ?? 0 : 0;
+  double get checkoutTotalAfterCoupon {
+    final payable = checkoutTotal - checkoutAppliedCouponDiscount;
+    return payable < 0 ? 0 : payable;
+  }
+
+  List<Item> get checkoutItems => checkoutLines
+      .map((line) {
+        line.itemSnapshot.count = line.quantity;
+        return line.itemSnapshot;
+      })
+      .toList(growable: false);
 
   bool get canCheckout =>
       cartLines.isNotEmpty && cartLines.every((line) => line.structurallyValid);
@@ -862,7 +921,7 @@ class ShopController extends GetxController {
     checkoutState = checkoutState.copyWith(stage: CheckoutStage.submitting);
     update();
     try {
-      final coupon = activeCode == true ? couponModel?.code : null;
+      final coupon = checkoutHasCoupon ? couponModel?.code : null;
       final transport = await runCheckoutTransport(
         connectivityCheck:
             () async => await CheckInternet.checkInternet() == true,
@@ -870,7 +929,7 @@ class ShopController extends GetxController {
             () => shopRepository.submitNativeCheckout(
               _checkoutAttempt.attachTo(
                 buildNativeCheckoutPayload(
-                  items: items,
+                  items: checkoutItems,
                   accountRole: role,
                   customerAddress: addressController.text,
                   shiplyCityId: int.parse(selectedCityId!),
@@ -912,7 +971,12 @@ class ShopController extends GetxController {
           selectedRole: role,
           availableRoles: checkoutState.availableRoles,
         );
-        clearCart();
+        if (isBuyNowCheckout) {
+          _buyNowCheckoutLines = null;
+          update();
+        } else {
+          clearCart();
+        }
         if (Get.isRegistered<OrderController>()) {
           unawaited(
             Get.find<OrderController>().load(filter: OrderListFilter.current),
@@ -935,7 +999,7 @@ class ShopController extends GetxController {
       } else {
         checkoutState = checkoutState.copyWith(
           stage: CheckoutStage.error,
-          message: 'تعذر إتمام الطلب. لم يتم مسح السلة.',
+          message: 'تعذر إتمام الطلب. لم يتم تغيير السلة.',
         );
       }
     } catch (_) {

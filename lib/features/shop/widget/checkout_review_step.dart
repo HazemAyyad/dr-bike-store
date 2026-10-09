@@ -40,7 +40,7 @@ class CheckoutReviewStep extends StatelessWidget {
       children: [
         Text('مراجعة الطلب', style: StoreTypography.headline),
         const SizedBox(height: StoreSpacing.md),
-        ...controller.cartLines.map(
+        ...controller.checkoutLines.map(
           (line) => ListTile(
             title: Text(line.nameAr),
             subtitle: Text('الكمية: ${line.quantity}'),

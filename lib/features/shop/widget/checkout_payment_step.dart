@@ -79,7 +79,7 @@ class CheckoutPaymentStep extends StatelessWidget {
         const SizedBox(height: 18),
         Text('ملخص الدفع', style: StoreTypography.title),
         const SizedBox(height: 10),
-        CartSummary(controller: controller),
+        CartSummary(controller: controller, forCheckout: true),
         const SizedBox(height: 10),
         _DeliveryCard(controller: controller),
         if (_showsFailure(state.stage)) ...[
@@ -105,8 +105,8 @@ class CheckoutPaymentStep extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           controller.hasAuthoritativeDeliveryQuote
-              ? 'المبلغ المتوقع: ${_price(controller.cartTotalAfterCoupon + controller.selectedCityPrice)} ₪'
-              : 'الإجمالي قبل الشحن: ${_price(controller.cartTotalAfterCoupon)} ₪',
+              ? 'المبلغ المتوقع: ${_price(controller.checkoutTotalAfterCoupon + controller.selectedCityPrice)} ₪'
+              : 'الإجمالي قبل الشحن: ${_price(controller.checkoutTotalAfterCoupon)} ₪',
           textAlign: TextAlign.center,
           style: StoreTypography.label.copyWith(color: StorePalette.navy),
         ),

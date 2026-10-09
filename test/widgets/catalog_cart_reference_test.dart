@@ -154,6 +154,32 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  test('buy-now checkout is isolated from the persisted cart', () {
+    final controller = Get.put(
+      ShopController(
+        shopRepository: ShopRepository(apiClient: apiClient),
+        storage: GetStorage('catalog-cart-reference-test'),
+      ),
+    );
+    final cartItem = _item()..count = 2;
+    controller.cartLines.assign(CartLine.fromItem(cartItem));
+    controller.items.assign(cartItem);
+    controller.saveCart();
+
+    final buyNowItem = _item(productId: 202, listingId: 9202)..count = 1;
+
+    expect(controller.prepareBuyNowCheckout(buyNowItem), isTrue);
+    expect(controller.isBuyNowCheckout, isTrue);
+    expect(controller.checkoutLines, hasLength(1));
+    expect(controller.checkoutLines.single.identity.listingId, 9202);
+    expect(controller.cartLines, hasLength(1));
+    expect(controller.cartLines.single.identity.listingId, 9001);
+    expect(
+      controller.box.read<List<dynamic>>(ShopController.cartStorageKey),
+      hasLength(1),
+    );
+  });
 }
 
 class _TestApp extends StatelessWidget {

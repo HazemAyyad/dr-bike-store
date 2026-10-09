@@ -88,6 +88,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('متابعة الشحن'), findsOneWidget);
+      final addressArrow = find.byIcon(Icons.arrow_forward_rounded);
+      expect(addressArrow, findsOneWidget);
+      expect(
+        tester.getCenter(addressArrow).dx,
+        lessThan(tester.getCenter(find.text('متابعة الشحن')).dx),
+      );
       expect(tester.takeException(), isNull);
     });
 
@@ -118,6 +124,12 @@ void main() {
         scrollable: find.byType(Scrollable).last,
       );
       expect(find.text('متابعة الدفع'), findsOneWidget);
+      final shippingArrow = find.byIcon(Icons.arrow_forward_rounded);
+      expect(shippingArrow, findsOneWidget);
+      expect(
+        tester.getCenter(shippingArrow).dx,
+        lessThan(tester.getCenter(find.text('متابعة الدفع')).dx),
+      );
       expect(find.textContaining('استلام من الفرع'), findsNothing);
       expect(tester.takeException(), isNull);
     });
