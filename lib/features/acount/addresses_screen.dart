@@ -6,6 +6,7 @@ import '../../core/model/city_model.dart';
 import '../../core/model/store_address_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
+import '../../core/widget/custom_snackbar.dart';
 import '../../core/widget/store_buttons.dart';
 import '../../core/widget/store_skeletons.dart';
 import '../../core/widget/store_states.dart';
@@ -280,10 +281,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           onPressed: () async {
                             if (selectedCity == null ||
                                 selectedVillage == null) {
-                              ScaffoldMessenger.of(sheetContext).showSnackBar(
-                                const SnackBar(
-                                  content: Text('حدد المدينة ومنطقة التوصيل.'),
-                                ),
+                              showCustomSnackBar(
+                                'حدد المدينة ومنطقة التوصيل.',
+                                isError: true,
                               );
                               return;
                             }

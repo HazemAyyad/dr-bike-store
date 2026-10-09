@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../firebase_options.dart';
 import '../model/notification_model.dart';
 
 sealed class NotificationRouteTarget {
@@ -110,7 +111,7 @@ class NotificationApi {
 
 @pragma('vm:entry-point')
 Future<void> _handleBackgroundMessage(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   NotificationRouteResolver.resolve(message.data);
   await NotificationApi.instance.setupFlutterNotifications();
   await NotificationApi.instance.showNotification(message);

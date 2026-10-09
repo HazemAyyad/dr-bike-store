@@ -646,7 +646,13 @@ class ShopController extends GetxController {
     _syncItemsFromLines();
     cal();
     saveCart();
-    showCustomSnackBar('Product added'.tr, isError: false);
+    showCustomSnackBar(
+      'Product added'.tr,
+      isError: false,
+      title: 'storeFeedbackAddedTitle'.tr,
+      actionLabel: 'storeViewCart'.tr,
+      onAction: () => Get.toNamed(RouteHelper.cartScreen),
+    );
     if (closeAfterAdd && Get.key.currentState?.canPop() == true) Get.back();
     update();
     return true;

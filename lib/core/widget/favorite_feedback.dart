@@ -1,17 +1,40 @@
+import 'dart:async';
+
+import 'package:get/get.dart';
+
 import '../../controller/favorites/favorites_controller.dart';
+import '../../controller/home/home_controller.dart';
+import '../helper/route_helper.dart';
+import 'store_bottom_navigation.dart';
 import 'custom_snackbar.dart';
 
 void showFavoriteFeedback(FavoriteActionOutcome outcome) {
   switch (outcome) {
     case FavoriteActionOutcome.added:
-      showCustomSnackBar('تمت إضافة المنتج إلى المفضلة.', isError: false);
+      showCustomSnackBar(
+        'storeFavoriteAdded'.tr,
+        isError: false,
+        title: 'storeFeedbackAddedTitle'.tr,
+        actionLabel: 'storeViewFavorites'.tr,
+        onAction: () => unawaited(_openFavorites()),
+      );
     case FavoriteActionOutcome.removed:
-      showCustomSnackBar('تمت إزالة المنتج من المفضلة.', isError: false);
+      showCustomSnackBar('storeFavoriteRemoved'.tr, isError: false);
     case FavoriteActionOutcome.failed:
-      showCustomSnackBar('تعذر تحديث المفضلة. حاول مجددًا.', isError: true);
+      showCustomSnackBar('storeFavoriteUpdateFailed'.tr, isError: true);
     case FavoriteActionOutcome.invalidIdentity:
-      showCustomSnackBar('هذا المنتج غير متاح للمفضلة.', isError: true);
+      showCustomSnackBar('storeFavoriteUnavailable'.tr, isError: true);
     case FavoriteActionOutcome.loginRequired:
       break;
   }
+}
+
+Future<void> _openFavorites() async {
+  if (Get.isRegistered<HomeControllerImp>()) {
+    final outcome = await Get.find<HomeControllerImp>().selectDestination(
+      StoreDestination.favorites,
+    );
+    if (outcome != ShellNavigationOutcome.selected) return;
+  }
+  await Get.offAllNamed(RouteHelper.homePage);
 }

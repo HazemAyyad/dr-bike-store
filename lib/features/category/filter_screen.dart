@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../controller/categores/categores_controller.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
+import '../../core/widget/custom_snackbar.dart';
 
 class FilterPage extends StatelessWidget {
   const FilterPage({super.key, this.embedded = false});
@@ -196,9 +197,7 @@ class _FilterContentState extends State<_FilterContent> {
     if ((min != null && min < 0) ||
         (max != null && max < 0) ||
         (min != null && max != null && min > max)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تحقق من نطاق السعر المدخل.')),
-      );
+      showCustomSnackBar('تحقق من نطاق السعر المدخل.', isError: true);
       return;
     }
     widget.onClose();

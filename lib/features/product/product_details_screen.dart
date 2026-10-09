@@ -13,6 +13,7 @@ import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
 import '../../core/widget/store_chips.dart';
+import '../../core/widget/custom_snackbar.dart';
 import '../../core/widget/favorite_feedback.dart';
 import '../../core/widget/store_skeletons.dart';
 import '../shop/shop_car_screen.dart';
@@ -132,18 +133,25 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
         '${_label(context, 'رمز المنتج', 'Product code')}: ${item.model.trim()}',
       '${item.normailPrice.toStringAsFixed(2)} ₪',
     ];
+    final renderBox = context.findRenderObject();
+    final shareOrigin =
+        renderBox is RenderBox && renderBox.hasSize
+            ? renderBox.localToGlobal(Offset.zero) & renderBox.size
+            : null;
     try {
       await SharePlus.instance.share(
-        ShareParams(text: lines.join('\n'), subject: name),
+        ShareParams(
+          text: lines.join('\n'),
+          subject: name,
+          title: name,
+          sharePositionOrigin: shareOrigin,
+        ),
       );
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _label(context, 'تعذرت مشاركة المنتج', 'Unable to share product'),
-            ),
-          ),
+        showCustomSnackBar(
+          _label(context, 'تعذرت مشاركة المنتج', 'Unable to share product'),
+          isError: true,
         );
       }
     }
