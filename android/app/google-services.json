@@ -1,13 +1,32 @@
 {
   "project_info": {
-    "project_number": "889483409620",
-    "project_id": "doctor-bike-1323e",
-    "storage_bucket": "doctor-bike-1323e.firebasestorage.app"
+    "project_number": "960923193223",
+    "project_id": "drbike-7fa3a",
+    "storage_bucket": "drbike-7fa3a.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:889483409620:android:83352dd337c97501a62341",
+        "mobilesdk_app_id": "1:960923193223:android:f026a525be6386c924cd22",
+        "android_client_info": {
+          "package_name": "com.application.doctorbike"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDge4XGPw6OVrvK_051-1ELHnU8EBIzah8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960923193223:android:22444bf8e9f751ad24cd22",
         "android_client_info": {
           "package_name": "com.mahm.doctor_bike"
         }
@@ -15,7 +34,26 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD2jdvQVCA__71Pv-Vxyek-cKY25f1ovGk"
+          "current_key": "AIzaSyDge4XGPw6OVrvK_051-1ELHnU8EBIzah8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960923193223:android:9b7c56a07743cb5724cd22",
+        "android_client_info": {
+          "package_name": "com.nofal.doctorbike"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDge4XGPw6OVrvK_051-1ELHnU8EBIzah8"
         }
       ],
       "services": {
