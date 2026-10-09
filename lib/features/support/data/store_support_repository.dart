@@ -132,6 +132,15 @@ class StoreSupportRepository {
     _requireSuccess(response);
   }
 
+  Future<void> setTyping(int conversationId, bool isTyping) async {
+    final response = await apiClient.postData(
+      '/OnlineStore/Support/Conversations/$conversationId/Typing',
+      headers: await _headers(),
+      body: {'is_typing': isTyping},
+    );
+    _requireSuccess(response);
+  }
+
   void _requireSuccess(Response response) {
     final code = response.statusCode ?? 0;
     if (code < 200 || code >= 300 || response.body is! Map) {

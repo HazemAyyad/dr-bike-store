@@ -155,7 +155,8 @@ class StoreSupportMessage {
                 )
                 .toList(),
         delivery: StoreSupportDelivery.sent,
-        createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+        createdAt:
+            DateTime.tryParse((json['created_at'] ?? '').toString())?.toLocal(),
       );
 }
 

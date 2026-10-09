@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/store_tokens.dart';
 import '../data/store_support_models.dart';
@@ -36,6 +37,7 @@ class _StoreSupportConversationScreenState
 
   @override
   void dispose() {
+    controller.stopTyping();
     input.dispose();
     scroll.dispose();
     controller.realtime.dispose();
@@ -87,26 +89,37 @@ class _StoreSupportConversationScreenState
                         child: Text('تم إغلاق هذه المحادثة'),
                       )
                     else
-                      _Composer(
-                        controller: input,
-                        hasImage: imagePath != null,
-                        onImage: () async {
-                          final image = await ImagePicker().pickImage(
-                            source: ImageSource.gallery,
-                            imageQuality: 82,
-                            maxWidth: 1800,
-                          );
-                          if (image != null) {
-                            setState(() => imagePath = image.path);
-                          }
-                        },
-                        onSend: () {
-                          final text = input.text;
-                          if (text.trim().isEmpty && imagePath == null) return;
-                          state.send(text, imagePath: imagePath);
-                          input.clear();
-                          setState(() => imagePath = null);
-                        },
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (state.supportIsTyping)
+                            const _TypingLabel(text: 'الدعم يكتب الآن...'),
+                          _Composer(
+                            controller: input,
+                            hasImage: imagePath != null,
+                            onChanged: state.composerChanged,
+                            onImage: () async {
+                              final image = await ImagePicker().pickImage(
+                                source: ImageSource.gallery,
+                                imageQuality: 82,
+                                maxWidth: 1800,
+                              );
+                              if (image != null) {
+                                setState(() => imagePath = image.path);
+                              }
+                            },
+                            onSend: () {
+                              final text = input.text;
+                              if (text.trim().isEmpty && imagePath == null) {
+                                return;
+                              }
+                              state.send(text, imagePath: imagePath);
+                              state.stopTyping();
+                              input.clear();
+                              setState(() => imagePath = null);
+                            },
+                          ),
+                        ],
                       ),
                   ],
                 ),
@@ -247,6 +260,18 @@ class _MessageBubble extends StatelessWidget {
                 color: message.isMine ? Colors.white : StorePalette.textPrimary,
               ),
             ),
+          const SizedBox(height: 4),
+          Text(
+            message.createdAt == null
+                ? '--/--/---- --:--'
+                : DateFormat(
+                  'yyyy/MM/dd • HH:mm',
+                ).format(message.createdAt!.toLocal()),
+            style: TextStyle(
+              fontSize: 10,
+              color: message.isMine ? Colors.white70 : Colors.grey.shade600,
+            ),
+          ),
           if (message.delivery == StoreSupportDelivery.sending)
             Text(
               'جاري الإرسال...',
@@ -271,11 +296,13 @@ class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
     required this.hasImage,
+    required this.onChanged,
     required this.onImage,
     required this.onSend,
   });
   final TextEditingController controller;
   final bool hasImage;
+  final ValueChanged<String> onChanged;
   final VoidCallback onImage;
   final VoidCallback onSend;
 
@@ -301,6 +328,7 @@ class _Composer extends StatelessWidget {
             child: TextField(
               key: const Key('support-composer'),
               controller: controller,
+              onChanged: onChanged,
               minLines: 1,
               maxLines: 4,
               decoration: InputDecoration(
@@ -315,6 +343,27 @@ class _Composer extends StatelessWidget {
             icon: const Icon(Icons.send_rounded),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+class _TypingLabel extends StatelessWidget {
+  const _TypingLabel({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    color: StorePalette.surface,
+    padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: StorePalette.purple,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
       ),
     ),
   );
