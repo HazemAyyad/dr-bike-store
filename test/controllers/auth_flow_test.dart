@@ -30,6 +30,8 @@ class _FakeAuthGateway implements StoreAuthGateway {
   int otpCalls = 0;
   int resetCalls = 0;
   String? submittedProof;
+  String? submittedLoginToken;
+  String? submittedRegistrationToken;
 
   @override
   Future<AuthResult<StoreAuthenticatedSession>> authenticate({
@@ -38,6 +40,7 @@ class _FakeAuthGateway implements StoreAuthGateway {
     required String notificationToken,
   }) async {
     loginCalls++;
+    submittedLoginToken = notificationToken;
     return loginResult;
   }
 
@@ -48,8 +51,10 @@ class _FakeAuthGateway implements StoreAuthGateway {
     required String password,
     required String passwordConfirmation,
     required DateTime timestamp,
+    String notificationToken = '',
   }) async {
     registrationCalls++;
+    submittedRegistrationToken = notificationToken;
     return registrationResult;
   }
 
@@ -176,8 +181,29 @@ void main() {
       expect(store.session, same(session));
       expect(store.remembered, isTrue);
       expect(navigated, isTrue);
+      expect(gateway.submittedLoginToken, 'fcm-token');
     },
   );
+
+  test('registration submits the current FCM token', () async {
+    final gateway = _FakeAuthGateway();
+    final controller = Get.put(
+      SignUpControllerImp(
+        authRepository: gateway,
+        notificationTokenProvider: () async => 'registration-fcm-token',
+        onRegistered: () {},
+      ),
+    );
+    controller.EmailController.text = 'customer@example.test';
+    controller.PhoneController.text = '0599000000';
+    controller.PasswordController.text = 'Password123!';
+    controller.ConfirmPassword.text = 'Password123!';
+
+    await controller.signUp();
+
+    expect(gateway.registrationCalls, 1);
+    expect(gateway.submittedRegistrationToken, 'registration-fcm-token');
+  });
 
   test(
     'registration validation rejects mismatched passwords locally',

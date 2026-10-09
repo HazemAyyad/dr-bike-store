@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 
@@ -28,6 +30,7 @@ class NotificationController extends GetxController {
   final NotificationIdentityLoader _userIdLoader;
   final FirebaseMessaging? _messaging;
   final bool initializePush;
+  StreamSubscription<String>? _tokenRefreshSubscription;
 
   final fcmToken = ''.obs;
   StoreViewState<List<NotificationItem>> inboxState = const StoreInitial();
@@ -122,11 +125,47 @@ class NotificationController extends GetxController {
     final messaging = _messaging ?? FirebaseMessaging.instance;
     await messaging.requestPermission();
     fcmToken.value = await messaging.getToken() ?? '';
+    await _syncToken(fcmToken.value);
+  }
+
+  Future<String> freshToken() async {
+    final messaging = _messaging ?? FirebaseMessaging.instance;
+    await messaging.requestPermission();
+    final token = await messaging.getToken() ?? '';
+    if (token.isNotEmpty) fcmToken.value = token;
+    return token;
+  }
+
+  Future<void> _syncToken(String token) async {
+    if (token.trim().isEmpty ||
+        (await AppUsageService.getToken())?.trim().isEmpty != false) {
+      return;
+    }
+    final source = repository;
+    if (source is! StorePushDataSource) return;
+    try {
+      await (source as StorePushDataSource).updateFcmToken(token.trim());
+    } catch (_) {
+      // Token sync is retried on the next app start or token refresh.
+    }
   }
 
   @override
   void onInit() {
     super.onInit();
-    if (initializePush) getToken();
+    if (initializePush) {
+      getToken();
+      final messaging = _messaging ?? FirebaseMessaging.instance;
+      _tokenRefreshSubscription = messaging.onTokenRefresh.listen((token) {
+        fcmToken.value = token;
+        _syncToken(token);
+      });
+    }
+  }
+
+  @override
+  void onClose() {
+    _tokenRefreshSubscription?.cancel();
+    super.onClose();
   }
 }

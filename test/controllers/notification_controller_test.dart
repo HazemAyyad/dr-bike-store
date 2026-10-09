@@ -132,6 +132,33 @@ void main() {
     ),
   );
   test(
+    'known category deep-link allow-list',
+    () => expect(
+      NotificationRouteResolver.resolve({
+        'destination_type': 'category',
+        'destination_id': 12,
+      }),
+      isA<NotificationCategoryTarget>(),
+    ),
+  );
+  test(
+    'home deep-link needs no identifier',
+    () => expect(
+      NotificationRouteResolver.resolve({'destination_type': 'home'}),
+      isA<NotificationHomeTarget>(),
+    ),
+  );
+  test(
+    'safe web URL deep-link is supported',
+    () => expect(
+      NotificationRouteResolver.resolve({
+        'destination_type': 'url',
+        'destination_url': 'https://dr-bike.duosparktech.com/store',
+      }),
+      isA<NotificationUrlTarget>(),
+    ),
+  );
+  test(
     'unknown deep-link has safe fallback',
     () => expect(
       NotificationRouteResolver.resolve({

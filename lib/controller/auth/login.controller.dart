@@ -68,7 +68,7 @@ class LoginControllerImp extends LoginController {
 
   static Future<String> _defaultNotificationToken() async {
     if (!Get.isRegistered<NotificationController>()) return '';
-    return Get.find<NotificationController>().fcmToken.value;
+    return Get.find<NotificationController>().freshToken();
   }
 
   @override

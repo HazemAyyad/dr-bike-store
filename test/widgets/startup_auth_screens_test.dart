@@ -50,6 +50,7 @@ class _NoopAuthGateway implements StoreAuthGateway {
     required String password,
     required String passwordConfirmation,
     required DateTime timestamp,
+    String notificationToken = '',
   }) async => const AuthSuccess(true);
 
   @override

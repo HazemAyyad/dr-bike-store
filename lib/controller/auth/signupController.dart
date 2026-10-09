@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../core/helper/route_helper.dart';
 import '../../repository/auth/auth_repository.dart';
+import '../notification/notification_controller.dart';
 
 abstract class SignUpController extends GetxController {
   Future<void> signUp();
@@ -16,13 +17,22 @@ class SignUpControllerImp extends SignUpController {
     required this.authRepository,
     VoidCallback? onRegistered,
     DateTime Function()? now,
+    Future<String> Function()? notificationTokenProvider,
   }) : _onRegistered =
            onRegistered ?? (() => Get.offAllNamed(RouteHelper.signIn)),
-       _now = now ?? DateTime.now;
+       _now = now ?? DateTime.now,
+       _notificationTokenProvider =
+           notificationTokenProvider ?? _defaultNotificationToken;
 
   final StoreAuthGateway authRepository;
   final VoidCallback _onRegistered;
   final DateTime Function() _now;
+  final Future<String> Function() _notificationTokenProvider;
+
+  static Future<String> _defaultNotificationToken() async {
+    if (!Get.isRegistered<NotificationController>()) return '';
+    return Get.find<NotificationController>().freshToken();
+  }
 
   final formstate = GlobalKey<FormState>();
   late final TextEditingController EmailController;
@@ -71,6 +81,7 @@ class SignUpControllerImp extends SignUpController {
       password: password,
       passwordConfirmation: confirmation,
       timestamp: _now(),
+      notificationToken: await _notificationTokenProvider(),
     );
     switch (result) {
       case AuthSuccess<bool>():

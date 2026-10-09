@@ -30,6 +30,7 @@ class _SuccessfulAuthGateway implements StoreAuthGateway {
     required String password,
     required String passwordConfirmation,
     required DateTime timestamp,
+    String notificationToken = '',
   }) => throw UnimplementedError();
 
   @override
