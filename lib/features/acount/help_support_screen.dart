@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/account/account_controller.dart';
 import '../../core/helper/route_helper.dart';
+import '../../core/functions/app_usage_service.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/widget/store_states.dart';
 
@@ -43,6 +44,33 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   child: ListView(
                     padding: const EdgeInsets.all(StoreSpacing.md),
                     children: [
+                      Card(
+                        color: StorePalette.lightPurple,
+                        child: ListTile(
+                          key: const Key('live-support-entry'),
+                          leading: const CircleAvatar(
+                            backgroundColor: StorePalette.purple,
+                            foregroundColor: Colors.white,
+                            child: Icon(Icons.support_agent),
+                          ),
+                          title: const Text('المحادثة المباشرة مع الدعم'),
+                          subtitle: const Text(
+                            'اسأل سؤالاً عاماً أو تابع استفسارك عن منتج',
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () async {
+                            if (!await AppUsageService.getIsLogin()) {
+                              await Get.toNamed(RouteHelper.intoLog);
+                              return;
+                            }
+                            await Get.toNamed(RouteHelper.supportHome);
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: StoreSpacing.sm),
                       if (data?.call?.trim().isNotEmpty == true)
                         ListTile(
                           leading: const Icon(Icons.call_outlined),

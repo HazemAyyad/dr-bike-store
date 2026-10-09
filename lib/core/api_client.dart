@@ -86,6 +86,34 @@ class ApiClient {
     }
   }
 
+  Future<Response> postMultipartData(
+    String uri, {
+    Map<String, String> fields = const {},
+    List<String> filePaths = const [],
+    String fieldName = 'attachments[]',
+    Map<String, String>? headers,
+  }) async {
+    final url = AppConstants.appBaseUrl + uri;
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(url));
+      request.headers.addAll({'Accept': 'application/json', ...?headers});
+      request.fields.addAll(fields);
+      for (final path in filePaths) {
+        request.files.add(await http.MultipartFile.fromPath(fieldName, path));
+      }
+      _logRequest('POST', url, headers: request.headers, body: fields);
+      final streamed = await request.send().timeout(
+        Duration(seconds: timeoutInSeconds),
+      );
+      final response = await http.Response.fromStream(streamed);
+      _logRawResponse(response);
+      return handleResponse(response, uri);
+    } catch (e) {
+      _logError('POST', url, e);
+      return Response(statusCode: 1, statusText: noInternetMessage);
+    }
+  }
+
   Response handleResponse(http.Response response, String uri) {
     dynamic body;
     try {
