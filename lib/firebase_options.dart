@@ -59,12 +59,12 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCp1_1BeNhkbtuaFyx4zu1jm9ilzpxzq3w',
-    appId: '1:889483409620:ios:8b5088c89c4de8c2a62341',
-    messagingSenderId: '889483409620',
-    projectId: 'doctor-bike-1323e',
-    storageBucket: 'doctor-bike-1323e.firebasestorage.app',
-    iosBundleId: 'com.nofal.doctorBike',
+    apiKey: 'AIzaSyBHTfwFtF-zzpa2Rs-Xs1likTgrMCfdGyU',
+    appId: '1:960923193223:ios:9dd769b3304edfa924cd22',
+    messagingSenderId: '960923193223',
+    projectId: 'drbike-7fa3a',
+    storageBucket: 'drbike-7fa3a.firebasestorage.app',
+    iosBundleId: 'com.hazemAyad.doctorBike',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
