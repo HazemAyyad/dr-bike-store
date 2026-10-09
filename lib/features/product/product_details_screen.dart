@@ -6,6 +6,7 @@ import '../../controller/favorites/favorites_controller.dart';
 import '../../controller/product/product_controller.dart';
 import '../../controller/shop/shop_controller.dart';
 import '../../core/classes/store_view_state.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/model/commint_model.dart';
 import '../../core/model/get_all_item_model.dart';
@@ -132,6 +133,8 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
       if (item.model.trim().isNotEmpty)
         '${_label(context, 'رمز المنتج', 'Product code')}: ${item.model.trim()}',
       '${item.normailPrice.toStringAsFixed(2)} ₪',
+      '',
+      AppConstants.productShareUrl(item.productId),
     ];
     final renderBox = context.findRenderObject();
     final shareOrigin =

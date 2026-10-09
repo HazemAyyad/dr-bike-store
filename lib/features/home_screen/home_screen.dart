@@ -8,6 +8,7 @@ import '../../controller/shop/shop_controller.dart';
 import '../../controller/order/order_controller.dart';
 import '../../controller/notification/notification_controller.dart';
 import '../../controller/product/product_controller.dart';
+import '../../core/functions/store_product_link_service.dart';
 import '../../core/helper/route_helper.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
@@ -62,7 +63,14 @@ class _HomeScreenState extends State<HomeScreen> {
       await controller.initializeShell();
       if (widget.loadOnStart) {
         await controller.loadHome();
-        if (mounted) await _showPopupCampaign();
+      }
+      if (!mounted) return;
+      final openedProductLink =
+          Get.isRegistered<StoreProductLinkService>()
+              ? await Get.find<StoreProductLinkService>().markNavigationReady()
+              : false;
+      if (mounted && widget.loadOnStart && !openedProductLink) {
+        await _showPopupCampaign();
       }
     });
   }
