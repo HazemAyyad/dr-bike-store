@@ -5,11 +5,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../controller/notification/notification_controller.dart';
-import '../../controller/order/order_controller.dart';
-import '../../controller/product/product_controller.dart';
 import '../../core/classes/store_view_state.dart';
 import '../../core/functions/notification_api.dart';
-import '../../core/helper/route_helper.dart';
 import '../../core/model/notification_model.dart';
 import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
@@ -137,30 +134,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (!item.isRead) await controller.markRead(item);
     final destination = item.destination;
     if (destination == null) return;
-    final target = NotificationRouteResolver.resolve({
+    await NotificationApi.instance.openData({
       'destination_type': destination.type.name,
       'destination_id': destination.id,
+      'destination_url': destination.url,
     });
-    if (target is NotificationOrderTarget &&
-        Get.isRegistered<OrderController>()) {
-      final orders = Get.find<OrderController>();
-      await orders.load();
-      final order = orders.orders.firstWhereOrNull(
-        (row) => row.id == target.orderId,
-      );
-      if (order != null) {
-        orders.selectOrder(order);
-        Get.toNamed(RouteHelper.orderDetailsScreen, arguments: order);
-      } else {
-        Get.toNamed(RouteHelper.ordersScreen);
-      }
-    } else if (target is NotificationProductTarget &&
-        Get.isRegistered<ProductControllerImp>()) {
-      await Get.find<ProductControllerImp>().loadProductDetail(
-        productId: target.productId,
-        navigate: true,
-      );
-    }
   }
 }
 
@@ -267,12 +245,14 @@ class _NotificationCard extends StatelessWidget {
   IconData get _categoryIcon => switch (item.category) {
     NotificationCategory.order => Icons.receipt_long_outlined,
     NotificationCategory.promotion => Icons.local_offer_outlined,
+    NotificationCategory.support => Icons.support_agent_outlined,
     NotificationCategory.unknown => Icons.notifications_none_rounded,
   };
 
   Color get _categoryColor => switch (item.category) {
     NotificationCategory.order => StorePalette.purple,
     NotificationCategory.promotion => StorePalette.success,
+    NotificationCategory.support => StorePalette.purple,
     NotificationCategory.unknown => StorePalette.navy,
   };
 }

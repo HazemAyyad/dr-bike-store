@@ -31,6 +31,9 @@ import '../../features/splash/splash.dart';
 import '../../features/splash/store_unavailable_screen.dart';
 import '../../features/splash/update_required_screen.dart';
 import '../../features/supCategory/supCategory.dart';
+import '../../features/support/presentation/store_support_conversation_screen.dart';
+import '../../features/support/presentation/store_support_home_screen.dart';
+import '../../features/support/presentation/store_support_new_screen.dart';
 
 class RouteHelper {
   static const String initial = '/';
@@ -66,6 +69,9 @@ class RouteHelper {
   static const String settings = '/SettingsScreen';
   static const String helpSupport = '/HelpSupportScreen';
   static const String accountActions = '/AccountActionsScreen';
+  static const String supportHome = '/StoreSupportHomeScreen';
+  static const String supportNew = '/StoreSupportNewScreen';
+  static const String supportConversation = '/StoreSupportConversationScreen';
 
   static List<GetPage> routes = [
     GetPage(name: initial, page: () => const SplashScreen()),
@@ -133,5 +139,11 @@ class RouteHelper {
     GetPage(name: settings, page: () => const SettingsScreen()),
     GetPage(name: helpSupport, page: () => const HelpSupportScreen()),
     GetPage(name: accountActions, page: () => const AccountActionsScreen()),
+    GetPage(name: supportHome, page: () => const StoreSupportHomeScreen()),
+    GetPage(name: supportNew, page: () => const StoreSupportNewScreen()),
+    GetPage(
+      name: supportConversation,
+      page: () => const StoreSupportConversationScreen(),
+    ),
   ];
 }

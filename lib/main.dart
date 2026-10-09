@@ -26,4 +26,7 @@ void main() async {
   // if (kReleaseMode) ErrorWidget.builder = (_) => const AppErrorWidget();
   await init();
   runApp(MyApp());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    NotificationApi.instance.flushPending();
+  });
 }

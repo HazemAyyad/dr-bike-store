@@ -8,6 +8,7 @@ import '../../controller/shop/shop_controller.dart';
 import '../../core/classes/store_view_state.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/helper/route_helper.dart';
+import '../../core/functions/app_usage_service.dart';
 import '../../core/model/commint_model.dart';
 import '../../core/model/get_all_item_model.dart';
 import '../../core/theme/store_tokens.dart';
@@ -238,6 +239,34 @@ class _ProductContent extends StatelessWidget {
           ],
           const SizedBox(height: StoreSpacing.sm),
           _PurchaseSection(controller: controller, item: item),
+          const SizedBox(height: StoreSpacing.xs),
+          OutlinedButton.icon(
+            key: const Key('ask-support-about-product'),
+            onPressed:
+                item.listingId == null
+                    ? null
+                    : () async {
+                      if (!await AppUsageService.getIsLogin()) {
+                        await Get.toNamed(RouteHelper.intoLog);
+                        return;
+                      }
+                      await Get.toNamed(
+                        RouteHelper.supportNew,
+                        arguments: {
+                          'listing_id': item.listingId,
+                          'product_name': name,
+                        },
+                      );
+                    },
+            icon: const Icon(Icons.support_agent_outlined),
+            label: Text(
+              _label(
+                context,
+                'اسأل الدعم عن هذا المنتج',
+                'Ask support about this product',
+              ),
+            ),
+          ),
           const SizedBox(height: StoreSpacing.sm),
           _DetailsSections(item: item, description: description),
           const SizedBox(height: StoreSpacing.md),

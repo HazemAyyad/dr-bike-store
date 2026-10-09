@@ -1,12 +1,21 @@
-enum NotificationCategory { order, promotion, unknown }
+enum NotificationCategory { order, promotion, support, unknown }
 
-enum NotificationDestinationType { order, product, unknown }
+enum NotificationDestinationType {
+  home,
+  order,
+  product,
+  category,
+  support,
+  url,
+  unknown,
+}
 
 class NotificationDestination {
-  const NotificationDestination({required this.type, required this.id});
+  const NotificationDestination({required this.type, this.id, this.url});
 
   final NotificationDestinationType type;
-  final int id;
+  final int? id;
+  final String? url;
 
   static NotificationDestination? fromJson(Map<String, dynamic> json) {
     final rawType =
@@ -17,14 +26,34 @@ class NotificationDestination {
     final type = switch (rawType) {
       'order' => NotificationDestinationType.order,
       'product' => NotificationDestinationType.product,
+      'listing' => NotificationDestinationType.product,
+      'category' => NotificationDestinationType.category,
+      'support_conversation' => NotificationDestinationType.support,
+      'url' => NotificationDestinationType.url,
+      'home' => NotificationDestinationType.home,
       _ => NotificationDestinationType.unknown,
     };
     if (type == NotificationDestinationType.unknown) return null;
+    if (type == NotificationDestinationType.home) {
+      return const NotificationDestination(
+        type: NotificationDestinationType.home,
+      );
+    }
+    if (type == NotificationDestinationType.url) {
+      final url =
+          (json['destination_url'] ?? json['destinationUrl'])?.toString();
+      final uri = Uri.tryParse(url ?? '');
+      return uri != null && {'http', 'https'}.contains(uri.scheme)
+          ? NotificationDestination(type: type, url: url)
+          : null;
+    }
     final rawId =
         json['destination_id'] ??
         json['destinationId'] ??
         (type == NotificationDestinationType.order
             ? json['order_id']
+            : type == NotificationDestinationType.support
+            ? json['conversation_id'] ?? json['support_conversation_id']
             : json['product_id']);
     final id = int.tryParse(rawId?.toString() ?? '');
     return id != null && id > 0
@@ -93,7 +122,12 @@ class NotificationItem {
         (json['category'] ?? json['type'])?.toString().toLowerCase();
     final category = switch (rawCategory) {
       'order' || 'order_status' => NotificationCategory.order,
-      'promotion' || 'offer' => NotificationCategory.promotion,
+      'promotion' ||
+      'offer' ||
+      'store_marketing_promotion' ||
+      'store_popup_campaign' ||
+      'store_broadcast' => NotificationCategory.promotion,
+      'store_support_message' => NotificationCategory.support,
       _ => NotificationCategory.unknown,
     };
     return NotificationItem(

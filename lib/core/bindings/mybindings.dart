@@ -19,6 +19,8 @@ import '../../repository/home/home_repository.dart';
 import '../../repository/favorites/favorites_repository.dart';
 import '../../repository/shop/shop_repository.dart';
 import '../../repository/product/review_repository.dart';
+import '../../features/support/data/store_support_repository.dart';
+import '../../features/support/presentation/store_support_controller.dart';
 import '../api_client.dart';
 
 class Mybinding extends Bindings {
@@ -96,6 +98,12 @@ class Mybinding extends Bindings {
     Get.lazyPut(
       () => NotificationController(
         repository: HomeRepository(apiClient: Get.find()),
+      ),
+      fenix: true,
+    );
+    Get.lazyPut(
+      () => StoreSupportController(
+        repository: StoreSupportRepository(apiClient: Get.find()),
       ),
       fenix: true,
     );
