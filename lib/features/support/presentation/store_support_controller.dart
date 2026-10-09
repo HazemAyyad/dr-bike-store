@@ -23,7 +23,12 @@ class StoreSupportController extends GetxController {
   String? error;
   StoreSupportConnectionState connectionState =
       StoreSupportConnectionState.disconnected;
+  bool supportIsTyping = false;
   Timer? _fallbackTimer;
+  Timer? _typingIdleTimer;
+  Timer? _remoteTypingTimer;
+  DateTime? _lastTypingSignal;
+  bool _typingSent = false;
 
   int get unreadCount =>
       conversations.fold(0, (sum, row) => sum + row.unreadCount);
@@ -84,6 +89,7 @@ class StoreSupportController extends GetxController {
   }
 
   Future<void> openConversation(int id) async {
+    _clearRemoteTyping();
     loadingConversation = true;
     error = null;
     update();
@@ -136,6 +142,7 @@ class StoreSupportController extends GetxController {
       ...messages.where((row) => row.clientMessageId != clientId),
       optimistic,
     ];
+    stopTyping();
     update();
     try {
       final sent = await repository.send(
@@ -169,7 +176,41 @@ class StoreSupportController extends GetxController {
     retryId: message.clientMessageId,
   );
 
+  void composerChanged(String value) {
+    final conversation = activeConversation;
+    if (conversation == null || conversation.isClosed) return;
+    if (value.trim().isEmpty) {
+      stopTyping();
+      return;
+    }
+
+    final now = DateTime.now();
+    if (!_typingSent ||
+        _lastTypingSignal == null ||
+        now.difference(_lastTypingSignal!) >= const Duration(seconds: 2)) {
+      _typingSent = true;
+      _lastTypingSignal = now;
+      unawaited(repository.setTyping(conversation.id, true).catchError((_) {}));
+    }
+    _typingIdleTimer?.cancel();
+    _typingIdleTimer = Timer(const Duration(seconds: 3), stopTyping);
+  }
+
+  void stopTyping() {
+    _typingIdleTimer?.cancel();
+    final conversationId = activeConversation?.id;
+    if (!_typingSent || conversationId == null) return;
+    _typingSent = false;
+    _lastTypingSignal = null;
+    unawaited(repository.setTyping(conversationId, false).catchError((_) {}));
+  }
+
   void _onRealtimePayload(Map<String, dynamic> payload) {
+    if (payload['actor_type']?.toString() == 'support' &&
+        payload.containsKey('is_typing')) {
+      _setRemoteTyping(payload['is_typing'] == true);
+      return;
+    }
     final rawMessage = payload['message'];
     final rawConversation = payload['conversation'];
     if (rawConversation is Map) {
@@ -178,12 +219,33 @@ class StoreSupportController extends GetxController {
       );
     }
     if (rawMessage is Map) {
-      _merge([
-        StoreSupportMessage.fromJson(Map<String, dynamic>.from(rawMessage)),
-      ]);
+      final message = StoreSupportMessage.fromJson(
+        Map<String, dynamic>.from(rawMessage),
+      );
+      if (!message.isMine) _clearRemoteTyping();
+      _merge([message]);
       final id = activeConversation?.id;
       if (id != null) unawaited(repository.markRead(id));
     }
+    update();
+  }
+
+  void _setRemoteTyping(bool value) {
+    _remoteTypingTimer?.cancel();
+    supportIsTyping = value;
+    if (value) {
+      _remoteTypingTimer = Timer(
+        const Duration(seconds: 6),
+        _clearRemoteTyping,
+      );
+    }
+    update();
+  }
+
+  void _clearRemoteTyping() {
+    _remoteTypingTimer?.cancel();
+    if (!supportIsTyping) return;
+    supportIsTyping = false;
     update();
   }
 
@@ -220,6 +282,9 @@ class StoreSupportController extends GetxController {
   @override
   void onClose() {
     _fallbackTimer?.cancel();
+    _typingIdleTimer?.cancel();
+    _remoteTypingTimer?.cancel();
+    stopTyping();
     unawaited(realtime.dispose());
     super.onClose();
   }

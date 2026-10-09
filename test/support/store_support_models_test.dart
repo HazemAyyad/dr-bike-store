@@ -49,4 +49,19 @@ void main() {
     expect(failed.clientMessageId, 'fixed-client-id');
     expect(failed.delivery, StoreSupportDelivery.failed);
   });
+
+  test('message timestamp is converted to the device local timezone', () {
+    final message = StoreSupportMessage.fromJson({
+      'id': 9,
+      'conversation_id': 3,
+      'client_message_id': 'server-id',
+      'sender_type': 'support',
+      'body': 'أهلاً',
+      'attachments': <dynamic>[],
+      'created_at': '2026-10-09T10:15:00Z',
+    });
+
+    expect(message.createdAt, isNotNull);
+    expect(message.createdAt!.isUtc, isFalse);
+  });
 }

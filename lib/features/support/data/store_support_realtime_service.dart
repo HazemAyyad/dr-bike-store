@@ -119,7 +119,8 @@ class StoreSupportRealtimeService {
       return;
     }
     if ((event == 'support.message.created' ||
-            event == 'support.conversation.read') &&
+            event == 'support.conversation.read' ||
+            event == 'support.typing') &&
         data is Map) {
       onPayload?.call(Map<String, dynamic>.from(data));
     }
