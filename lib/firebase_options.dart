@@ -51,11 +51,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyD2jdvQVCA__71Pv-Vxyek-cKY25f1ovGk',
-    appId: '1:889483409620:android:83352dd337c97501a62341',
-    messagingSenderId: '889483409620',
-    projectId: 'doctor-bike-1323e',
-    storageBucket: 'doctor-bike-1323e.firebasestorage.app',
+    apiKey: 'AIzaSyDge4XGPw6OVrvK_051-1ELHnU8EBIzah8',
+    appId: '1:960923193223:android:22444bf8e9f751ad24cd22',
+    messagingSenderId: '960923193223',
+    projectId: 'drbike-7fa3a',
+    storageBucket: 'drbike-7fa3a.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
