@@ -476,6 +476,29 @@ void main() {
       );
       expect(controller.buyNow(), isFalse);
     });
+
+    test(
+      'buy-now starts checkout with the selected product and quantity',
+      () async {
+        Item? checkoutItem;
+        final controller = ProductControllerImp(
+          categoriesRepository: repository,
+          connectivityCheck: () async => true,
+          detailLoader: (_) async => Response(body: _detail(), statusCode: 200),
+          checkoutStarter: (item) {
+            checkoutItem = item;
+            return true;
+          },
+        );
+
+        await controller.loadProductDetail(productId: 101);
+        controller.setQuantity(2);
+
+        expect(controller.buyNow(), isTrue);
+        expect(checkoutItem?.listingId, 9001);
+        expect(checkoutItem?.count, 2);
+      },
+    );
   });
 }
 

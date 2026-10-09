@@ -14,6 +14,7 @@ import '../shop/shop_controller.dart';
 
 typedef ProductDetailLoader = Future<Response> Function(int productId);
 typedef ProductConnectivityCheck = Future<bool> Function();
+typedef ProductCheckoutStarter = bool Function(Item item);
 
 abstract class ProductController extends GetxController {}
 
@@ -55,16 +56,19 @@ class ProductControllerImp extends ProductController {
     ProductDetailLoader? detailLoader,
     ProductConnectivityCheck? connectivityCheck,
     ShopController? shopController,
+    ProductCheckoutStarter? checkoutStarter,
   }) : _detailLoader = detailLoader,
        _connectivityCheck =
            connectivityCheck ??
            (() async => await CheckInternet.checkInternet()),
-       _injectedShopController = shopController;
+       _injectedShopController = shopController,
+       _checkoutStarter = checkoutStarter;
 
   final CategoriesRepository categoriesRepository;
   final ProductDetailLoader? _detailLoader;
   final ProductConnectivityCheck _connectivityCheck;
   final ShopController? _injectedShopController;
+  final ProductCheckoutStarter? _checkoutStarter;
 
   StoreViewState<Item> productState = const StoreInitial<Item>();
   StoreViewState<List<ProductMedia>> mediaState =
@@ -349,7 +353,10 @@ class ProductControllerImp extends ProductController {
   }
 
   bool buyNow() {
-    return addToCart();
+    final item = itemView;
+    if (item == null || !canPurchase) return false;
+    item.count = quantity.value;
+    return (_checkoutStarter ?? shopController.startBuyNowCheckout)(item);
   }
 
   void _setUnavailable() {

@@ -63,7 +63,8 @@ class CheckoutAddressStep extends StatelessWidget {
         const SizedBox(height: 20),
         StoreButton(
           label: 'متابعة الشحن',
-          icon: Icons.arrow_back_rounded,
+          icon: Icons.arrow_forward_rounded,
+          iconAtEnd: true,
           onPressed: () {
             if (controller.formstate.currentState?.validate() == true) {
               controller.setCheckoutStage(CheckoutStage.shipping);

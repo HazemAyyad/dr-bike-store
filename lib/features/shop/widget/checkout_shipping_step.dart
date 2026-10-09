@@ -162,11 +162,12 @@ class CheckoutShippingStep extends StatelessWidget {
       const SizedBox(height: 18),
       Text('ملخص الطلب', style: StoreTypography.title),
       const SizedBox(height: 10),
-      CartSummary(controller: controller),
+      CartSummary(controller: controller, forCheckout: true),
       const SizedBox(height: 18),
       StoreButton(
         label: 'متابعة الدفع',
-        icon: Icons.arrow_back_rounded,
+        icon: Icons.arrow_forward_rounded,
+        iconAtEnd: true,
         onPressed:
             controller.selectedVillageId == null || controller.isDeliveryLoading
                 ? null

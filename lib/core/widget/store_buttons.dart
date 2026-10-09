@@ -12,6 +12,7 @@ class StoreButton extends StatelessWidget {
     required this.onPressed,
     this.variant = StoreButtonVariant.primary,
     this.icon,
+    this.iconAtEnd = false,
     this.isLoading = false,
     this.expand = true,
     this.height = StoreCalibration.controlHeight,
@@ -23,6 +24,7 @@ class StoreButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final StoreButtonVariant variant;
   final IconData? icon;
+  final bool iconAtEnd;
   final bool isLoading;
   final bool expand;
   final double height;
@@ -64,19 +66,34 @@ class StoreButton extends StatelessWidget {
                 key: const ValueKey('label'),
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: StoreIconSizes.medium),
-                    const SizedBox(width: StoreSpacing.xs),
-                  ],
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+                children:
+                    iconAtEnd
+                        ? [
+                          Flexible(
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (icon != null) ...[
+                            const SizedBox(width: StoreSpacing.xs),
+                            Icon(icon, size: StoreIconSizes.medium),
+                          ],
+                        ]
+                        : [
+                          if (icon != null) ...[
+                            Icon(icon, size: StoreIconSizes.medium),
+                            const SizedBox(width: StoreSpacing.xs),
+                          ],
+                          Flexible(
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
               ),
     );
 
