@@ -149,7 +149,7 @@ class HomeControllerImp extends HomeController {
     StoreDestination destination,
   ) async {
     if ((destination == StoreDestination.orders ||
-            destination == StoreDestination.favorites) &&
+            destination == StoreDestination.support) &&
         !isAuthenticated) {
       return ShellNavigationOutcome.loginRequired;
     }

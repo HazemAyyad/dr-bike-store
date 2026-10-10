@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../../controller/favorites/favorites_controller.dart';
-import '../../controller/home/home_controller.dart';
 import '../helper/route_helper.dart';
-import 'store_bottom_navigation.dart';
 import 'custom_snackbar.dart';
 
 void showFavoriteFeedback(FavoriteActionOutcome outcome) {
@@ -30,11 +28,5 @@ void showFavoriteFeedback(FavoriteActionOutcome outcome) {
 }
 
 Future<void> _openFavorites() async {
-  if (Get.isRegistered<HomeControllerImp>()) {
-    final outcome = await Get.find<HomeControllerImp>().selectDestination(
-      StoreDestination.favorites,
-    );
-    if (outcome != ShellNavigationOutcome.selected) return;
-  }
-  await Get.offAllNamed(RouteHelper.homePage);
+  await Get.toNamed(RouteHelper.favorites);
 }

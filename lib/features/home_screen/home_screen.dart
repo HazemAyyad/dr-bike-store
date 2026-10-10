@@ -21,7 +21,8 @@ import '../../core/widget/store_states.dart';
 import '../../core/widget/store_top_bar.dart';
 import '../acount/profile_screen.dart';
 import '../search/search_screen.dart';
-import '../favorites/favorites_screen.dart';
+import '../support/presentation/store_support_home_screen.dart';
+import '../support/presentation/store_support_controller.dart';
 import '../shop/shop_car_screen.dart';
 import '../order/order_screen.dart';
 import 'home_page.dart';
@@ -136,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onBack: () => _selectDestination(StoreDestination.home),
     ),
     StoreDestination.orders => const OrderScreen(embedded: true),
-    StoreDestination.favorites => const FavoritesScreen(),
+    StoreDestination.support => const StoreSupportHomeScreen(embedded: true),
     StoreDestination.profile => ProfileScreen(),
   };
 
@@ -151,10 +152,21 @@ class _HomeScreenState extends State<HomeScreen> {
         Get.isRegistered<OrderController>()) {
       await Get.find<OrderController>().load();
     }
-    if (destination == StoreDestination.favorites &&
-        Get.isRegistered<FavoritesController>()) {
+    if (destination == StoreDestination.support &&
+        Get.isRegistered<StoreSupportController>()) {
+      await Get.find<StoreSupportController>().loadInbox();
+    }
+  }
+
+  Future<void> _openFavorites() async {
+    if (!controller.isAuthenticated) {
+      await Get.toNamed(RouteHelper.intoLog);
+      return;
+    }
+    if (Get.isRegistered<FavoritesController>()) {
       await Get.find<FavoritesController>().load();
     }
+    await Get.toNamed(RouteHelper.favorites);
   }
 
   void _addToCart(Item item) {
@@ -198,6 +210,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           )
                           : controller.notificationBadgeCount,
                   cartCount: cartCount == 0 ? null : cartCount,
+                  favoriteCount:
+                      Get.isRegistered<FavoritesController>()
+                          ? Get.find<FavoritesController>().listingIds.length
+                          : null,
                   searchExpanded: controller.isSearchExpanded.value,
                   searchController: controller.search,
                   onSearchExpandedChanged: controller.setSearchExpanded,
@@ -218,6 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   },
                   onCart: () => Get.to(() => const ShopCarScreen()),
+                  onFavorites: _openFavorites,
                   onProfile: () => _selectDestination(StoreDestination.profile),
                 ),
               Expanded(
@@ -250,11 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
         bottomNavigationBar: StoreBottomNavigation(
           current: current,
           onSelected: _selectDestination,
-          badges: {
-            if (Get.isRegistered<FavoritesController>())
-              StoreDestination.favorites:
-                  Get.find<FavoritesController>().listingIds.length,
-          },
+          badges: const {},
         ),
       ),
     );
