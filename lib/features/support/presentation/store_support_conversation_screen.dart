@@ -37,7 +37,7 @@ class _StoreSupportConversationScreenState
 
   @override
   void dispose() {
-    controller.stopTyping();
+    controller.leaveConversation();
     input.dispose();
     scroll.dispose();
     controller.realtime.dispose();
