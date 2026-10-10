@@ -12,6 +12,7 @@ import '../../core/widget/store_media.dart';
 import '../../core/widget/store_product_layout_toggle.dart';
 import '../../core/widget/store_skeletons.dart';
 import '../../core/widget/store_states.dart';
+import '../search/store_search_action.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -26,103 +27,108 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<FavoritesController>();
-    return ColoredBox(
-      color: StorePalette.background,
-      child: Obx(() {
+    return Scaffold(
+      backgroundColor: StorePalette.background,
+      appBar: AppBar(
+        backgroundColor: StorePalette.surface,
+        foregroundColor: StorePalette.textPrimary,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text('المنتجات المفضلة'),
+        actions: [
+          const StoreSearchAction(),
+          StoreProductLayoutToggle(
+            isGrid: _isGrid,
+            onChanged: (value) => setState(() => _isGrid = value),
+          ),
+          const SizedBox(width: StoreSpacing.xs),
+        ],
+      ),
+      body: Obx(() {
         switch (controller.status.value) {
           case FavoritesStatus.initial:
           case FavoritesStatus.loading:
             return StoreProductCollectionSkeleton(
               isGrid: _isGrid,
-              showHeader: true,
+              showHeader: false,
             );
           case FavoritesStatus.error:
-            return StoreMessageState(
-              kind: StoreMessageKind.error,
-              icon: Icons.error_outline,
-              title: 'تعذر تحميل المفضلة',
-              message: 'تحقق من الاتصال ثم أعد المحاولة.',
-              actionLabel: 'إعادة المحاولة',
-              onAction: controller.load,
+            return _refreshableState(
+              controller: controller,
+              child: StoreMessageState(
+                kind: StoreMessageKind.error,
+                icon: Icons.error_outline,
+                title: 'تعذر تحميل المفضلة',
+                message: 'تحقق من الاتصال ثم أعد المحاولة.',
+                actionLabel: 'إعادة المحاولة',
+                onAction: controller.load,
+              ),
             );
           case FavoritesStatus.empty:
-            return const StoreMessageState(
-              kind: StoreMessageKind.empty,
-              icon: Icons.favorite_border,
-              title: 'المفضلة فارغة',
-              message: 'اضغط على رمز القلب لحفظ المنتجات هنا.',
+            return _refreshableState(
+              controller: controller,
+              child: const StoreMessageState(
+                kind: StoreMessageKind.empty,
+                icon: Icons.favorite_border,
+                title: 'المفضلة فارغة',
+                message: 'اضغط على رمز القلب لحفظ المنتجات هنا.',
+              ),
             );
           case FavoritesStatus.content:
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    StoreSpacing.md,
-                    StoreSpacing.xs,
-                    StoreSpacing.md,
-                    StoreSpacing.xs,
-                  ),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'المنتجات المفضلة',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      StoreProductLayoutToggle(
-                        isGrid: _isGrid,
-                        onChanged: (value) => setState(() => _isGrid = value),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: controller.load,
-                    color: StorePalette.purple,
-                    child:
-                        _isGrid
-                            ? GridView.builder(
-                              padding: const EdgeInsets.all(StoreSpacing.sm),
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    mainAxisExtent: 260,
-                                    crossAxisSpacing: StoreSpacing.sm,
-                                    mainAxisSpacing: StoreSpacing.sm,
-                                  ),
-                              itemCount: controller.items.length,
-                              itemBuilder:
-                                  (_, index) => _FavoriteCard(
-                                    item: controller.items[index],
-                                    controller: controller,
-                                    grid: true,
-                                  ),
-                            )
-                            : ListView.separated(
-                              padding: const EdgeInsets.all(StoreSpacing.sm),
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: controller.items.length,
-                              separatorBuilder:
-                                  (_, _) =>
-                                      const SizedBox(height: StoreSpacing.sm),
-                              itemBuilder:
-                                  (_, index) => _FavoriteCard(
-                                    item: controller.items[index],
-                                    controller: controller,
-                                    grid: false,
-                                  ),
+            return RefreshIndicator(
+              onRefresh: controller.load,
+              color: StorePalette.purple,
+              child:
+                  _isGrid
+                      ? GridView.builder(
+                        padding: const EdgeInsets.all(StoreSpacing.sm),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              mainAxisExtent:
+                                  StoreCalibration.denseProductCardHeight,
+                              crossAxisSpacing: 6,
+                              mainAxisSpacing: 6,
                             ),
-                  ),
-                ),
-              ],
+                        itemCount: controller.items.length,
+                        itemBuilder:
+                            (_, index) => _FavoriteCard(
+                              item: controller.items[index],
+                              controller: controller,
+                              grid: true,
+                            ),
+                      )
+                      : ListView.separated(
+                        padding: const EdgeInsets.all(StoreSpacing.sm),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: controller.items.length,
+                        separatorBuilder:
+                            (_, _) => const SizedBox(height: StoreSpacing.sm),
+                        itemBuilder:
+                            (_, index) => _FavoriteCard(
+                              item: controller.items[index],
+                              controller: controller,
+                              grid: false,
+                            ),
+                      ),
             );
         }
       }),
     );
   }
+
+  Widget _refreshableState({
+    required FavoritesController controller,
+    required Widget child,
+  }) => RefreshIndicator(
+    onRefresh: controller.load,
+    color: StorePalette.purple,
+    child: CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [SliverFillRemaining(hasScrollBody: false, child: child)],
+    ),
+  );
 }
 
 class _FavoriteCard extends StatelessWidget {
@@ -189,6 +195,7 @@ class _FavoriteCard extends StatelessWidget {
         onFavorite: favorite,
         onAddToCart: () => shop.addToCart(item),
         compact: true,
+        denseGrid: true,
       );
     });
   }

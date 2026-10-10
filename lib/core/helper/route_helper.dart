@@ -1,5 +1,4 @@
 import 'package:doctor_bike/features/category/category_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../features/acount/about_us_screen.dart';
 import '../../features/acount/change_password_screen.dart';
@@ -143,14 +142,7 @@ class RouteHelper {
     GetPage(name: helpSupport, page: () => const HelpSupportScreen()),
     GetPage(name: accountActions, page: () => const AccountActionsScreen()),
     GetPage(name: supportHome, page: () => const StoreSupportHomeScreen()),
-    GetPage(
-      name: favorites,
-      page:
-          () => Scaffold(
-            appBar: AppBar(title: const Text('المنتجات المفضلة')),
-            body: const FavoritesScreen(),
-          ),
-    ),
+    GetPage(name: favorites, page: () => const FavoritesScreen()),
     GetPage(name: supportNew, page: () => const StoreSupportNewScreen()),
     GetPage(
       name: supportConversation,

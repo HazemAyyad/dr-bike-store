@@ -346,6 +346,44 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('dense three-column card keeps details at 1.3 text scale', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const _TestApp(
+        textScale: 1.3,
+        child: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 96,
+              height: StoreCalibration.denseProductCardHeight,
+              child: StoreProductCard(
+                name: 'سكوتر كهربائي قابل للطي والتنقل اليومي',
+                price: 1350,
+                originalPrice: 1500,
+                rating: 4.6,
+                reviewCount: 128,
+                discountPercent: 10,
+                compact: true,
+                denseGrid: true,
+                media: ColoredBox(color: StorePalette.background),
+                onTap: _noop,
+                onFavorite: _noop,
+                onAddToCart: _noop,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byIcon(Icons.star_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.add_shopping_cart_rounded), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('category card shows its full long name without overflow', (
     tester,
   ) async {

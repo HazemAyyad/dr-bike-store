@@ -104,10 +104,16 @@ class StoreDiscountChip extends StatelessWidget {
 }
 
 class StoreRating extends StatelessWidget {
-  const StoreRating({required this.value, this.count, super.key});
+  const StoreRating({
+    required this.value,
+    this.count,
+    this.compact = false,
+    super.key,
+  });
 
   final double value;
   final int? count;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -125,14 +131,27 @@ class StoreRating extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.star_rounded,
-            size: StoreIconSizes.small,
+            size: compact ? 13 : StoreIconSizes.small,
             color: StorePalette.warning,
           ),
-          const SizedBox(width: StoreSpacing.xxs),
-          Text(safeValue, style: StoreTypography.caption),
-          if (count != null) Text(' ($count)', style: StoreTypography.caption),
+          SizedBox(width: compact ? 2 : StoreSpacing.xxs),
+          Text(
+            safeValue,
+            style:
+                compact
+                    ? StoreTypography.caption.copyWith(fontSize: 10)
+                    : StoreTypography.caption,
+          ),
+          if (count != null)
+            Text(
+              ' ($count)',
+              style:
+                  compact
+                      ? StoreTypography.caption.copyWith(fontSize: 10)
+                      : StoreTypography.caption,
+            ),
         ],
       ),
     );

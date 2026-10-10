@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/model/online_store_home_model.dart';
 import '../../../core/theme/store_tokens.dart';
@@ -29,6 +30,13 @@ class _StorePopupCampaignDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final language = Localizations.localeOf(context).languageCode;
     final colors = _theme(campaign.theme);
+    final campaignTitle = campaign.title(language);
+    final title =
+        campaignTitle.isEmpty ? 'storePopupDefaultTitle'.tr : campaignTitle;
+    final content = campaign.content(language);
+    final campaignButton = campaign.button(language);
+    final button =
+        campaignButton.isEmpty ? 'storePopupDefaultAction'.tr : campaignButton;
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
       backgroundColor: Colors.transparent,
@@ -67,7 +75,7 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                               )
                               : StoreNetworkMedia(
                                 url: campaign.imagePath,
-                                semanticLabel: campaign.title(language),
+                                semanticLabel: title,
                                 fit: BoxFit.cover,
                               ),
                     ),
@@ -78,7 +86,7 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                         color: Colors.black.withValues(alpha: .52),
                         shape: const CircleBorder(),
                         child: IconButton(
-                          tooltip: 'إخفاء الإعلان',
+                          tooltip: 'storePopupClose'.tr,
                           onPressed:
                               () => Navigator.pop(
                                 context,
@@ -117,7 +125,7 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              'مختار لك',
+                              'storePopupSelectedForYou'.tr,
                               style: StoreTypography.caption.copyWith(
                                 color: colors.foreground,
                                 fontWeight: FontWeight.w800,
@@ -128,17 +136,17 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        campaign.title(language),
+                        title,
                         textAlign: TextAlign.center,
                         style: StoreTypography.title.copyWith(
                           fontSize: 22,
                           height: 1.3,
                         ),
                       ),
-                      if (campaign.content(language).isNotEmpty) ...[
+                      if (content.isNotEmpty) ...[
                         const SizedBox(height: 9),
                         Text(
-                          campaign.content(language),
+                          content,
                           textAlign: TextAlign.center,
                           maxLines: 4,
                           overflow: TextOverflow.ellipsis,
@@ -167,7 +175,7 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                               ),
                           icon: const Icon(Icons.arrow_back_rounded, size: 20),
                           label: Text(
-                            campaign.button(language),
+                            button,
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 15,
@@ -182,7 +190,7 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                               context,
                               StorePopupCampaignResult.dismiss,
                             ),
-                        child: const Text('لا أريد رؤية هذا الإعلان'),
+                        child: Text('storePopupDismiss'.tr),
                       ),
                     ],
                   ),

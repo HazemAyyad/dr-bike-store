@@ -24,6 +24,7 @@ class StoreProductCard extends StatelessWidget {
     this.onAddToCart,
     this.compact = false,
     this.homePresentation = false,
+    this.denseGrid = false,
     super.key,
   });
 
@@ -43,6 +44,7 @@ class StoreProductCard extends StatelessWidget {
   final VoidCallback? onAddToCart;
   final bool compact;
   final bool homePresentation;
+  final bool denseGrid;
 
   @override
   Widget build(BuildContext context) {
@@ -81,9 +83,16 @@ class StoreProductCard extends StatelessWidget {
               isInCart: isInCart,
               onFavorite: onFavorite,
               onAddToCart: compact ? null : onAddToCart,
-              dimension: homePresentation ? 30 : 36,
+              dimension:
+                  denseGrid
+                      ? 28
+                      : homePresentation
+                      ? 30
+                      : 36,
               iconSize:
-                  homePresentation
+                  denseGrid
+                      ? 15
+                      : homePresentation
                       ? StoreIconSizes.small
                       : StoreIconSizes.medium,
             ),
@@ -117,7 +126,11 @@ class StoreProductCard extends StatelessWidget {
                   ),
                 Padding(
                   padding: EdgeInsets.all(
-                    compact ? StoreSpacing.xs : StoreSpacing.sm,
+                    denseGrid
+                        ? 6
+                        : compact
+                        ? StoreSpacing.xs
+                        : StoreSpacing.sm,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +140,12 @@ class StoreProductCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style:
-                            compact
+                            denseGrid
+                                ? StoreTypography.caption.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: StoreTypography.semiBold,
+                                )
+                                : compact
                                 ? StoreTypography.label
                                 : StoreTypography.bodyMedium,
                       ),
@@ -136,7 +154,11 @@ class StoreProductCard extends StatelessWidget {
                       ),
                       if (compact &&
                           _hasPublishedRating(rating, reviewCount)) ...[
-                        StoreRating(value: rating!, count: reviewCount),
+                        StoreRating(
+                          value: rating!,
+                          count: reviewCount,
+                          compact: denseGrid,
+                        ),
                         const SizedBox(height: StoreSpacing.xxs),
                       ],
                       Wrap(
@@ -146,7 +168,12 @@ class StoreProductCard extends StatelessWidget {
                         children: [
                           Text(
                             '${homePresentation ? _formatStorePrice(price) : price} $currency',
-                            style: (compact
+                            style: (denseGrid
+                                    ? StoreTypography.caption.copyWith(
+                                      fontSize: 11,
+                                      fontWeight: StoreTypography.bold,
+                                    )
+                                    : compact
                                     ? StoreTypography.label
                                     : StoreTypography.title)
                                 .copyWith(color: StorePalette.navy),
@@ -155,6 +182,7 @@ class StoreProductCard extends StatelessWidget {
                             Text(
                               '${homePresentation ? _formatStorePrice(originalPrice!) : originalPrice} $currency',
                               style: StoreTypography.caption.copyWith(
+                                fontSize: denseGrid ? 9 : null,
                                 decoration: TextDecoration.lineThrough,
                               ),
                             ),
@@ -163,9 +191,9 @@ class StoreProductCard extends StatelessWidget {
                       if (compact && onAddToCart != null) ...[
                         const SizedBox(height: StoreSpacing.xs),
                         SizedBox(
-                          height: 32,
+                          height: denseGrid ? 28 : 32,
                           width: double.infinity,
-                          child: FilledButton.icon(
+                          child: FilledButton(
                             onPressed: inStock ? onAddToCart : null,
                             style: FilledButton.styleFrom(
                               backgroundColor:
@@ -173,8 +201,8 @@ class StoreProductCard extends StatelessWidget {
                                       ? StorePalette.success
                                       : StorePalette.purple,
                               disabledBackgroundColor: StorePalette.border,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: denseGrid ? 2 : 6,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
@@ -186,20 +214,45 @@ class StoreProductCard extends StatelessWidget {
                                 fontWeight: StoreTypography.semiBold,
                               ),
                             ),
-                            icon: Icon(
-                              isInCart
-                                  ? Icons.shopping_cart_rounded
-                                  : Icons.add_shopping_cart_rounded,
-                              size: 16,
-                            ),
-                            label: Text(
-                              inStock
-                                  ? isInCart
-                                      ? 'في السلة'
-                                      : 'أضف للسلة'
-                                  : 'غير متوفر',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: Semantics(
+                              label:
+                                  inStock
+                                      ? isInCart
+                                          ? 'في السلة'
+                                          : 'storeAddToCart'.tr
+                                      : 'غير متوفر',
+                              child:
+                                  denseGrid
+                                      ? Icon(
+                                        isInCart
+                                            ? Icons.shopping_cart_rounded
+                                            : Icons.add_shopping_cart_rounded,
+                                        size: 15,
+                                      )
+                                      : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isInCart
+                                                ? Icons.shopping_cart_rounded
+                                                : Icons
+                                                    .add_shopping_cart_rounded,
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              inStock
+                                                  ? isInCart
+                                                      ? 'في السلة'
+                                                      : 'أضف للسلة'
+                                                  : 'غير متوفر',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                             ),
                           ),
                         ),

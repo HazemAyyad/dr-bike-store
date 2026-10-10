@@ -11,7 +11,7 @@ class StoreProductCollectionSkeleton extends StatelessWidget {
   const StoreProductCollectionSkeleton({
     this.isGrid = true,
     this.showHeader = true,
-    this.itemCount = 6,
+    this.itemCount = 9,
     super.key,
   });
 
@@ -36,10 +36,10 @@ class StoreProductCollectionSkeleton extends StatelessWidget {
             isGrid
                 ? SliverGrid.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisExtent: 260,
-                    crossAxisSpacing: StoreSpacing.sm,
-                    mainAxisSpacing: StoreSpacing.sm,
+                    crossAxisCount: 3,
+                    mainAxisExtent: StoreCalibration.denseProductCardHeight,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
                   ),
                   itemCount: itemCount,
                   itemBuilder: (_, _) => const _ProductCardSkeleton(),
