@@ -84,6 +84,7 @@ void main() {
       'storeNavCategories',
       'storeNavOrders',
       'storeNavFavorites',
+      'storeNavChats',
       'storeNavProfile',
       'storeGreeting',
       'storeSearchHint',
@@ -190,16 +191,16 @@ void main() {
     expect(find.bySemanticsLabel('الرئيسية'), findsOneWidget);
     expect(find.bySemanticsLabel('الأقسام'), findsOneWidget);
     expect(find.bySemanticsLabel('طلباتي'), findsOneWidget);
-    expect(find.bySemanticsLabel('المفضلة'), findsOneWidget);
+    expect(find.bySemanticsLabel('محادثاتي'), findsOneWidget);
     expect(find.bySemanticsLabel('الملف الشخصي'), findsOneWidget);
 
     final home = tester.getCenter(find.bySemanticsLabel('الرئيسية'));
     final profile = tester.getCenter(find.bySemanticsLabel('الملف الشخصي'));
     expect(home.dx, greaterThan(profile.dx));
 
-    await tester.tap(find.bySemanticsLabel('المفضلة'));
+    await tester.tap(find.bySemanticsLabel('محادثاتي'));
     await tester.pump();
-    expect(selected, StoreDestination.favorites);
+    expect(selected, StoreDestination.support);
   });
 
   testWidgets('state wrappers resolve Arabic copy and retry in RTL', (

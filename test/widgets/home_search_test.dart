@@ -512,7 +512,7 @@ Widget _goldenShell(HomeControllerImp controller) => HomeScreen(
     StoreDestination.home: HomePage(controller: controller),
     StoreDestination.categories: const SizedBox.shrink(),
     StoreDestination.orders: const SizedBox.shrink(),
-    StoreDestination.favorites: const SizedBox.shrink(),
+    StoreDestination.support: const SizedBox.shrink(),
     StoreDestination.profile: const SizedBox.shrink(),
   },
 );

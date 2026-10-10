@@ -1,4 +1,5 @@
 import 'package:doctor_bike/features/category/category_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../features/acount/about_us_screen.dart';
 import '../../features/acount/change_password_screen.dart';
@@ -16,6 +17,7 @@ import '../../features/auth/forget_password/forget_password_page.dart';
 import '../../features/auth/signup/sign_up_screen.dart';
 import '../../features/category/filter_screen.dart';
 import '../../features/home_screen/home_screen.dart';
+import '../../features/favorites/favorites_screen.dart';
 import '../../features/lang/lang_screen.dart';
 
 import '../../features/notification/notification_screen.dart';
@@ -72,6 +74,7 @@ class RouteHelper {
   static const String supportHome = '/StoreSupportHomeScreen';
   static const String supportNew = '/StoreSupportNewScreen';
   static const String supportConversation = '/StoreSupportConversationScreen';
+  static const String favorites = '/FavoritesScreen';
 
   static List<GetPage> routes = [
     GetPage(name: initial, page: () => const SplashScreen()),
@@ -140,6 +143,14 @@ class RouteHelper {
     GetPage(name: helpSupport, page: () => const HelpSupportScreen()),
     GetPage(name: accountActions, page: () => const AccountActionsScreen()),
     GetPage(name: supportHome, page: () => const StoreSupportHomeScreen()),
+    GetPage(
+      name: favorites,
+      page:
+          () => Scaffold(
+            appBar: AppBar(title: const Text('المنتجات المفضلة')),
+            body: const FavoritesScreen(),
+          ),
+    ),
     GetPage(name: supportNew, page: () => const StoreSupportNewScreen()),
     GetPage(
       name: supportConversation,

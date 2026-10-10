@@ -10,7 +10,9 @@ import '../data/store_support_models.dart';
 import 'store_support_controller.dart';
 
 class StoreSupportHomeScreen extends StatefulWidget {
-  const StoreSupportHomeScreen({super.key});
+  const StoreSupportHomeScreen({this.embedded = false, super.key});
+
+  final bool embedded;
 
   @override
   State<StoreSupportHomeScreen> createState() => _StoreSupportHomeScreenState();
@@ -22,13 +24,17 @@ class _StoreSupportHomeScreenState extends State<StoreSupportHomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => controller.loadInbox());
+    if (!widget.embedded) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => controller.loadInbox(),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: StorePalette.background,
-    appBar: AppBar(title: const Text('الدعم والمحادثات')),
+    appBar: widget.embedded ? null : AppBar(title: const Text('محادثاتي')),
     floatingActionButton: FloatingActionButton.extended(
       key: const Key('new-general-support'),
       backgroundColor: StorePalette.purple,
@@ -62,7 +68,7 @@ class _StoreSupportHomeScreenState extends State<StoreSupportHomeScreen> {
         return RefreshIndicator(
           onRefresh: state.loadInbox,
           child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+            padding: EdgeInsets.fromLTRB(12, 12, 12, widget.embedded ? 80 : 96),
             itemCount: state.conversations.length,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder:

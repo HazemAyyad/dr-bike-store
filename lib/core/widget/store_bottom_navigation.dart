@@ -4,14 +4,14 @@ import 'package:get/get.dart';
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
 
-enum StoreDestination { home, categories, orders, favorites, profile }
+enum StoreDestination { home, categories, orders, support, profile }
 
 extension StoreDestinationPresentation on StoreDestination {
   String get translationKey => switch (this) {
     StoreDestination.home => 'storeNavHome',
     StoreDestination.categories => 'storeNavCategories',
     StoreDestination.orders => 'storeNavOrders',
-    StoreDestination.favorites => 'storeNavFavorites',
+    StoreDestination.support => 'storeNavChats',
     StoreDestination.profile => 'storeNavProfile',
   };
 
@@ -21,7 +21,7 @@ extension StoreDestinationPresentation on StoreDestination {
     StoreDestination.home => Icons.home_outlined,
     StoreDestination.categories => Icons.grid_view_outlined,
     StoreDestination.orders => Icons.receipt_long_outlined,
-    StoreDestination.favorites => Icons.favorite_border,
+    StoreDestination.support => Icons.forum_outlined,
     StoreDestination.profile => Icons.person_outline,
   };
 
@@ -29,7 +29,7 @@ extension StoreDestinationPresentation on StoreDestination {
     StoreDestination.home => Icons.home,
     StoreDestination.categories => Icons.grid_view_rounded,
     StoreDestination.orders => Icons.receipt_long,
-    StoreDestination.favorites => Icons.favorite,
+    StoreDestination.support => Icons.forum_rounded,
     StoreDestination.profile => Icons.person,
   };
 }

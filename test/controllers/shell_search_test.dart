@@ -30,12 +30,12 @@ void main() {
       StoreDestination.home,
       StoreDestination.categories,
       StoreDestination.orders,
-      StoreDestination.favorites,
+      StoreDestination.support,
       StoreDestination.profile,
     ]);
   });
 
-  test('guest gates orders and favorites without losing current tab', () async {
+  test('guest gates orders and support without losing current tab', () async {
     final controller = _controller(preferences, authenticated: false);
     await controller.initializeShell();
     await controller.selectDestination(StoreDestination.categories);
@@ -47,7 +47,7 @@ void main() {
     expect(controller.selectedDestination.value, StoreDestination.categories);
 
     expect(
-      await controller.selectDestination(StoreDestination.favorites),
+      await controller.selectDestination(StoreDestination.support),
       ShellNavigationOutcome.loginRequired,
     );
     expect(controller.selectedDestination.value, StoreDestination.categories);
@@ -58,19 +58,16 @@ void main() {
     );
   });
 
-  test(
-    'authenticated users can open the server-backed favorites tab',
-    () async {
-      final controller = _controller(preferences, authenticated: true);
-      await controller.initializeShell();
+  test('authenticated users can open the support conversations tab', () async {
+    final controller = _controller(preferences, authenticated: true);
+    await controller.initializeShell();
 
-      expect(
-        await controller.selectDestination(StoreDestination.favorites),
-        ShellNavigationOutcome.selected,
-      );
-      expect(controller.selectedDestination.value, StoreDestination.favorites);
-    },
-  );
+    expect(
+      await controller.selectDestination(StoreDestination.support),
+      ShellNavigationOutcome.selected,
+    );
+    expect(controller.selectedDestination.value, StoreDestination.support);
+  });
 
   test(
     'back closes search then returns to home before leaving shell',

@@ -13,8 +13,10 @@ class StoreTopBar extends StatefulWidget {
     this.avatar,
     this.notificationCount,
     this.cartCount,
+    this.favoriteCount,
     this.onNotifications,
     this.onCart,
+    this.onFavorites,
     this.onProfile,
     this.onSearch,
     this.onSearchChanged,
@@ -32,8 +34,10 @@ class StoreTopBar extends StatefulWidget {
   final Widget? avatar;
   final int? notificationCount;
   final int? cartCount;
+  final int? favoriteCount;
   final VoidCallback? onNotifications;
   final VoidCallback? onCart;
+  final VoidCallback? onFavorites;
   final VoidCallback? onProfile;
   final ValueChanged<String>? onSearch;
   final ValueChanged<String>? onSearchChanged;
@@ -169,6 +173,14 @@ class _StoreTopBarState extends State<StoreTopBar> {
                     onPressed: _toggleSearch,
                     tonal: true,
                   ),
+                  if (widget.onFavorites != null)
+                    StoreIconButton(
+                      icon: Icons.favorite_border_rounded,
+                      semanticLabel: 'storeNavFavorites'.tr,
+                      badgeCount: widget.favoriteCount,
+                      badgeColor: StorePalette.purple,
+                      onPressed: widget.onFavorites,
+                    ),
                   StoreIconButton(
                     icon: Icons.shopping_cart_outlined,
                     semanticLabel: 'storeCart'.tr,
