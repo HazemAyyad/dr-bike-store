@@ -24,8 +24,12 @@ class StoreSupportController extends GetxController {
   StoreSupportConnectionState connectionState =
       StoreSupportConnectionState.disconnected;
   bool supportIsTyping = false;
+  bool showingAutomaticRefreshNotice = false;
+  bool fallbackRefreshFailed = false;
   Timer? _fallbackTimer;
   Timer? _presenceTimer;
+  Timer? _connectionNoticeTimer;
+  Timer? _supportPresenceExpiryTimer;
   Timer? _typingIdleTimer;
   Timer? _remoteTypingTimer;
   DateTime? _lastTypingSignal;
@@ -39,11 +43,7 @@ class StoreSupportController extends GetxController {
     super.onInit();
     realtime = StoreSupportRealtimeService(
       onPayload: _onRealtimePayload,
-      onStateChanged: (state) {
-        connectionState = state;
-        _configureFallback();
-        update();
-      },
+      onStateChanged: _onConnectionStateChanged,
       onReconnect: refreshActive,
     );
   }
@@ -97,6 +97,7 @@ class StoreSupportController extends GetxController {
     try {
       final result = await repository.detail(id);
       activeConversation = result.conversation;
+      _scheduleSupportPresenceExpiry();
       messages = result.messages;
       await repository.markRead(id);
       await realtime.watchConversation(id);
@@ -111,16 +112,39 @@ class StoreSupportController extends GetxController {
   }
 
   Future<void> refreshActive() async {
+    await _refreshActive();
+  }
+
+  Future<bool> _refreshActive() async {
     final id = activeConversation?.id;
-    if (id == null) return;
+    if (id == null) return false;
     try {
       final after = messages.where((row) => row.id > 0).lastOrNull?.id;
       final result = await repository.detail(id, afterId: after);
       activeConversation = result.conversation;
+      _scheduleSupportPresenceExpiry();
       _merge(result.messages);
       await repository.markRead(id);
+      fallbackRefreshFailed = false;
       update();
-    } catch (_) {}
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> retryConnection() async {
+    fallbackRefreshFailed = false;
+    showingAutomaticRefreshNotice = false;
+    update();
+    final refreshed = await _refreshActive();
+    final id = activeConversation?.id;
+    if (id != null) await realtime.watchConversation(id);
+    if (!refreshed &&
+        connectionState != StoreSupportConnectionState.connected) {
+      fallbackRefreshFailed = true;
+      update();
+    }
   }
 
   Future<void> send(String text, {String? imagePath, String? retryId}) async {
@@ -219,6 +243,7 @@ class StoreSupportController extends GetxController {
       activeConversation = StoreSupportConversation.fromJson(
         Map<String, dynamic>.from(rawConversation),
       );
+      _scheduleSupportPresenceExpiry();
     }
     if (rawMessage is Map) {
       final message = StoreSupportMessage.fromJson(
@@ -269,9 +294,44 @@ class StoreSupportController extends GetxController {
         connectionState == StoreSupportConnectionState.connected) {
       return;
     }
-    _fallbackTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => refreshActive(),
+    _fallbackTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
+      final refreshed = await _refreshActive();
+      if (!refreshed &&
+          connectionState != StoreSupportConnectionState.connected) {
+        fallbackRefreshFailed = true;
+        showingAutomaticRefreshNotice = false;
+        update();
+      }
+    });
+  }
+
+  void _onConnectionStateChanged(StoreSupportConnectionState state) {
+    connectionState = state;
+    _connectionNoticeTimer?.cancel();
+    if (state == StoreSupportConnectionState.connected) {
+      showingAutomaticRefreshNotice = false;
+      fallbackRefreshFailed = false;
+    } else if (state == StoreSupportConnectionState.disconnected &&
+        !fallbackRefreshFailed) {
+      showingAutomaticRefreshNotice = true;
+      _connectionNoticeTimer = Timer(const Duration(seconds: 4), () {
+        showingAutomaticRefreshNotice = false;
+        update();
+      });
+    }
+    _configureFallback();
+    update();
+  }
+
+  void _scheduleSupportPresenceExpiry() {
+    _supportPresenceExpiryTimer?.cancel();
+    final expiresAt = activeConversation?.supportPresenceExpiresAt;
+    if (expiresAt == null) return;
+    final remaining = expiresAt.difference(DateTime.now());
+    if (remaining <= Duration.zero) return;
+    _supportPresenceExpiryTimer = Timer(
+      remaining + const Duration(milliseconds: 250),
+      update,
     );
   }
 
@@ -302,6 +362,8 @@ class StoreSupportController extends GetxController {
   void onClose() {
     _fallbackTimer?.cancel();
     _presenceTimer?.cancel();
+    _connectionNoticeTimer?.cancel();
+    _supportPresenceExpiryTimer?.cancel();
     _typingIdleTimer?.cancel();
     _remoteTypingTimer?.cancel();
     stopTyping();

@@ -34,6 +34,25 @@ void main() {
     expect((target as NotificationSupportTarget).conversationId, 15);
   });
 
+  test('support presence uses the server expiry instead of socket state', () {
+    final online = StoreSupportConversation.fromJson({
+      'id': 7,
+      'support_is_online': true,
+      'support_last_seen_at': DateTime.now().toIso8601String(),
+      'support_presence_expires_at':
+          DateTime.now().add(const Duration(minutes: 1)).toIso8601String(),
+    });
+    final expired = StoreSupportConversation.fromJson({
+      'id': 8,
+      'support_is_online': true,
+      'support_presence_expires_at':
+          DateTime.now().subtract(const Duration(seconds: 1)).toIso8601String(),
+    });
+
+    expect(online.supportIsOnline, isTrue);
+    expect(expired.supportIsOnline, isFalse);
+  });
+
   test('optimistic message keeps retry identity and failure state', () {
     const message = StoreSupportMessage(
       id: -1,
