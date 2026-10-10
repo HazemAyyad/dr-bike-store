@@ -141,6 +141,15 @@ class StoreSupportRepository {
     _requireSuccess(response);
   }
 
+  Future<void> updatePresence(int conversationId) async {
+    final response = await apiClient.postData(
+      '/OnlineStore/Support/Conversations/$conversationId/Presence',
+      headers: await _headers(),
+      body: const {},
+    );
+    _requireSuccess(response);
+  }
+
   void _requireSuccess(Response response) {
     final code = response.statusCode ?? 0;
     if (code < 200 || code >= 300 || response.body is! Map) {

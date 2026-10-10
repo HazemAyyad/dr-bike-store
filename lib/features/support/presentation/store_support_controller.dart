@@ -25,6 +25,7 @@ class StoreSupportController extends GetxController {
       StoreSupportConnectionState.disconnected;
   bool supportIsTyping = false;
   Timer? _fallbackTimer;
+  Timer? _presenceTimer;
   Timer? _typingIdleTimer;
   Timer? _remoteTypingTimer;
   DateTime? _lastTypingSignal;
@@ -99,6 +100,7 @@ class StoreSupportController extends GetxController {
       messages = result.messages;
       await repository.markRead(id);
       await realtime.watchConversation(id);
+      _startPresenceHeartbeat(id);
       _configureFallback();
     } catch (exception) {
       error = exception.toString();
@@ -273,6 +275,23 @@ class StoreSupportController extends GetxController {
     );
   }
 
+  void _startPresenceHeartbeat(int conversationId) {
+    _presenceTimer?.cancel();
+    unawaited(repository.updatePresence(conversationId).catchError((_) {}));
+    _presenceTimer = Timer.periodic(
+      const Duration(seconds: 45),
+      (_) => repository.updatePresence(conversationId).catchError((_) {}),
+    );
+  }
+
+  void leaveConversation() {
+    _presenceTimer?.cancel();
+    _presenceTimer = null;
+    _fallbackTimer?.cancel();
+    _clearRemoteTyping();
+    stopTyping();
+  }
+
   static int _messageOrder(StoreSupportMessage a, StoreSupportMessage b) {
     final time = (a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
         .compareTo(b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0));
@@ -282,6 +301,7 @@ class StoreSupportController extends GetxController {
   @override
   void onClose() {
     _fallbackTimer?.cancel();
+    _presenceTimer?.cancel();
     _typingIdleTimer?.cancel();
     _remoteTypingTimer?.cancel();
     stopTyping();

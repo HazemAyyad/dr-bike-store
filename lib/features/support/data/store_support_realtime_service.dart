@@ -120,7 +120,8 @@ class StoreSupportRealtimeService {
     }
     if ((event == 'support.message.created' ||
             event == 'support.conversation.read' ||
-            event == 'support.typing') &&
+            event == 'support.typing' ||
+            event == 'support.presence.updated') &&
         data is Map) {
       onPayload?.call(Map<String, dynamic>.from(data));
     }
