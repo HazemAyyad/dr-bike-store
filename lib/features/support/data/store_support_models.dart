@@ -38,6 +38,9 @@ class StoreSupportConversation {
     required this.messagesCount,
     this.product,
     this.lastMessageAt,
+    this.supportOnlineSnapshot = false,
+    this.supportLastSeenAt,
+    this.supportPresenceExpiresAt,
   });
 
   final int id;
@@ -49,8 +52,14 @@ class StoreSupportConversation {
   final int messagesCount;
   final StoreSupportProductContext? product;
   final DateTime? lastMessageAt;
+  final bool supportOnlineSnapshot;
+  final DateTime? supportLastSeenAt;
+  final DateTime? supportPresenceExpiresAt;
 
   bool get isClosed => status == 'closed';
+  bool get supportIsOnline =>
+      supportPresenceExpiresAt?.isAfter(DateTime.now()) ??
+      supportOnlineSnapshot;
 
   factory StoreSupportConversation.fromJson(Map<String, dynamic> json) {
     final productJson = json['product_context'];
@@ -70,6 +79,13 @@ class StoreSupportConversation {
               : null,
       lastMessageAt: DateTime.tryParse(
         (json['last_message_at'] ?? '').toString(),
+      ),
+      supportOnlineSnapshot: json['support_is_online'] == true,
+      supportLastSeenAt: DateTime.tryParse(
+        (json['support_last_seen_at'] ?? '').toString(),
+      ),
+      supportPresenceExpiresAt: DateTime.tryParse(
+        (json['support_presence_expires_at'] ?? '').toString(),
       ),
     );
   }

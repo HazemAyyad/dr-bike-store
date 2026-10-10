@@ -51,6 +51,8 @@ class StoreSupportRealtimeService {
   Future<void> watchConversation(int conversationId) async {
     _conversationId = conversationId;
     _disposed = false;
+    _retryTimer?.cancel();
+    _retryTimer = null;
     await _connect();
   }
 
@@ -81,7 +83,9 @@ class StoreSupportRealtimeService {
       _socket = socket;
       await socket.ready;
       _subscription = socket.stream.listen(
-        _handleFrame,
+        (frame) => unawaited(
+          _handleFrame(frame).catchError((_) => _scheduleReconnect()),
+        ),
         onError: (_) => _scheduleReconnect(),
         onDone: _scheduleReconnect,
         cancelOnError: true,
@@ -166,6 +170,7 @@ class StoreSupportRealtimeService {
 
   void _scheduleReconnect() {
     if (_disposed) return;
+    if (_retryTimer?.isActive == true) return;
     onStateChanged?.call(StoreSupportConnectionState.disconnected);
     _pingTimer?.cancel();
     _retryTimer?.cancel();

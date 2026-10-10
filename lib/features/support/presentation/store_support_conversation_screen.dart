@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/store_tokens.dart';
 import '../data/store_support_models.dart';
-import '../data/store_support_realtime_service.dart';
 import 'store_support_controller.dart';
 
 class StoreSupportConversationScreen extends StatefulWidget {
@@ -53,10 +52,16 @@ class _StoreSupportConversationScreenState
         backgroundColor: StorePalette.background,
         appBar: AppBar(
           title: Text(conversation?.subject ?? 'محادثة الدعم'),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(24),
-            child: _ConnectionLabel(state: state.connectionState),
-          ),
+          bottom:
+              _ConversationStatusBar.isVisible(state, conversation)
+                  ? PreferredSize(
+                    preferredSize: const Size.fromHeight(28),
+                    child: _ConversationStatusBar(
+                      state: state,
+                      conversation: conversation,
+                    ),
+                  )
+                  : null,
         ),
         body:
             state.loadingConversation && conversation == null
@@ -137,26 +142,63 @@ class _StoreSupportConversationScreenState
   }
 }
 
-class _ConnectionLabel extends StatelessWidget {
-  const _ConnectionLabel({required this.state});
-  final StoreSupportConnectionState state;
+class _ConversationStatusBar extends StatelessWidget {
+  const _ConversationStatusBar({required this.state, this.conversation});
+
+  final StoreSupportController state;
+  final StoreSupportConversation? conversation;
+
+  static bool isVisible(
+    StoreSupportController state,
+    StoreSupportConversation? conversation,
+  ) =>
+      state.fallbackRefreshFailed ||
+      state.showingAutomaticRefreshNotice ||
+      conversation?.supportIsOnline == true;
 
   @override
   Widget build(BuildContext context) {
-    final connected = state == StoreSupportConnectionState.connected;
+    final unavailable = state.fallbackRefreshFailed;
+    final automatic = state.showingAutomaticRefreshNotice && !unavailable;
+    final label =
+        unavailable
+            ? 'لا يوجد اتصال'
+            : automatic
+            ? 'يتم تحديث الرسائل تلقائيًا'
+            : 'الدعم متصل الآن';
+    final color =
+        unavailable
+            ? Colors.red.shade700
+            : automatic
+            ? Colors.orange.shade800
+            : StorePalette.success;
     return Container(
-      height: 24,
+      height: 28,
       alignment: Alignment.center,
-      color:
-          connected
-              ? StorePalette.success.withValues(alpha: .08)
-              : Colors.orange.withValues(alpha: .08),
-      child: Text(
-        connected ? 'متصل مباشرة' : 'جاري الاتصال · التحديث مستمر',
-        style: TextStyle(
-          fontSize: 11,
-          color: connected ? StorePalette.success : Colors.orange.shade800,
-        ),
+      color: color.withValues(alpha: .08),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(fontSize: 11, color: color)),
+          if (unavailable) ...[
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: state.retryConnection,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 24),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('إعادة المحاولة'),
+            ),
+          ],
+        ],
       ),
     );
   }
