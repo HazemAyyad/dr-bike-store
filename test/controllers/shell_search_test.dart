@@ -91,7 +91,7 @@ void main() {
   );
 
   test(
-    'selected destination survives search and safe shell restoration',
+    'selected destination survives search but a cold start returns home',
     () async {
       var controller = _controller(preferences, authenticated: true);
       await controller.initializeShell();
@@ -101,17 +101,19 @@ void main() {
 
       expect(controller.selectedDestination.value, StoreDestination.categories);
 
-      controller = _controller(preferences, authenticated: true);
-      await controller.initializeShell();
-      expect(controller.selectedDestination.value, StoreDestination.categories);
-
       await preferences.setString(
         HomeControllerImp.shellDestinationPreferenceKey,
-        StoreDestination.orders.name,
+        StoreDestination.categories.name,
       );
-      controller = _controller(preferences, authenticated: false);
+      controller = _controller(preferences, authenticated: true);
       await controller.initializeShell();
       expect(controller.selectedDestination.value, StoreDestination.home);
+      expect(
+        preferences.containsKey(
+          HomeControllerImp.shellDestinationPreferenceKey,
+        ),
+        isFalse,
+      );
     },
   );
 
