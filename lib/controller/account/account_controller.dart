@@ -20,6 +20,7 @@ import '../../core/model/store_address_model.dart';
 import '../../core/model/user_data_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../LocalizationController.dart';
+import '../home/home_controller.dart';
 import '../order/order_controller.dart';
 import 'package:intl/intl.dart';
 
@@ -136,6 +137,7 @@ class AccountControllerImp extends AccountController {
             response.body is Map<String, dynamic>) {
           userModel = UserModel.fromJson(response.body);
           if (userModel!.id.isEmpty) throw const FormatException('profile');
+          _syncHomeProfile(userModel!);
           nameController.text =
               userModel!.fullName == null ? '' : userModel!.fullName.toString();
           emailController.text = userModel!.email;
@@ -243,6 +245,7 @@ class AccountControllerImp extends AccountController {
               throw const FormatException('profile');
             }
             userModel = authoritative;
+            _syncHomeProfile(authoritative);
             mutationStatus = AccountMutationStatus.success;
             profileStatus = AccountViewStatus.content;
             _populateProfile(authoritative);
@@ -304,6 +307,7 @@ class AccountControllerImp extends AccountController {
       final authoritative = UserModel.fromJson(response.body);
       if (authoritative.id.isEmpty) throw const FormatException('profile');
       userModel = authoritative;
+      _syncHomeProfile(authoritative);
       _populateProfile(authoritative);
       showCustomSnackBar('تم تحديث الصورة الشخصية', isError: false);
     } catch (_) {
@@ -354,7 +358,16 @@ class AccountControllerImp extends AccountController {
     token = null;
     userModel = null;
     profileStatus = AccountViewStatus.guest;
+    if (Get.isRegistered<HomeControllerImp>()) {
+      Get.find<HomeControllerImp>().clearAuthenticatedProfile();
+    }
     update();
+  }
+
+  void _syncHomeProfile(UserModel profile) {
+    if (Get.isRegistered<HomeControllerImp>()) {
+      Get.find<HomeControllerImp>().applyProfile(profile);
+    }
   }
 
   Future<bool> deleteUserAccount() => deactivateAccount(confirmed: true);

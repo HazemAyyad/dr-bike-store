@@ -5,6 +5,7 @@ import 'package:doctor_bike/core/classes/store_view_state.dart';
 import 'package:doctor_bike/core/helper/search_history_store.dart';
 import 'package:doctor_bike/core/constants/app_constants.dart';
 import 'package:doctor_bike/core/model/get_all_item_model.dart';
+import 'package:doctor_bike/core/model/user_data_model.dart';
 import 'package:doctor_bike/core/widget/store_bottom_navigation.dart';
 import 'package:doctor_bike/repository/home/home_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -67,6 +68,24 @@ void main() {
       ShellNavigationOutcome.selected,
     );
     expect(controller.selectedDestination.value, StoreDestination.support);
+  });
+
+  test('authoritative profile updates the Home name and avatar', () {
+    final controller = _controller(preferences, authenticated: true);
+    final profile = UserModel.fromJson(<String, dynamic>{
+      'id': '15',
+      'email': 'customer@example.com',
+      'fullName': 'عميل دكتور بايك',
+      'profileImageUrl': 'https://example.com/customer.jpg',
+    });
+
+    controller.applyProfile(profile);
+
+    expect(controller.displayName.value, 'عميل دكتور بايك');
+    expect(
+      controller.profileImageUrl.value,
+      'https://example.com/customer.jpg',
+    );
   });
 
   test(

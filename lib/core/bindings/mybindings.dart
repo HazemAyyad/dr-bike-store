@@ -62,6 +62,7 @@ class Mybinding extends Bindings {
     Get.lazyPut(
       () => HomeControllerImp(
         homeRepository: HomeRepository(apiClient: Get.find()),
+        authRepository: AuthRepository(apiClient: Get.find()),
       ),
       fenix: true,
     );

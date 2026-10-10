@@ -15,7 +15,9 @@ import '../../core/model/get_all_item_model.dart';
 import '../../core/model/main_categores_model.dart';
 import '../../core/model/notification_model.dart';
 import '../../core/model/online_store_home_model.dart';
+import '../../core/model/user_data_model.dart';
 import '../../core/widget/store_bottom_navigation.dart';
+import '../../repository/auth/auth_repository.dart';
 import '../../repository/home/home_repository.dart';
 import '../LocalizationController.dart';
 
@@ -37,6 +39,7 @@ class HomeControllerImp extends HomeController {
     Future<bool> Function()? connectivityCheck,
     Future<String?> Function()? tokenLoader,
     Future<String?> Function()? userNameLoader,
+    this.authRepository,
     LocalizationController? localizationController,
   }) : searchHistoryStore =
            searchHistoryStore ??
@@ -62,6 +65,7 @@ class HomeControllerImp extends HomeController {
   final Future<bool> Function() connectivityCheck;
   final Future<String?> Function() tokenLoader;
   final Future<String?> Function() userNameLoader;
+  final AuthRepository? authRepository;
   final LocalizationController localizationController;
 
   final CarouselSliderController carouselController =
@@ -72,6 +76,7 @@ class HomeControllerImp extends HomeController {
   final isRefreshingHome = false.obs;
   final recentSearches = <String>[].obs;
   final displayName = ''.obs;
+  final profileImageUrl = RxnString();
   final searchState = Rx<StoreViewState<List<Item>>>(const StoreInitial());
   final categoriesState = Rx<StoreViewState<List<Category>>>(
     const StoreInitial(),
@@ -137,6 +142,43 @@ class HomeControllerImp extends HomeController {
     recentSearches.assignAll(await searchHistoryStore.load());
     await _startShellAtHome();
     _initialized = true;
+    update();
+    if (isAuthenticated && authRepository != null) {
+      unawaited(refreshAuthenticatedProfile());
+    }
+  }
+
+  Future<void> refreshAuthenticatedProfile() async {
+    final repository = authRepository;
+    if (!isAuthenticated || repository == null) return;
+    try {
+      final response = await repository.getUser();
+      if (response.statusCode != 200 || response.body is! Map) return;
+      final profile = UserModel.fromJson(
+        Map<String, dynamic>.from(response.body as Map),
+      );
+      if (profile.id.isEmpty) return;
+      applyProfile(profile);
+    } catch (_) {
+      // Keep the cached name and the default avatar if profile refresh fails.
+    }
+  }
+
+  void applyProfile(UserModel profile) {
+    final name = profile.fullName?.trim();
+    if (name != null && name.isNotEmpty) {
+      displayName.value = name;
+    }
+    final imageUrl = profile.profileImageUrl?.trim();
+    profileImageUrl.value =
+        imageUrl == null || imageUrl.isEmpty ? null : imageUrl;
+    update();
+  }
+
+  void clearAuthenticatedProfile() {
+    token = null;
+    displayName.value = '';
+    profileImageUrl.value = null;
     update();
   }
 

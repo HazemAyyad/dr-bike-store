@@ -203,6 +203,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       controller.displayName.value.isEmpty
                           ? 'storeGuest'.tr
                           : controller.displayName.value,
+                  avatar:
+                      controller.profileImageUrl.value == null
+                          ? null
+                          : ClipOval(
+                            child: SizedBox.expand(
+                              child: StoreNetworkMedia(
+                                url: controller.profileImageUrl.value,
+                                semanticLabel: 'الصورة الشخصية',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
                   notificationCount:
                       Get.isRegistered<NotificationController>()
                           ? _notificationCount(
