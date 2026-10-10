@@ -137,6 +137,12 @@ class ShopController extends GetxController {
     couponIntent = box.read<String>(couponIntentStorageKey) ?? '';
   }
 
+  Future<void> refreshCart() async {
+    loadCart();
+    cal();
+    update();
+  }
+
   GlobalKey<FormState> formstate = GlobalKey<FormState>();
   ShopRepository shopRepository;
   bool changeList = false;

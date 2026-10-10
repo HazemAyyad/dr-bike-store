@@ -16,6 +16,7 @@ import '../../core/widget/store_product_layout_toggle.dart';
 import '../../core/widget/store_skeletons.dart';
 import '../../repository/categories/categories_repository.dart';
 import '../../repository/shop/shop_repository.dart';
+import '../search/store_search_action.dart';
 import 'filter_screen.dart';
 
 class CategoryScreen extends StatelessWidget {
@@ -71,6 +72,7 @@ class CategoryScreen extends StatelessWidget {
         title: const Text('قائمة المنتجات'),
         titleTextStyle: StoreTypography.label.copyWith(fontSize: 14),
         actions: [
+          const StoreSearchAction(),
           Obx(
             () => StoreProductLayoutToggle(
               isGrid: controller.isGrid.value,
@@ -89,17 +91,15 @@ class CategoryScreen extends StatelessWidget {
       return StoreProductCollectionSkeleton(isGrid: controller.isGrid.value);
     }
     if (state is StoreOffline<List<Item>>) {
-      return _CatalogMessage(
+      return _refreshableMessage(
         message: state.message,
         icon: Icons.wifi_off_rounded,
-        onRetry: _reload,
       );
     }
     if (state is StoreError<List<Item>>) {
-      return _CatalogMessage(
+      return _refreshableMessage(
         message: state.message,
         icon: Icons.error_outline_rounded,
-        onRetry: _reload,
       );
     }
 
@@ -108,10 +108,9 @@ class CategoryScreen extends StatelessWidget {
       _ => controller.itemList?.rows ?? const <Item>[],
     };
     if (state is StoreEmpty<List<Item>> || products.isEmpty) {
-      return _CatalogMessage(
+      return _refreshableMessage(
         message: 'لا توجد منتجات في هذا القسم',
         icon: Icons.inventory_2_outlined,
-        onRetry: _reload,
       );
     }
 
@@ -130,10 +129,11 @@ class CategoryScreen extends StatelessWidget {
                     ? SliverGrid.builder(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisExtent: 270,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
+                            crossAxisCount: 3,
+                            mainAxisExtent:
+                                StoreCalibration.denseProductCardHeight,
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 6,
                           ),
                       itemCount: products.length,
                       itemBuilder:
@@ -150,6 +150,27 @@ class CategoryScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _refreshableMessage({
+    required String message,
+    required IconData icon,
+  }) => RefreshIndicator(
+    color: StorePalette.purple,
+    onRefresh: _reload,
+    child: CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: _CatalogMessage(
+            message: message,
+            icon: icon,
+            onRetry: _reload,
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _listProduct(Item item) => Obx(() {
     favoritesController?.listingIds.length;
@@ -205,6 +226,7 @@ class CategoryScreen extends StatelessWidget {
               ? () => productController.getCategoryById(itemId: item.productId)
               : () => shopController.addToCart(item),
       compact: true,
+      denseGrid: true,
     );
   });
 

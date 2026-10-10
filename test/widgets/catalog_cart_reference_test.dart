@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:doctor_bike/controller/categores/categores_controller.dart';
+import 'package:doctor_bike/controller/favorites/favorites_controller.dart';
 import 'package:doctor_bike/controller/shop/shop_controller.dart';
 import 'package:doctor_bike/core/api_client.dart';
 import 'package:doctor_bike/core/classes/store_view_state.dart';
@@ -8,10 +9,13 @@ import 'package:doctor_bike/core/locale/locale.dart';
 import 'package:doctor_bike/core/model/cart_line_model.dart';
 import 'package:doctor_bike/core/model/get_all_item_model.dart';
 import 'package:doctor_bike/core/theme/light.dart';
+import 'package:doctor_bike/core/widget/store_cards.dart';
 import 'package:doctor_bike/features/category/category_screen.dart';
 import 'package:doctor_bike/features/category/filter_screen.dart';
+import 'package:doctor_bike/features/favorites/favorites_screen.dart';
 import 'package:doctor_bike/features/shop/shop_car_screen.dart';
 import 'package:doctor_bike/repository/categories/categories_repository.dart';
+import 'package:doctor_bike/repository/favorites/favorites_repository.dart';
 import 'package:doctor_bike/repository/shop/shop_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -91,10 +95,17 @@ void main() {
         categoriesRepository: CategoriesRepository(apiClient: apiClient),
         titleMain: 'سكوترات كهربائية',
       );
-      controller.catalogState.value = StoreContent<List<Item>>([
-        _item(),
-        _item(productId: 102, listingId: 9002, discount: 0),
-      ]);
+      controller.isGrid.value = true;
+      controller.catalogState.value = StoreContent<List<Item>>(
+        List.generate(
+          9,
+          (index) => _item(
+            productId: 101 + index,
+            listingId: 9001 + index,
+            discount: index.isEven ? 10 : 0,
+          ),
+        ),
+      );
       controller.itemList = ItemsResponse(
         rows: (controller.catalogState.value as StoreContent<List<Item>>).data,
       );
@@ -112,9 +123,24 @@ void main() {
       await tester.pump();
 
       expect(find.text('قائمة المنتجات'), findsOneWidget);
+      expect(find.byKey(const ValueKey('store-search-action')), findsOneWidget);
+      expect(find.byType(RefreshIndicator), findsOneWidget);
       expect(find.text('تصفية (0)'), findsOneWidget);
       expect(find.byIcon(Icons.add_shopping_cart_rounded), findsWidgets);
-      expect(find.text('-10.0%'), findsOneWidget);
+      expect(find.text('-10.0%'), findsWidgets);
+      final cards = find.byType(StoreProductCard);
+      expect(cards, findsAtLeastNWidgets(3));
+      final first = tester.getTopLeft(cards.at(0));
+      final second = tester.getTopLeft(cards.at(1));
+      final third = tester.getTopLeft(cards.at(2));
+      expect(second.dy, closeTo(first.dy, 0.1));
+      expect(third.dy, closeTo(first.dy, 0.1));
+      expect({first.dx, second.dx, third.dx}, hasLength(3));
+      expect(tester.getSize(cards.at(0)).height, 190);
+      if (size.height >= 800) {
+        expect(cards, findsAtLeastNWidgets(9));
+        expect(tester.getTopLeft(cards.at(6)).dy, lessThan(size.height));
+      }
       expect(tester.takeException(), isNull);
     });
 
@@ -147,6 +173,8 @@ void main() {
       await tester.pump();
 
       expect(find.textContaining('سلة المشتريات'), findsOneWidget);
+      expect(find.byKey(const ValueKey('store-search-action')), findsOneWidget);
+      expect(find.byType(RefreshIndicator), findsOneWidget);
       expect(controller.cartLines, hasLength(2));
       expect(find.text('إتمام الطلب'), findsOneWidget);
       expect(find.bySemanticsLabel('زيادة الكمية'), findsNWidgets(2));
@@ -180,6 +208,100 @@ void main() {
       hasLength(1),
     );
   });
+
+  testWidgets('empty cart keeps search and pull-to-refresh available', (
+    tester,
+  ) async {
+    Get.put(
+      ShopController(
+        shopRepository: ShopRepository(apiClient: apiClient),
+        storage: GetStorage('catalog-cart-reference-test'),
+      ),
+    );
+
+    await tester.pumpWidget(const _TestApp(child: ShopCarScreen()));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('store-search-action')), findsOneWidget);
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    expect(find.text('Your shopping cart is empty'.tr), findsOneWidget);
+  });
+
+  testWidgets('empty favorites keep search and pull-to-refresh available', (
+    tester,
+  ) async {
+    final favorites = Get.put(
+      FavoritesController(
+        repository: _NoopFavoritesGateway(),
+        isAuthenticated: () => true,
+      ),
+    );
+    favorites.status.value = FavoritesStatus.empty;
+
+    await tester.pumpWidget(const _TestApp(child: FavoritesScreen()));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('store-search-action')), findsOneWidget);
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    expect(find.text('المفضلة فارغة'), findsOneWidget);
+  });
+
+  testWidgets('favorites grid shows three products per row and three rows', (
+    tester,
+  ) async {
+    Get.put(
+      ShopController(
+        shopRepository: ShopRepository(apiClient: apiClient),
+        storage: GetStorage('catalog-cart-reference-test'),
+      ),
+    );
+    final favorites = Get.put(
+      FavoritesController(
+        repository: _NoopFavoritesGateway(),
+        isAuthenticated: () => true,
+      ),
+    );
+    final items = List.generate(
+      9,
+      (index) => _item(
+        productId: 201 + index,
+        listingId: 9201 + index,
+        discount: index.isEven ? 10 : 0,
+      ),
+    );
+    favorites.items.assignAll(items);
+    favorites.listingIds.addAll(items.map((item) => item.listingId!));
+    favorites.status.value = FavoritesStatus.content;
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const _TestApp(child: FavoritesScreen()));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('store-search-action')), findsOneWidget);
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    final cards = find.byType(StoreProductCard);
+    expect(cards, findsNWidgets(9));
+    final first = tester.getTopLeft(cards.at(0));
+    final second = tester.getTopLeft(cards.at(1));
+    final third = tester.getTopLeft(cards.at(2));
+    expect(second.dy, closeTo(first.dy, 0.1));
+    expect(third.dy, closeTo(first.dy, 0.1));
+    expect({first.dx, second.dx, third.dx}, hasLength(3));
+    expect(tester.getSize(cards.at(0)).height, 190);
+    expect(tester.getTopLeft(cards.at(6)).dy, lessThan(844));
+    expect(tester.takeException(), isNull);
+  });
+}
+
+class _NoopFavoritesGateway implements FavoritesGateway {
+  @override
+  Future<FavoriteSnapshot> load() async =>
+      const FavoriteSnapshot(listingIds: <int>{}, items: <Item>[]);
+
+  @override
+  Future<FavoriteToggleResult> toggle(int listingId) async =>
+      FavoriteToggleResult(listingId: listingId, isFavorite: true);
 }
 
 class _TestApp extends StatelessWidget {

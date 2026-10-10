@@ -43,19 +43,14 @@ class OnlineStorePopupCampaign {
         couponCode: json['coupon_code']?.toString(),
       );
 
-  String _localized(Map<String, String> values, String languageCode) =>
-      values[languageCode]?.trim().isNotEmpty == true
-          ? values[languageCode]!
-          : values['ar'] ?? values['en'] ?? values['he'] ?? '';
+  String _localized(Map<String, String> values, String languageCode) {
+    final locale = languageCode.toLowerCase().split(RegExp('[-_]')).first;
+    return values[locale]?.trim() ?? '';
+  }
 
   String title(String languageCode) => _localized(titles, languageCode);
   String content(String languageCode) => _localized(contents, languageCode);
-  String button(String languageCode) {
-    final value = _localized(buttons, languageCode);
-    return value.isEmpty
-        ? (languageCode == 'en' ? 'Explore now' : 'اكتشف الآن')
-        : value;
-  }
+  String button(String languageCode) => _localized(buttons, languageCode);
 }
 
 class OnlineStoreHomeSection {

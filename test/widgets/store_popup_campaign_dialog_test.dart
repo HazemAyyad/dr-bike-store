@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
 
+import 'package:doctor_bike/core/locale/locale.dart';
 import 'package:doctor_bike/core/model/online_store_home_model.dart';
 import 'package:doctor_bike/features/home_screen/widget/store_popup_campaign_dialog.dart';
 
@@ -40,8 +42,9 @@ void main() {
   ) async {
     StorePopupCampaignResult? result;
     await tester.pumpWidget(
-      MaterialApp(
+      GetMaterialApp(
         locale: const Locale('en'),
+        translations: MyLocale(),
         home: Builder(
           builder:
               (context) => Scaffold(
@@ -67,5 +70,47 @@ void main() {
     await tester.tap(find.text('Explore offer'));
     await tester.pumpAndSettle();
     expect(result, StorePopupCampaignResult.action);
+  });
+
+  testWidgets('popup never falls back to another campaign language', (
+    tester,
+  ) async {
+    const arabicOnly = OnlineStorePopupCampaign(
+      id: 8,
+      imagePath: '',
+      titles: {'ar': 'عرض عربي'},
+      contents: {'ar': 'محتوى عربي'},
+      buttons: {'ar': 'زر عربي'},
+      theme: 'brand',
+      actionType: 'none',
+    );
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        locale: const Locale('en'),
+        translations: MyLocale(),
+        home: Builder(
+          builder:
+              (context) => Scaffold(
+                body: TextButton(
+                  onPressed:
+                      () => showStorePopupCampaignDialog(context, arabicOnly),
+                  child: const Text('open'),
+                ),
+              ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Special offer'), findsOneWidget);
+    expect(find.text('Explore now'), findsOneWidget);
+    expect(find.text('Selected for you'), findsOneWidget);
+    expect(find.text('Do not show me this advertisement'), findsOneWidget);
+    expect(find.text('عرض عربي'), findsNothing);
+    expect(find.text('محتوى عربي'), findsNothing);
+    expect(find.text('زر عربي'), findsNothing);
   });
 }

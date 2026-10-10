@@ -6,6 +6,7 @@ import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/store_buttons.dart';
 import '../../core/widget/store_navigation_icons.dart';
+import '../search/store_search_action.dart';
 import 'widget/cart_summary.dart';
 import 'widget/empty_car.dart';
 import 'widget/item_shop_car.dart';
@@ -33,6 +34,7 @@ class ShopCarScreen extends StatelessWidget {
               title: Text('سلة المشتريات (${controller.cartQuantity})'),
               titleTextStyle: StoreTypography.title.copyWith(fontSize: 17),
               actions: [
+                const StoreSearchAction(),
                 if (controller.cartLines.isNotEmpty)
                   PopupMenuButton<String>(
                     tooltip: 'خيارات السلة',
@@ -47,33 +49,48 @@ class ShopCarScreen extends StatelessWidget {
                   ),
               ],
             ),
-            body:
-                controller.cartLines.isEmpty
-                    ? const EmptyCar()
-                    : SafeArea(
-                      top: false,
-                      child: ListView(
-                        key: const PageStorageKey<String>('store-cart-scroll'),
-                        padding: const EdgeInsetsDirectional.fromSTEB(
-                          12,
-                          10,
-                          12,
-                          18,
-                        ),
-                        children: [
-                          ...controller.cartLines.map(
-                            (line) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: ItemShopCar(line: line),
-                            ),
+            body: RefreshIndicator(
+              onRefresh: controller.refreshCart,
+              color: StorePalette.purple,
+              child:
+                  controller.cartLines.isEmpty
+                      ? const CustomScrollView(
+                        physics: AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: EmptyCar(),
                           ),
-                          const SizedBox(height: 4),
-                          _CouponSection(controller: controller),
-                          const SizedBox(height: 12),
-                          CartSummary(controller: controller),
                         ],
+                      )
+                      : SafeArea(
+                        top: false,
+                        child: ListView(
+                          key: const PageStorageKey<String>(
+                            'store-cart-scroll',
+                          ),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            12,
+                            10,
+                            12,
+                            18,
+                          ),
+                          children: [
+                            ...controller.cartLines.map(
+                              (line) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: ItemShopCar(line: line),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            _CouponSection(controller: controller),
+                            const SizedBox(height: 12),
+                            CartSummary(controller: controller),
+                          ],
+                        ),
                       ),
-                    ),
+            ),
             bottomNavigationBar:
                 controller.cartLines.isEmpty
                     ? null
