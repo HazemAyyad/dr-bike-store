@@ -267,6 +267,11 @@ void main() {
     final context = tester.element(find.byType(SignInScreen));
     expect(Directionality.of(context), TextDirection.rtl);
     expect(find.text('تسجيل الدخول'), findsOneWidget);
+    expect(find.text('الاستمرار كضيف'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('continue-as-guest-button')),
+      findsOneWidget,
+    );
     expect(find.textContaining('Google'), findsNothing);
     expect(find.textContaining('Apple'), findsNothing);
     expect(tester.takeException(), isNull);

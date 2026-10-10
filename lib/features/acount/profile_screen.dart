@@ -107,13 +107,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _header(AccountControllerImp controller, bool guest) => Card(
+    color: guest ? StorePalette.lightPurple : StorePalette.surface,
+    elevation: StoreElevation.none,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(StoreRadii.lg),
+      side: BorderSide(
+        color: guest ? StorePalette.purple : StorePalette.border,
+      ),
+    ),
     child: Padding(
       padding: const EdgeInsets.all(StoreSpacing.md),
       child:
           guest
               ? Column(
                 children: [
-                  Text('تصفح كضيف', style: StoreTypography.title),
+                  const Icon(
+                    Icons.person_outline_rounded,
+                    color: StorePalette.purple,
+                    size: 34,
+                  ),
+                  const SizedBox(height: StoreSpacing.xs),
+                  Text(
+                    'تصفح كضيف',
+                    style: StoreTypography.title.copyWith(
+                      color: StorePalette.navy,
+                      fontWeight: StoreTypography.bold,
+                    ),
+                  ),
                   const SizedBox(height: StoreSpacing.sm),
                   StoreButton(
                     label: 'register/log in.'.tr,

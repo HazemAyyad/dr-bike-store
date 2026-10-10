@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../controller/auth/login.controller.dart';
+import '../../../core/helper/route_helper.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
+import '../../../core/widget/store_buttons.dart';
 import '../../../core/widget/store_fields.dart';
 import '../widget/store_auth_scaffold.dart';
 
@@ -27,6 +29,12 @@ class _SignInScreenState extends State<SignInScreen> {
       password: _passwordController.text,
     );
   }
+
+  String get _continueAsGuestLabel => switch (Get.locale?.languageCode) {
+    'ar' => 'الاستمرار كضيف',
+    'he' => 'המשך כאורח',
+    _ => 'Continue as guest',
+  };
 
   @override
   void dispose() {
@@ -136,6 +144,17 @@ class _SignInScreenState extends State<SignInScreen> {
                       label: 'storeLoginAction'.tr,
                       onPressed: () => _submit(controller),
                       isLoading: controller.isSubmitting,
+                    ),
+                    const SizedBox(height: StoreSpacing.sm),
+                    StoreButton(
+                      key: const ValueKey('continue-as-guest-button'),
+                      label: _continueAsGuestLabel,
+                      variant: StoreButtonVariant.secondary,
+                      icon: Icons.person_outline_rounded,
+                      onPressed:
+                          controller.isSubmitting
+                              ? null
+                              : () => Get.offAllNamed(RouteHelper.homePage),
                     ),
                   ],
                 ),
