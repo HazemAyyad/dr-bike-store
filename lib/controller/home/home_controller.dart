@@ -54,6 +54,7 @@ class HomeControllerImp extends HomeController {
                  LocalizationController(sharedPreferences: Get.find()),
                ));
 
+  // Kept only to clear the destination persisted by older app versions.
   static const shellDestinationPreferenceKey = 'store_shell_destination';
 
   final HomeDataSource homeRepository;
@@ -134,26 +135,14 @@ class HomeControllerImp extends HomeController {
     token = await tokenLoader();
     displayName.value = (await userNameLoader())?.trim() ?? '';
     recentSearches.assignAll(await searchHistoryStore.load());
-    await _restoreDestination();
+    await _startShellAtHome();
     _initialized = true;
     update();
   }
 
-  Future<void> _restoreDestination() async {
-    final saved = searchHistoryStore.preferences.getString(
-      shellDestinationPreferenceKey,
-    );
-    final destination = StoreDestination.values.firstWhereOrNull(
-      (candidate) => candidate.name == saved,
-    );
-    if (destination == null ||
-        (!isAuthenticated &&
-            (destination == StoreDestination.orders ||
-                destination == StoreDestination.favorites))) {
-      selectedDestination.value = StoreDestination.home;
-      return;
-    }
-    selectedDestination.value = destination;
+  Future<void> _startShellAtHome() async {
+    selectedDestination.value = StoreDestination.home;
+    await searchHistoryStore.preferences.remove(shellDestinationPreferenceKey);
   }
 
   Future<ShellNavigationOutcome> selectDestination(
@@ -167,10 +156,6 @@ class HomeControllerImp extends HomeController {
 
     closeSearch(clearQuery: false);
     selectedDestination.value = destination;
-    await searchHistoryStore.preferences.setString(
-      shellDestinationPreferenceKey,
-      destination.name,
-    );
     update();
 
     return ShellNavigationOutcome.selected;
