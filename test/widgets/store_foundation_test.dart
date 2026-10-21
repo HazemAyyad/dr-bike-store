@@ -473,7 +473,7 @@ void main() {
     final provider = image.image as NetworkImage;
     expect(
       provider.url,
-      'https://dr-bike.duosparktech.com/public/OnlineStore/Content/category.jpg',
+      'https://dr-bike.shop/OnlineStore/Content/category.jpg',
     );
   });
 

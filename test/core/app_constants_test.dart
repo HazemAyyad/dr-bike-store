@@ -2,10 +2,10 @@ import 'package:doctor_bike/core/constants/app_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('product share URL uses productId and the public backend base', () {
+  test('product share URL uses productId and the deployed backend base', () {
     expect(
       AppConstants.productShareUrl(42),
-      'https://dr-bike.duosparktech.com/public/store/products/42',
+      'https://dr-bike.shop/store/products/42',
     );
   });
 

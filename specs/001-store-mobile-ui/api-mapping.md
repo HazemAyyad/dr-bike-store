@@ -1,6 +1,6 @@
 # API Mapping: Doctor Bike Store Mobile UI
 
-**Inspected client base URL**: `https://dr-bike.duosparktech.com/public`
+**Inspected client base URL**: `https://dr-bike.shop`
 **Authority**: current source in `lib/core/constants/app_constants.dart`
 **Note**: `docs/api-endpoints.md` still names an older base URL and is not current authority.
 

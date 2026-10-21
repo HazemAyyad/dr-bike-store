@@ -5,20 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('StoreProductLinkService.productIdFromUri', () {
-    test('accepts deployed and root HTTPS product paths', () {
+    test('accepts the deployed HTTPS product path', () {
       expect(
         StoreProductLinkService.productIdFromUri(
-          Uri.parse(
-            'https://dr-bike.duosparktech.com/public/store/products/42',
-          ),
+          Uri.parse('https://dr-bike.shop/store/products/42'),
         ),
         42,
-      );
-      expect(
-        StoreProductLinkService.productIdFromUri(
-          Uri.parse('https://dr-bike.duosparktech.com/store/products/77'),
-        ),
-        77,
       );
     });
 
@@ -40,7 +32,7 @@ void main() {
       );
       expect(
         StoreProductLinkService.productIdFromUri(
-          Uri.parse('https://dr-bike.duosparktech.com/public/orders/42'),
+          Uri.parse('https://dr-bike.shop/orders/42'),
         ),
         isNull,
       );
@@ -59,9 +51,7 @@ void main() {
     final service = StoreProductLinkService(
       linkStream: links.stream,
       initialLink:
-          () async => Uri.parse(
-            'https://dr-bike.duosparktech.com/public/store/products/91',
-          ),
+          () async => Uri.parse('https://dr-bike.shop/store/products/91'),
       openProduct: (productId) async => opened.add(productId),
     );
 

@@ -153,7 +153,7 @@ void main() {
     () => expect(
       NotificationRouteResolver.resolve({
         'destination_type': 'url',
-        'destination_url': 'https://dr-bike.duosparktech.com/store',
+        'destination_url': 'https://dr-bike.shop/store',
       }),
       isA<NotificationUrlTarget>(),
     ),

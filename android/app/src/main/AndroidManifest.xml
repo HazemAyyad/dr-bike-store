@@ -36,8 +36,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="dr-bike.duosparktech.com" android:pathPrefix="/store/products/" />
-                <data android:scheme="https" android:host="dr-bike.duosparktech.com" android:pathPrefix="/public/store/products/" />
+                <data android:scheme="https" android:host="dr-bike.shop" android:pathPrefix="/store/products/" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

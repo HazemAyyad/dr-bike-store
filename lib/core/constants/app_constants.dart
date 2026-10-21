@@ -12,7 +12,7 @@ class AppConstants {
   static const String key = "isDarkMode";
   static const String items = "items";
   static const String FirstLog = 'FirstLog';
-  static const String appBaseUrl = "https://dr-bike.duosparktech.com/public";
+  static const String appBaseUrl = "https://dr-bike.shop";
   static const String storePublicBaseUrl = String.fromEnvironment(
     'STORE_PUBLIC_BASE_URL',
     defaultValue: appBaseUrl,

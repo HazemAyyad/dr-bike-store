@@ -121,16 +121,11 @@ class StoreProductLinkService extends GetxService {
       return null;
     }
 
-    final isRootPath =
+    final isProductPath =
         segments.length == 3 &&
         segments[0] == 'store' &&
         segments[1] == 'products';
-    final isPublicPath =
-        segments.length == 4 &&
-        segments[0] == 'public' &&
-        segments[1] == 'store' &&
-        segments[2] == 'products';
-    if (!isRootPath && !isPublicPath) return null;
+    if (!isProductPath) return null;
 
     return _positiveInt(segments.last);
   }
