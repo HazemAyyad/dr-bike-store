@@ -7,6 +7,7 @@ import '../../../core/model/city_model.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
 import '../../../core/widget/store_buttons.dart';
+import '../../../core/widget/store_city_picker.dart';
 import '../../../core/widget/store_skeletons.dart';
 import 'cart_summary.dart';
 
@@ -60,24 +61,13 @@ class CheckoutShippingStep extends StatelessWidget {
       const SizedBox(height: 16),
       Text('منطقة التوصيل', style: StoreTypography.title),
       const SizedBox(height: 10),
-      DropdownButtonFormField<Citys>(
+      StoreCityPicker(
+        cities: controller.cities,
         value:
             controller.cities
                 .where((c) => c.id.toString() == controller.selectedCityId)
                 .firstOrNull,
-        isExpanded: true,
-        items:
-            controller.cities
-                .map(
-                  (city) => DropdownMenuItem(
-                    value: city,
-                    child: Text(city.cityNameAr),
-                  ),
-                )
-                .toList(),
-        onChanged: (city) {
-          if (city != null) controller.onCitySelected(city);
-        },
+        onChanged: controller.onCitySelected,
         decoration: _decoration('المدينة', Icons.location_city_outlined),
       ),
       const SizedBox(height: 9),

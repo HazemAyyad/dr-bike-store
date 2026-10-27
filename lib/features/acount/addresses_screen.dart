@@ -8,6 +8,7 @@ import '../../core/theme/store_tokens.dart';
 import '../../core/theme/store_typography.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../../core/widget/store_buttons.dart';
+import '../../core/widget/store_city_picker.dart';
 import '../../core/widget/store_skeletons.dart';
 import '../../core/widget/store_states.dart';
 
@@ -182,23 +183,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        DropdownButtonFormField<Citys>(
+                        StoreCityPicker(
+                          cities: controller.cities,
                           value: selectedCity,
-                          isExpanded: true,
                           decoration: const InputDecoration(
                             labelText: 'المدينة',
                             prefixIcon: Icon(Icons.location_city_outlined),
                           ),
-                          items: controller.cities
-                              .map(
-                                (city) => DropdownMenuItem(
-                                  value: city,
-                                  child: Text(city.cityNameAr),
-                                ),
-                              )
-                              .toList(growable: false),
                           onChanged: (city) async {
-                            if (city == null) return;
                             setSheetState(() {
                               selectedCity = city;
                               selectedVillage = null;
