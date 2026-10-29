@@ -3,11 +3,11 @@ import 'package:get/get.dart';
 
 import '../../core/api_client.dart';
 import '../../core/functions/app_usage_service.dart';
+import 'store_catalog_source.dart';
 
-class CategoriesRepository extends GetxService {
+class CategoriesRepository extends GetxService implements StoreCatalogSource {
   final ApiClient apiClient;
   CategoriesRepository({required this.apiClient});
-  String tok = AppUsageService.getToken().toString();
 
   Future<Response> getAllCategoriesByMainCategoresId({
     required mainCategoresId,
@@ -42,10 +42,34 @@ class CategoriesRepository extends GetxService {
   Future<Response> getListingsByOnlineStoreCategory({
     required int categoryId,
     Map<String, String> filters = const {},
-  }) => getAllCategoriesByMainCategoresId(
-    mainCategoresId: categoryId,
-    filters: filters,
-  );
+  }) => catalogPage(categoryId: categoryId, filters: filters);
+
+  @override
+  Future<Response> catalogPage({
+    String? query,
+    int? categoryId,
+    int page = 1,
+    Map<String, String> filters = const {},
+  }) async {
+    final response = await apiClient.getData(
+      '/OnlineStore/Catalog',
+      query: {
+        if (query != null) 'q': query,
+        if (categoryId != null && categoryId > 0) 'category_id': '$categoryId',
+        'page': '$page',
+        'per_page': '24',
+        ...filters,
+      },
+    );
+    // A new APK can browse while the compatible server addition rolls out.
+    if (response.statusCode == 404 && page == 1 && categoryId != null) {
+      return getAllCategoriesByMainCategoresId(
+        mainCategoresId: categoryId,
+        filters: filters,
+      );
+    }
+    return response;
+  }
 
   Future<Response> getCategoriesById({required categoryId}) async {
     return await apiClient.postData(

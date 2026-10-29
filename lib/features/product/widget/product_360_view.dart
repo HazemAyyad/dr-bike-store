@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -33,7 +34,10 @@ class Product360View extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         ColoredBox(
-          color: dark ? const Color(0xFF0D0E12) : StorePalette.surface,
+          color:
+              dark
+                  ? const Color(0xFF0D0E12)
+                  : StoreColors.resolve(context, StorePalette.surface),
           child:
               preview == null
                   ? StoreMediaPlaceholder(
@@ -71,9 +75,10 @@ class Product360View extends StatelessWidget {
                     _unavailableLabel(context),
                     key: const Key('product-360-unavailable'),
                     textAlign: TextAlign.center,
-                    style: StoreTypography.caption.copyWith(
-                      color: Colors.white,
-                    ),
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.caption,
+                    ).copyWith(color: Colors.white),
                   ),
                 ),
               ],
@@ -97,9 +102,5 @@ class Product360View extends StatelessWidget {
   }
 
   String _unavailableLabel(BuildContext context) =>
-      (Get.locale?.languageCode ??
-                  Localizations.localeOf(context).languageCode) ==
-              'ar'
-          ? 'المعاينة متاحة، العارض التفاعلي غير متوفر'
-          : 'Preview available; interactive viewer unavailable';
+      'المعاينة متاحة، العارض التفاعلي غير متوفر'.tr;
 }

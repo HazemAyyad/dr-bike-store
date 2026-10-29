@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -49,7 +50,10 @@ class _SignInScreenState extends State<SignInScreen> {
       autoRemove: false,
       builder:
           (controller) => Scaffold(
-            backgroundColor: StorePalette.background,
+            backgroundColor: StoreColors.resolve(
+              context,
+              StorePalette.background,
+            ),
             body: StoreAuthScaffold(
               title: 'storeLoginTitle'.tr,
               subtitle: 'storeLoginSubtitle'.tr,
@@ -60,8 +64,14 @@ class _SignInScreenState extends State<SignInScreen> {
                   Flexible(
                     child: Text(
                       'storeNoAccount'.tr,
-                      style: StoreTypography.body.copyWith(
-                        color: StorePalette.textSecondary,
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.body,
+                      ).copyWith(
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.textSecondary,
+                        ),
                       ),
                     ),
                   ),
@@ -127,7 +137,10 @@ class _SignInScreenState extends State<SignInScreen> {
                         Expanded(
                           child: Text(
                             'storeRememberMe'.tr,
-                            style: StoreTypography.caption,
+                            style: StoreColors.text(
+                              context,
+                              StoreTypography.caption,
+                            ),
                           ),
                         ),
                         TextButton(

@@ -1,5 +1,7 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 
 import '../../../controller/shop/shop_controller.dart';
 import '../../../core/model/checkout_flow_model.dart';
@@ -21,63 +23,75 @@ class CheckoutPaymentStep extends StatelessWidget {
       key: const PageStorageKey<String>('checkout-payment-scroll'),
       padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 22),
       children: [
-        Text('طريقة الدفع', style: StoreTypography.title),
+        Text(
+          'طريقة الدفع'.tr,
+          style: StoreColors.text(context, StoreTypography.title),
+        ),
         const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: StorePalette.surface,
+            color: StoreColors.resolve(context, StorePalette.surface),
             borderRadius: BorderRadius.circular(StoreRadii.lg),
             border: Border.all(color: StorePalette.purple, width: 1.3),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.check_circle_rounded,
                 color: StorePalette.purple,
                 size: 20,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'الدفع عند الاستلام',
-                      style: StoreTypography.bodyMedium,
+                      'الدفع عند الاستلام'.tr,
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.bodyMedium,
+                      ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'طريقة الدفع المتاحة في تطبيق المتجر',
-                      style: StoreTypography.caption,
+                      'طريقة الدفع المتاحة في تطبيق المتجر'.tr,
+                      style: StoreColors.text(context, StoreTypography.caption),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.payments_outlined, color: StorePalette.purple),
+              const Icon(Icons.payments_outlined, color: StorePalette.purple),
             ],
           ),
         ),
         if (state.availableRoles.length > 1) ...[
           const SizedBox(height: 18),
-          Text('نوع الحساب', style: StoreTypography.title),
+          Text(
+            'نوع الحساب'.tr,
+            style: StoreColors.text(context, StoreTypography.title),
+          ),
           const SizedBox(height: 8),
           _RoleChoice(
-            label: 'عميل تجزئة',
+            label: 'عميل تجزئة'.tr,
             value: 'customer',
             groupValue: state.selectedRole,
             onChanged: controller.selectCheckoutRole,
           ),
           const SizedBox(height: 8),
           _RoleChoice(
-            label: 'حساب بائع',
+            label: 'حساب بائع'.tr,
             value: 'seller',
             groupValue: state.selectedRole,
             onChanged: controller.selectCheckoutRole,
           ),
         ],
         const SizedBox(height: 18),
-        Text('ملخص الدفع', style: StoreTypography.title),
+        Text(
+          'ملخص الدفع'.tr,
+          style: StoreColors.text(context, StoreTypography.title),
+        ),
         const SizedBox(height: 10),
         CartSummary(controller: controller, forCheckout: true),
         const SizedBox(height: 10),
@@ -88,27 +102,40 @@ class CheckoutPaymentStep extends StatelessWidget {
         ],
         const SizedBox(height: 18),
         StoreButton(
-          label: 'تأكيد وإنشاء الطلب',
+          label: 'تأكيد وإنشاء الطلب'.tr,
           icon: Icons.lock_outline_rounded,
           isLoading: submitting,
           onPressed:
-              submitting || state.selectedRole == null
+              submitting ||
+                      state.selectedRole == null ||
+                      !controller.hasAuthoritativeDeliveryQuote ||
+                      controller.isDeliveryLoading
                   ? null
                   : controller.submitCheckout,
         ),
         const SizedBox(height: 8),
         Text(
-          'لن تُمسح السلة ولن يظهر النجاح إلا بعد إرجاع الخادم رقم طلب معتمد.',
+          'storeCheckoutReassurance'.tr,
           textAlign: TextAlign.center,
-          style: StoreTypography.caption,
+          style: StoreColors.text(context, StoreTypography.caption),
         ),
         const SizedBox(height: 4),
         Text(
           controller.hasAuthoritativeDeliveryQuote
-              ? 'المبلغ المتوقع: ${_price(controller.checkoutTotalAfterCoupon + controller.selectedCityPrice)} ₪'
-              : 'الإجمالي قبل الشحن: ${_price(controller.checkoutTotalAfterCoupon)} ₪',
+              ? 'storeExpectedAmount'.trParams({
+                'amount': _price(
+                  controller.checkoutTotalAfterCoupon +
+                      controller.selectedCityPrice,
+                ),
+              })
+              : 'storeBeforeShipping'.trParams({
+                'amount': _price(controller.checkoutTotalAfterCoupon),
+              }),
           textAlign: TextAlign.center,
-          style: StoreTypography.label.copyWith(color: StorePalette.navy),
+          style: StoreColors.text(
+            context,
+            StoreTypography.label,
+          ).copyWith(color: StoreColors.resolve(context, StorePalette.navy)),
         ),
       ],
     );
@@ -143,10 +170,13 @@ class _RoleChoice extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
-          color: StorePalette.surface,
+          color: StoreColors.resolve(context, StorePalette.surface),
           borderRadius: BorderRadius.circular(StoreRadii.md),
           border: Border.all(
-            color: selected ? StorePalette.purple : StorePalette.border,
+            color:
+                selected
+                    ? StorePalette.purple
+                    : StoreColors.resolve(context, StorePalette.border),
           ),
         ),
         child: Row(
@@ -155,11 +185,17 @@ class _RoleChoice extends StatelessWidget {
               selected
                   ? Icons.radio_button_checked_rounded
                   : Icons.radio_button_off_rounded,
-              color: selected ? StorePalette.purple : StorePalette.textDisabled,
+              color:
+                  selected
+                      ? StorePalette.purple
+                      : StoreColors.resolve(context, StorePalette.textDisabled),
               size: 20,
             ),
             const SizedBox(width: 10),
-            Text(label, style: StoreTypography.bodyMedium),
+            Text(
+              label,
+              style: StoreColors.text(context, StoreTypography.bodyMedium),
+            ),
           ],
         ),
       ),
@@ -176,9 +212,11 @@ class _DeliveryCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
-      border: Border.all(color: StorePalette.border),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +229,10 @@ class _DeliveryCard extends StatelessWidget {
               size: 20,
             ),
             const SizedBox(width: 8),
-            Text('عنوان التوصيل', style: StoreTypography.bodyMedium),
+            Text(
+              'عنوان التوصيل'.tr,
+              style: StoreColors.text(context, StoreTypography.bodyMedium),
+            ),
           ],
         ),
         const SizedBox(height: 7),
@@ -200,11 +241,14 @@ class _DeliveryCard extends StatelessWidget {
             controller.selectedCity,
             controller.selectedVillage,
             controller.addressController.text.trim(),
-          ].whereType<String>().where((v) => v.trim().isNotEmpty).join('، '),
-          style: StoreTypography.body,
+          ].whereType<String>().where((v) => v.trim().isNotEmpty).join('، '.tr),
+          style: StoreColors.text(context, StoreTypography.body),
         ),
         const SizedBox(height: 5),
-        Text('الدفع: نقدًا عند الاستلام', style: StoreTypography.caption),
+        Text(
+          'الدفع: نقدًا عند الاستلام'.tr,
+          style: StoreColors.text(context, StoreTypography.caption),
+        ),
       ],
     ),
   );
@@ -224,8 +268,14 @@ class _CheckoutMessage extends StatelessWidget {
       decoration: BoxDecoration(
         color:
             uncertain || offline
-                ? StorePalette.derivedWarningSurface
-                : StorePalette.derivedErrorSurface,
+                ? StoreColors.resolve(
+                  context,
+                  StorePalette.derivedWarningSurface,
+                )
+                : StoreColors.resolve(
+                  context,
+                  StorePalette.derivedErrorSurface,
+                ),
         borderRadius: BorderRadius.circular(StoreRadii.md),
       ),
       child: Row(
@@ -243,9 +293,13 @@ class _CheckoutMessage extends StatelessWidget {
           const SizedBox(width: 9),
           Expanded(
             child: Text(
-              state.message ?? 'تعذر إتمام الطلب. راجع البيانات وحاول مجددًا.',
-              style: StoreTypography.caption.copyWith(
-                color: StorePalette.textPrimary,
+              state.message ??
+                  'تعذر إتمام الطلب. راجع البيانات وحاول مجددًا.'.tr,
+              style: StoreColors.text(
+                context,
+                StoreTypography.caption,
+              ).copyWith(
+                color: StoreColors.resolve(context, StorePalette.textPrimary),
               ),
             ),
           ),

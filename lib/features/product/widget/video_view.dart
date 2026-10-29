@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
@@ -246,7 +247,10 @@ class _VideoControls extends StatelessWidget {
           _formatDuration(value.position),
           key: const Key('video-current-time'),
           textDirection: TextDirection.ltr,
-          style: StoreTypography.caption.copyWith(color: Colors.white),
+          style: StoreColors.text(
+            context,
+            StoreTypography.caption,
+          ).copyWith(color: Colors.white),
         ),
         const SizedBox(width: StoreSpacing.xs),
         Expanded(
@@ -266,7 +270,10 @@ class _VideoControls extends StatelessWidget {
           _formatDuration(value.duration),
           key: const Key('video-duration'),
           textDirection: TextDirection.ltr,
-          style: StoreTypography.caption.copyWith(color: Colors.white),
+          style: StoreColors.text(
+            context,
+            StoreTypography.caption,
+          ).copyWith(color: Colors.white),
         ),
         IconButton(
           tooltip: muted ? 'storeUnmute'.tr : 'storeMute'.tr,

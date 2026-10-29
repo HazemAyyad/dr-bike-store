@@ -6,27 +6,32 @@ import 'package:flutter/material.dart';
 
 import 'app_constants.dart';
 import 'dimensions.dart';
+import '../theme/store_typography.dart';
 
 final robotoRegular = TextStyle(
   fontFamily: AppConstants.fontFamily,
+  fontFamilyFallback: StoreTypography.fontFamilyFallback,
   fontWeight: FontWeight.w400,
   fontSize: Dimensions.fontSizeDefault,
 );
 
 final robotoMedium = TextStyle(
   fontFamily: AppConstants.fontFamily,
+  fontFamilyFallback: StoreTypography.fontFamilyFallback,
   fontWeight: FontWeight.w500,
   fontSize: Dimensions.fontSizeDefault,
 );
 
 final robotoBold = TextStyle(
   fontFamily: AppConstants.fontFamily,
+  fontFamilyFallback: StoreTypography.fontFamilyFallback,
   fontWeight: FontWeight.w700,
   fontSize: Dimensions.fontSizeDefault,
 );
 
 final robotoBlack = TextStyle(
   fontFamily: AppConstants.fontFamily,
+  fontFamilyFallback: StoreTypography.fontFamilyFallback,
   fontWeight: FontWeight.w900,
   fontSize: Dimensions.fontSizeDefault,
 );

@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -16,23 +17,39 @@ class ShopCarScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Directionality(
-    textDirection: TextDirection.rtl,
+    textDirection: Directionality.of(context),
     child: GetBuilder<ShopController>(
       builder:
           (controller) => Scaffold(
-            backgroundColor: StorePalette.background,
+            backgroundColor: StoreColors.resolve(
+              context,
+              StorePalette.background,
+            ),
             appBar: AppBar(
-              backgroundColor: StorePalette.surface,
-              foregroundColor: StorePalette.textPrimary,
+              backgroundColor: StoreColors.resolve(
+                context,
+                StorePalette.surface,
+              ),
+              foregroundColor: StoreColors.resolve(
+                context,
+                StorePalette.textPrimary,
+              ),
               elevation: 0,
               centerTitle: true,
               leading: IconButton(
                 tooltip: 'الرجوع',
                 onPressed: Get.back,
-                icon: Icon(storeBackIcon(context), size: 19),
+                icon: Icon(
+                  storeBackIcon(context),
+                  textDirection: TextDirection.ltr,
+                  size: 19,
+                ),
               ),
               title: Text('سلة المشتريات (${controller.cartQuantity})'),
-              titleTextStyle: StoreTypography.title.copyWith(fontSize: 17),
+              titleTextStyle: StoreColors.text(
+                context,
+                StoreTypography.title,
+              ).copyWith(fontSize: 17),
               actions: [
                 const StoreSearchAction(),
                 if (controller.cartLines.isNotEmpty)
@@ -103,9 +120,12 @@ class ShopCarScreen extends StatelessWidget {
                           12,
                           12,
                         ),
-                        decoration: const BoxDecoration(
-                          color: StorePalette.surface,
-                          boxShadow: [StoreElevation.lowShadow],
+                        decoration: BoxDecoration(
+                          color: StoreColors.resolve(
+                            context,
+                            StorePalette.surface,
+                          ),
+                          boxShadow: const [StoreElevation.lowShadow],
                         ),
                         child: StoreButton(
                           label: 'إتمام الطلب',
@@ -156,14 +176,19 @@ class _CouponSection extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
-      border: Border.all(color: StorePalette.border),
+      color: StoreColors.resolve(context, StorePalette.surface),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('كوبون خصم', style: StoreTypography.label),
+        Text(
+          'كوبون خصم',
+          style: StoreColors.text(context, StoreTypography.label),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -175,12 +200,18 @@ class _CouponSection extends StatelessWidget {
                   onChanged: controller.retainCouponIntent,
                   textInputAction: TextInputAction.done,
                   onSubmitted: controller.retainCouponIntent,
-                  style: StoreTypography.body,
+                  style: StoreColors.text(context, StoreTypography.body),
                   decoration: InputDecoration(
                     hintText: 'أدخل رمز الخصم',
-                    hintStyle: StoreTypography.caption,
+                    hintStyle: StoreColors.text(
+                      context,
+                      StoreTypography.caption,
+                    ),
                     filled: true,
-                    fillColor: StorePalette.background,
+                    fillColor: StoreColors.resolve(
+                      context,
+                      StorePalette.background,
+                    ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
@@ -199,14 +230,17 @@ class _CouponSection extends StatelessWidget {
               child: FilledButton(
                 onPressed: controller.isLoading ? null : controller.checkCode,
                 style: FilledButton.styleFrom(
-                  backgroundColor: StorePalette.lightPurple,
+                  backgroundColor: StoreColors.resolve(
+                    context,
+                    StorePalette.lightPurple,
+                  ),
                   foregroundColor: StorePalette.purple,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(StoreRadii.sm),
                   ),
-                  textStyle: StoreTypography.label,
+                  textStyle: StoreColors.text(context, StoreTypography.label),
                 ),
                 child: Text(controller.activeCode == true ? 'مفعّل' : 'تطبيق'),
               ),
@@ -218,9 +252,10 @@ class _CouponSection extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'تم تطبيق خصم ${controller.couponModel!.discountAmount.toStringAsFixed(2)} ₪، وسيعيد الخادم التحقق عند إنشاء الطلب.',
-            style: StoreTypography.caption.copyWith(
-              color: StorePalette.success,
-            ),
+            style: StoreColors.text(
+              context,
+              StoreTypography.caption,
+            ).copyWith(color: StorePalette.success),
           ),
         ],
       ],

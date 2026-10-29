@@ -5,6 +5,8 @@ import 'package:doctor_bike/controller/favorites/favorites_controller.dart';
 import 'package:doctor_bike/controller/shop/shop_controller.dart';
 import 'package:doctor_bike/core/api_client.dart';
 import 'package:doctor_bike/core/classes/store_view_state.dart';
+import 'package:doctor_bike/core/functions/store_cart_storage.dart';
+import 'package:doctor_bike/core/functions/store_session_boundary.dart';
 import 'package:doctor_bike/core/locale/locale.dart';
 import 'package:doctor_bike/core/model/cart_line_model.dart';
 import 'package:doctor_bike/core/model/get_all_item_model.dart';
@@ -208,6 +210,52 @@ void main() {
       hasLength(1),
     );
   });
+
+  test(
+    'cart migration preserves listing and quantity while ignoring malformed rows',
+    () async {
+      final storage = GetStorage('catalog-cart-reference-test');
+      final legacy = _item()..count = 3;
+      await storage.write('cart', [
+        legacy.toJson(),
+        {'id': 12},
+        'broken',
+      ]);
+      final snapshot = StoreCartStorage(storage).load();
+      expect(snapshot.lines, hasLength(1));
+      expect(snapshot.lines.single.identity.listingId, 9001);
+      expect(snapshot.lines.single.quantity, 3);
+      expect(snapshot.lines.single.status, CartLineStatus.needsValidation);
+      expect(StoreCartStorage(storage).load().lines.single.quantity, 3);
+    },
+  );
+
+  test(
+    'account changes clear private checkout data and retain guest cart intent',
+    () {
+      final controller = Get.put(
+        ShopController(
+          shopRepository: ShopRepository(apiClient: apiClient),
+          storage: GetStorage('catalog-cart-reference-test'),
+        ),
+      );
+      final item = _item()..count = 2;
+      controller.cartLines.assign(CartLine.fromItem(item));
+      controller.items.assign(item);
+      controller.couponIntent = 'SAVE';
+      controller.saveCart();
+      controller.nameController.text = 'Private customer';
+      controller.addressController.text = 'Private address';
+      controller.activeCode = true;
+      StoreSessionBoundary.reset();
+      expect(controller.nameController.text, isEmpty);
+      expect(controller.addressController.text, isEmpty);
+      expect(controller.activeCode, isNull);
+      expect(controller.cartLines.single.quantity, 2);
+      expect(controller.couponIntent, 'SAVE');
+      expect(StoreCartStorage(controller.box).load().lines.single.quantity, 2);
+    },
+  );
 
   testWidgets('empty cart keeps search and pull-to-refresh available', (
     tester,

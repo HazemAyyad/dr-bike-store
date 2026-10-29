@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -104,14 +105,16 @@ class StoreProductCard extends StatelessWidget {
       button: true,
       label: semanticsLabel,
       child: Material(
-        color: StorePalette.surface,
+        color: StoreColors.resolve(context, StorePalette.surface),
         borderRadius: BorderRadius.circular(StoreRadii.lg),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Container(
             decoration: BoxDecoration(
-              border: Border.all(color: StorePalette.border),
+              border: Border.all(
+                color: StoreColors.resolve(context, StorePalette.border),
+              ),
               borderRadius: BorderRadius.circular(StoreRadii.lg),
             ),
             child: Column(
@@ -141,13 +144,22 @@ class StoreProductCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style:
                             denseGrid
-                                ? StoreTypography.caption.copyWith(
+                                ? StoreColors.text(
+                                  context,
+                                  StoreTypography.caption,
+                                ).copyWith(
                                   fontSize: 11,
                                   fontWeight: StoreTypography.semiBold,
                                 )
                                 : compact
-                                ? StoreTypography.label
-                                : StoreTypography.bodyMedium,
+                                ? StoreColors.text(
+                                  context,
+                                  StoreTypography.label,
+                                )
+                                : StoreColors.text(
+                                  context,
+                                  StoreTypography.bodyMedium,
+                                ),
                       ),
                       SizedBox(
                         height: compact ? StoreSpacing.xxs : StoreSpacing.xs,
@@ -169,19 +181,36 @@ class StoreProductCard extends StatelessWidget {
                           Text(
                             '${homePresentation ? _formatStorePrice(price) : price} $currency',
                             style: (denseGrid
-                                    ? StoreTypography.caption.copyWith(
+                                    ? StoreColors.text(
+                                      context,
+                                      StoreTypography.caption,
+                                    ).copyWith(
                                       fontSize: 11,
                                       fontWeight: StoreTypography.bold,
                                     )
                                     : compact
-                                    ? StoreTypography.label
-                                    : StoreTypography.title)
-                                .copyWith(color: StorePalette.navy),
+                                    ? StoreColors.text(
+                                      context,
+                                      StoreTypography.label,
+                                    )
+                                    : StoreColors.text(
+                                      context,
+                                      StoreTypography.title,
+                                    ))
+                                .copyWith(
+                                  color: StoreColors.resolve(
+                                    context,
+                                    StorePalette.navy,
+                                  ),
+                                ),
                           ),
                           if (originalPrice != null)
                             Text(
                               '${homePresentation ? _formatStorePrice(originalPrice!) : originalPrice} $currency',
-                              style: StoreTypography.caption.copyWith(
+                              style: StoreColors.text(
+                                context,
+                                StoreTypography.caption,
+                              ).copyWith(
                                 fontSize: denseGrid ? 9 : null,
                                 decoration: TextDecoration.lineThrough,
                               ),
@@ -200,7 +229,10 @@ class StoreProductCard extends StatelessWidget {
                                   isInCart
                                       ? StorePalette.success
                                       : StorePalette.purple,
-                              disabledBackgroundColor: StorePalette.border,
+                              disabledBackgroundColor: StoreColors.resolve(
+                                context,
+                                StorePalette.border,
+                              ),
                               padding: EdgeInsets.symmetric(
                                 horizontal: denseGrid ? 2 : 6,
                               ),
@@ -209,7 +241,10 @@ class StoreProductCard extends StatelessWidget {
                                   StoreRadii.sm,
                                 ),
                               ),
-                              textStyle: StoreTypography.caption.copyWith(
+                              textStyle: StoreColors.text(
+                                context,
+                                StoreTypography.caption,
+                              ).copyWith(
                                 color: Colors.white,
                                 fontWeight: StoreTypography.semiBold,
                               ),
@@ -320,14 +355,16 @@ class StoreProductListCard extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     height: 132,
     child: Material(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(StoreRadii.md),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: StorePalette.border),
+            border: Border.all(
+              color: StoreColors.resolve(context, StorePalette.border),
+            ),
             borderRadius: BorderRadius.circular(StoreRadii.md),
           ),
           child: Row(
@@ -361,7 +398,10 @@ class StoreProductListCard extends StatelessWidget {
                               name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: StoreTypography.bodyMedium,
+                              style: StoreColors.text(
+                                context,
+                                StoreTypography.bodyMedium,
+                              ),
                             ),
                           ),
                           if (onFavorite != null || onAddToCart != null)
@@ -390,14 +430,23 @@ class StoreProductListCard extends StatelessWidget {
                               children: [
                                 Text(
                                   '${_formatStorePrice(price)} ₪',
-                                  style: StoreTypography.title.copyWith(
-                                    color: StorePalette.navy,
+                                  style: StoreColors.text(
+                                    context,
+                                    StoreTypography.title,
+                                  ).copyWith(
+                                    color: StoreColors.resolve(
+                                      context,
+                                      StorePalette.navy,
+                                    ),
                                   ),
                                 ),
                                 if (originalPrice != null)
                                   Text(
                                     '${_formatStorePrice(originalPrice!)} ₪',
-                                    style: StoreTypography.caption.copyWith(
+                                    style: StoreColors.text(
+                                      context,
+                                      StoreTypography.caption,
+                                    ).copyWith(
                                       decoration: TextDecoration.lineThrough,
                                     ),
                                   ),
@@ -471,7 +520,10 @@ class StoreCategoryCard extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(StoreSpacing.xxs),
                     decoration: BoxDecoration(
-                      color: StorePalette.background,
+                      color: StoreColors.resolve(
+                        context,
+                        StorePalette.background,
+                      ),
                       borderRadius: BorderRadius.circular(StoreRadii.md),
                     ),
                     child: media,
@@ -483,8 +535,14 @@ class StoreCategoryCard extends StatelessWidget {
                   maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: StoreTypography.caption.copyWith(
-                    color: StorePalette.textPrimary,
+                  style: StoreColors.text(
+                    context,
+                    StoreTypography.caption,
+                  ).copyWith(
+                    color: StoreColors.resolve(
+                      context,
+                      StorePalette.textPrimary,
+                    ),
                     fontSize: 10,
                     fontWeight: StoreTypography.medium,
                   ),
@@ -499,7 +557,7 @@ class StoreCategoryCard extends StatelessWidget {
       button: true,
       label: semanticsLabel,
       child: Material(
-        color: StorePalette.surface,
+        color: StoreColors.resolve(context, StorePalette.surface),
         borderRadius: BorderRadius.circular(StoreRadii.lg),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -507,7 +565,9 @@ class StoreCategoryCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(StoreSpacing.sm),
             decoration: BoxDecoration(
-              border: Border.all(color: StorePalette.border),
+              border: Border.all(
+                color: StoreColors.resolve(context, StorePalette.border),
+              ),
               borderRadius: BorderRadius.circular(StoreRadii.lg),
             ),
             child: Column(
@@ -519,10 +579,13 @@ class StoreCategoryCard extends StatelessWidget {
                   maxLines: 3,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: StoreTypography.label,
+                  style: StoreColors.text(context, StoreTypography.label),
                 ),
                 if (countLabel != null)
-                  Text(countLabel, style: StoreTypography.caption),
+                  Text(
+                    countLabel,
+                    style: StoreColors.text(context, StoreTypography.caption),
+                  ),
               ],
             ),
           ),
@@ -566,7 +629,10 @@ class _StoreProductActions extends StatelessWidget {
             style: IconButton.styleFrom(
               backgroundColor:
                   isInCart ? StorePalette.success : StorePalette.purple,
-              disabledBackgroundColor: StorePalette.border,
+              disabledBackgroundColor: StoreColors.resolve(
+                context,
+                StorePalette.border,
+              ),
               foregroundColor: Colors.white,
             ),
             icon: Icon(
@@ -588,14 +654,22 @@ class _StoreProductActions extends StatelessWidget {
             padding: EdgeInsets.zero,
             iconSize: iconSize,
             style: IconButton.styleFrom(
-              backgroundColor: StorePalette.surface.withValues(alpha: 0.92),
+              backgroundColor: StoreColors.resolve(
+                context,
+                StorePalette.surface,
+              ).withValues(alpha: 0.92),
             ),
             icon: Icon(
               isFavorite
                   ? Icons.favorite_rounded
                   : Icons.favorite_border_rounded,
               color:
-                  isFavorite ? StorePalette.error : StorePalette.textSecondary,
+                  isFavorite
+                      ? StorePalette.error
+                      : StoreColors.resolve(
+                        context,
+                        StorePalette.textSecondary,
+                      ),
             ),
           ),
         ),

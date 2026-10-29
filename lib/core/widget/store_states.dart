@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -39,7 +40,7 @@ class StoreMessageState extends StatelessWidget {
     final (icon, color, defaultTitle) = switch (kind) {
       StoreMessageKind.empty => (
         Icons.inbox_outlined,
-        StorePalette.textSecondary,
+        StoreColors.resolve(context, StorePalette.textSecondary),
         'storeStateEmptyTitle'.tr,
       ),
       StoreMessageKind.offline => (
@@ -77,14 +78,17 @@ class StoreMessageState extends StatelessWidget {
               Text(
                 title ?? defaultTitle,
                 textAlign: TextAlign.center,
-                style: StoreTypography.title,
+                style: StoreColors.text(context, StoreTypography.title),
               ),
               const SizedBox(height: StoreSpacing.xs),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: StoreTypography.body.copyWith(
-                  color: StorePalette.textSecondary,
+                style: StoreColors.text(context, StoreTypography.body).copyWith(
+                  color: StoreColors.resolve(
+                    context,
+                    StorePalette.textSecondary,
+                  ),
                 ),
               ),
               if (actionLabel != null && onAction != null) ...[
@@ -164,7 +168,10 @@ class StoreStateView<T> extends StatelessWidget {
               end: StoreSpacing.sm,
               top: StoreSpacing.sm,
               child: Material(
-                color: StorePalette.derivedWarningSurface,
+                color: StoreColors.resolve(
+                  context,
+                  StorePalette.derivedWarningSurface,
+                ),
                 borderRadius: BorderRadius.circular(StoreRadii.md),
                 child: ListTile(
                   leading: const Icon(Icons.wifi_off_outlined),
@@ -212,12 +219,14 @@ class StoreSkeletonBox extends StatefulWidget {
     this.width,
     this.height = 16,
     this.borderRadius = StoreRadii.sm,
+    this.animate = true,
     super.key,
   });
 
   final double? width;
   final double height;
   final double borderRadius;
+  final bool animate;
 
   @override
   State<StoreSkeletonBox> createState() => _StoreSkeletonBoxState();
@@ -228,7 +237,28 @@ class _StoreSkeletonBoxState extends State<StoreSkeletonBox>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 900),
-  )..repeat(reverse: true);
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncMotion();
+  }
+
+  @override
+  void didUpdateWidget(covariant StoreSkeletonBox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncMotion();
+  }
+
+  void _syncMotion() {
+    if (widget.animate && !MediaQuery.disableAnimationsOf(context)) {
+      if (!_controller.isAnimating) _controller.repeat(reverse: true);
+    } else {
+      _controller.stop();
+      _controller.value = 0.5;
+    }
+  }
 
   @override
   void dispose() {
@@ -238,7 +268,7 @@ class _StoreSkeletonBoxState extends State<StoreSkeletonBox>
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'جاري التحميل',
+    label: 'storeLoading'.tr,
     child: ExcludeSemantics(
       child: FadeTransition(
         opacity: Tween<double>(begin: 0.45, end: 0.9).animate(_controller),
@@ -246,7 +276,7 @@ class _StoreSkeletonBoxState extends State<StoreSkeletonBox>
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            color: StorePalette.border,
+            color: StoreColors.resolve(context, StorePalette.border),
             borderRadius: BorderRadius.circular(widget.borderRadius),
           ),
         ),

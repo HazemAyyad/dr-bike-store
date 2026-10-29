@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -35,8 +36,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Widget build(BuildContext context) => Directionality(
     textDirection: ui.TextDirection.rtl,
     child: Scaffold(
-      backgroundColor: StorePalette.background,
-      appBar: AppBar(title: Text('التقييمات', style: StoreTypography.title)),
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
+      appBar: AppBar(
+        title: Text(
+          'التقييمات',
+          style: StoreColors.text(context, StoreTypography.title),
+        ),
+      ),
       body: GetBuilder<ReviewController>(
         builder:
             (controller) => ListView(
@@ -47,7 +53,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   onRetry: controller.loadPublic,
                 ),
                 const SizedBox(height: StoreSpacing.lg),
-                Text('تقييمي', style: StoreTypography.title),
+                Text(
+                  'تقييمي',
+                  style: StoreColors.text(context, StoreTypography.title),
+                ),
                 const SizedBox(height: StoreSpacing.sm),
                 if (controller.isGuest)
                   StoreMessageState(
@@ -82,8 +91,10 @@ class _OwnReview extends StatelessWidget {
     padding: const EdgeInsets.all(StoreSpacing.md),
     margin: const EdgeInsets.only(bottom: StoreSpacing.md),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
-      border: Border.all(color: StorePalette.border),
+      color: StoreColors.resolve(context, StorePalette.surface),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
     ),
     child: Text(switch (review.status) {
@@ -91,7 +102,7 @@ class _OwnReview extends StatelessWidget {
       ReviewStatus.published => 'تقييمك منشور',
       ReviewStatus.rejected => 'لم يتم قبول تقييمك',
       ReviewStatus.unknown => 'حالة التقييم غير معروفة',
-    }, style: StoreTypography.bodyMedium),
+    }, style: StoreColors.text(context, StoreTypography.bodyMedium)),
   );
 }
 
@@ -126,7 +137,7 @@ class _Composer extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: StoreSpacing.sm),
           child: Text(
             controller.message!,
-            style: StoreTypography.body.copyWith(
+            style: StoreColors.text(context, StoreTypography.body).copyWith(
               color:
                   controller.mutationState == ReviewMutationState.failure
                       ? StorePalette.error

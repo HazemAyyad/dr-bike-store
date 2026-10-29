@@ -7,9 +7,10 @@ class TrianglePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
+    Paint paint =
+        Paint()
+          ..color = Colors.red
+          ..style = PaintingStyle.fill;
 
     Path path = Path();
     path.moveTo(size.width, size.height / 2); // Right point (vertex)

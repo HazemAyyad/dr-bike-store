@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
@@ -31,7 +32,10 @@ class ProductDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) => GetBuilder<ProductControllerImp>(
     builder:
         (controller) => Scaffold(
-          backgroundColor: StorePalette.background,
+          backgroundColor: StoreColors.resolve(
+            context,
+            StorePalette.background,
+          ),
           appBar: _ProductAppBar(controller: controller),
           body: _body(controller),
         ),
@@ -84,10 +88,10 @@ class _ProductAppBar extends StatelessWidget implements PreferredSizeWidget {
     final item = controller.itemView;
     return AppBar(
       automaticallyImplyLeading: false,
-      backgroundColor: StorePalette.surface,
+      backgroundColor: StoreColors.resolve(context, StorePalette.surface),
       foregroundColor: StorePalette.navy,
       elevation: 0,
-      surfaceTintColor: StorePalette.surface,
+      surfaceTintColor: StoreColors.resolve(context, StorePalette.surface),
       titleSpacing: StoreSpacing.xs,
       title: Row(
         children: [
@@ -334,20 +338,26 @@ class _ProductIdentity extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: StoreTypography.headline.copyWith(fontSize: 19),
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.headline,
+                    ).copyWith(fontSize: 19),
                   ),
                   if (item.model.trim().isNotEmpty) ...[
                     const SizedBox(height: StoreSpacing.xxs),
                     Text(
                       '${_label(context, 'رمز المنتج', 'Product code')}: ${item.model.trim()}',
                       key: const Key('product-code'),
-                      style: StoreTypography.caption,
+                      style: StoreColors.text(context, StoreTypography.caption),
                     ),
                   ],
                   const SizedBox(height: StoreSpacing.xxs),
                   Text(
                     brand.isNotEmpty ? brand : 'storeBrandName'.tr,
-                    style: StoreTypography.caption.copyWith(
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.caption,
+                    ).copyWith(
                       color: StorePalette.purple,
                       fontWeight: StoreTypography.semiBold,
                     ),
@@ -372,16 +382,22 @@ class _ProductIdentity extends StatelessWidget {
               '${selectedPrice.toStringAsFixed(2)} ₪',
               key: const Key('product-retail-price'),
               textDirection: TextDirection.ltr,
-              style: StoreTypography.headline.copyWith(
-                color: StorePalette.navy,
+              style: StoreColors.text(
+                context,
+                StoreTypography.headline,
+              ).copyWith(
+                color: StoreColors.resolve(context, StorePalette.navy),
               ),
             ),
             if (oldPrice != null && oldPrice > selectedPrice)
               Text(
                 '${oldPrice.toStringAsFixed(2)} ₪',
                 textDirection: TextDirection.ltr,
-                style: StoreTypography.body.copyWith(
-                  color: StorePalette.textSecondary,
+                style: StoreColors.text(context, StoreTypography.body).copyWith(
+                  color: StoreColors.resolve(
+                    context,
+                    StorePalette.textSecondary,
+                  ),
                   decoration: TextDecoration.lineThrough,
                 ),
               ),
@@ -413,12 +429,15 @@ class _DiscountBadge extends StatelessWidget {
         vertical: StoreSpacing.xxs,
       ),
       decoration: BoxDecoration(
-        color: StorePalette.derivedErrorSurface,
+        color: StoreColors.resolve(context, StorePalette.derivedErrorSurface),
         borderRadius: BorderRadius.circular(StoreRadii.sm),
       ),
       child: Text(
         _languageCode(context) == 'ar' ? 'خصم $formatted%' : '$formatted% off',
-        style: StoreTypography.caption.copyWith(color: StorePalette.error),
+        style: StoreColors.text(
+          context,
+          StoreTypography.caption,
+        ).copyWith(color: StorePalette.error),
       ),
     );
   }
@@ -474,9 +493,11 @@ class _QuickSpecCard extends StatelessWidget {
     constraints: const BoxConstraints(minHeight: 60),
     padding: const EdgeInsets.all(6),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(StoreRadii.md),
-      border: Border.all(color: StorePalette.border),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
     ),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -487,13 +508,13 @@ class _QuickSpecCard extends StatelessWidget {
           spec.label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: StoreTypography.caption,
+          style: StoreColors.text(context, StoreTypography.caption),
         ),
         Text(
           spec.value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: StoreTypography.label,
+          style: StoreColors.text(context, StoreTypography.label),
         ),
       ],
     ),
@@ -516,14 +537,19 @@ class _OptionsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(StoreSpacing.xs),
       decoration: BoxDecoration(
-        color: StorePalette.surface,
+        color: StoreColors.resolve(context, StorePalette.surface),
         borderRadius: BorderRadius.circular(StoreRadii.lg),
-        border: Border.all(color: StorePalette.border),
+        border: Border.all(
+          color: StoreColors.resolve(context, StorePalette.border),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('storeOptions'.tr, style: StoreTypography.title),
+          Text(
+            'storeOptions'.tr,
+            style: StoreColors.text(context, StoreTypography.title),
+          ),
           const SizedBox(height: StoreSpacing.xs),
           Wrap(
             spacing: StoreSpacing.xs,
@@ -542,7 +568,7 @@ class _OptionsSection extends StatelessWidget {
             const SizedBox(height: StoreSpacing.sm),
             Text(
               _label(context, 'اللون', 'Color'),
-              style: StoreTypography.label,
+              style: StoreColors.text(context, StoreTypography.label),
             ),
             const SizedBox(height: StoreSpacing.xs),
             Wrap(
@@ -592,9 +618,11 @@ class _PurchaseSection extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(StoreSpacing.xs),
           decoration: BoxDecoration(
-            color: StorePalette.surface,
+            color: StoreColors.resolve(context, StorePalette.surface),
             borderRadius: BorderRadius.circular(StoreRadii.lg),
-            border: Border.all(color: StorePalette.border),
+            border: Border.all(
+              color: StoreColors.resolve(context, StorePalette.border),
+            ),
           ),
           child: Column(
             children: [
@@ -624,7 +652,10 @@ class _PurchaseSection extends StatelessWidget {
                                 : 'storeOutOfStock'.tr,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: StoreTypography.label.copyWith(
+                            style: StoreColors.text(
+                              context,
+                              StoreTypography.label,
+                            ).copyWith(
                               color:
                                   purchasable
                                       ? StorePalette.success
@@ -686,9 +717,11 @@ class _QuantitySelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: StorePalette.background,
+      color: StoreColors.resolve(context, StorePalette.background),
       borderRadius: BorderRadius.circular(StoreRadii.md),
-      border: Border.all(color: StorePalette.border),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -709,7 +742,7 @@ class _QuantitySelector extends StatelessWidget {
             '${controller.quantity.value}',
             key: const Key('quantity-value'),
             textAlign: TextAlign.center,
-            style: StoreTypography.label,
+            style: StoreColors.text(context, StoreTypography.label),
           ),
         ),
         IconButton(
@@ -734,11 +767,13 @@ class _DetailsSections extends StatelessWidget {
   final String description;
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: StorePalette.surface,
+  Widget build(BuildContext context) => Material(
+    color: Theme.of(context).colorScheme.surface,
+    shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(StoreRadii.lg),
-      border: Border.all(color: StorePalette.border),
+      side: BorderSide(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
     ),
     clipBehavior: Clip.antiAlias,
     child: Column(
@@ -748,7 +783,7 @@ class _DetailsSections extends StatelessWidget {
           leading: const Icon(Icons.description_outlined),
           title: Text(
             _label(context, 'مواصفات المنتج', 'Product specifications'),
-            style: StoreTypography.label,
+            style: StoreColors.text(context, StoreTypography.label),
           ),
           childrenPadding: const EdgeInsetsDirectional.fromSTEB(
             StoreSpacing.md,
@@ -760,7 +795,10 @@ class _DetailsSections extends StatelessWidget {
             if (description.trim().isNotEmpty)
               Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: Text(description, style: StoreTypography.body),
+                child: Text(
+                  description,
+                  style: StoreColors.text(context, StoreTypography.body),
+                ),
               ),
             if (description.trim().isEmpty)
               _UnavailablePolicy(
@@ -778,7 +816,7 @@ class _DetailsSections extends StatelessWidget {
           leading: const Icon(Icons.local_shipping_outlined),
           title: Text(
             _label(context, 'الشحن والضمان', 'Shipping and warranty'),
-            style: StoreTypography.label,
+            style: StoreColors.text(context, StoreTypography.label),
           ),
           childrenPadding: const EdgeInsetsDirectional.fromSTEB(
             StoreSpacing.md,
@@ -813,7 +851,7 @@ class _DetailsSections extends StatelessWidget {
           leading: const Icon(Icons.verified_user_outlined),
           title: Text(
             _label(context, 'سياسة الإرجاع', 'Return policy'),
-            style: StoreTypography.label,
+            style: StoreColors.text(context, StoreTypography.label),
           ),
           childrenPadding: const EdgeInsetsDirectional.fromSTEB(
             StoreSpacing.md,
@@ -857,8 +895,8 @@ class _UnavailablePolicy extends StatelessWidget {
     alignment: AlignmentDirectional.centerStart,
     child: Text(
       text,
-      style: StoreTypography.caption.copyWith(
-        color: StorePalette.textSecondary,
+      style: StoreColors.text(context, StoreTypography.caption).copyWith(
+        color: StoreColors.resolve(context, StorePalette.textSecondary),
       ),
     ),
   );
@@ -882,12 +920,16 @@ class _ProductState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 56, color: StorePalette.textSecondary),
+          Icon(
+            icon,
+            size: 56,
+            color: StoreColors.resolve(context, StorePalette.textSecondary),
+          ),
           const SizedBox(height: StoreSpacing.md),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: StoreTypography.body,
+            style: StoreColors.text(context, StoreTypography.body),
           ),
           if (onRetry != null) ...[
             const SizedBox(height: StoreSpacing.sm),
@@ -910,7 +952,11 @@ String _localized(String language, String ar, String en, String he) =>
     };
 
 String _label(BuildContext context, String ar, String en) =>
-    _languageCode(context) == 'ar' ? ar : en;
+    switch (_languageCode(context)) {
+      'ar' => ar,
+      'he' => ar.tr,
+      _ => en,
+    };
 
 String _languageCode(BuildContext context) =>
     Get.locale?.languageCode ?? Localizations.localeOf(context).languageCode;

@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -256,7 +257,10 @@ class _ViewerHeader extends StatelessWidget {
             '${index + 1}/$total',
             key: const Key('fullscreen-media-counter'),
             textDirection: TextDirection.ltr,
-            style: StoreTypography.label.copyWith(color: Colors.white),
+            style: StoreColors.text(
+              context,
+              StoreTypography.label,
+            ).copyWith(color: Colors.white),
           ),
           Positioned(
             left: StoreSpacing.sm,
@@ -276,9 +280,10 @@ class _ViewerHeader extends StatelessWidget {
                 icon: const Icon(Icons.close_rounded, size: 23),
                 label: Text(
                   closeLabel,
-                  style: StoreTypography.label.copyWith(
-                    color: const Color(0xFF111318),
-                  ),
+                  style: StoreColors.text(
+                    context,
+                    StoreTypography.label,
+                  ).copyWith(color: const Color(0xFF111318)),
                 ),
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../../core/functions/theme_services.dart';
 import '../../core/theme/store_tokens.dart';
@@ -12,15 +13,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool dark = ThemeServices().loadThemeFromBox();
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('الإعدادات')),
+    appBar: AppBar(title: Text('الإعدادات'.tr)),
     body: SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(StoreSpacing.md),
         children: [
-          const Text('إعدادات محلية'),
+          Text('إعدادات محلية'.tr),
           SwitchListTile(
-            title: const Text('الوضع الداكن'),
-            subtitle: const Text('يُحفظ على هذا الجهاز'),
+            title: Text('الوضع الداكن'.tr),
+            subtitle: Text('يُحفظ على هذا الجهاز'.tr),
             value: dark,
             onChanged: (_) {
               ThemeServices().switchTheme();

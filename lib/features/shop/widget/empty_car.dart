@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -9,7 +10,7 @@ class EmptyCar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: StorePalette.background,
+    color: StoreColors.resolve(context, StorePalette.background),
     child: StoreMessageState(
       kind: StoreMessageKind.empty,
       icon: Icons.shopping_cart_outlined,

@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -28,10 +29,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     final controller = Get.find<FavoritesController>();
     return Scaffold(
-      backgroundColor: StorePalette.background,
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
       appBar: AppBar(
-        backgroundColor: StorePalette.surface,
-        foregroundColor: StorePalette.textPrimary,
+        backgroundColor: StoreColors.resolve(context, StorePalette.surface),
+        foregroundColor: StoreColors.resolve(context, StorePalette.textPrimary),
         elevation: 0,
         centerTitle: true,
         title: const Text('المنتجات المفضلة'),

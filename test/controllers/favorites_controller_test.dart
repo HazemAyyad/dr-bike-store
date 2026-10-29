@@ -1,6 +1,8 @@
 import 'package:doctor_bike/controller/favorites/favorites_controller.dart';
 import 'package:doctor_bike/repository/favorites/favorites_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
+import 'package:doctor_bike/core/functions/store_session_boundary.dart';
 
 void main() {
   test('guest favorite action is gated without a remote mutation', () async {
@@ -75,6 +77,30 @@ void main() {
     expect(controller.status.value, FavoritesStatus.empty);
   });
 
+  test(
+    'session change clears favorites and ignores a pending old toggle',
+    () async {
+      final repository = _FakeFavoritesGateway(initialIds: {7});
+      final controller = FavoritesController(
+        repository: repository,
+        isAuthenticated: () => true,
+      );
+      controller.onInit();
+      addTearDown(controller.onClose);
+      await controller.load();
+      final pending = Completer<FavoriteToggleResult>();
+      repository.pendingToggle = pending.future;
+      final action = controller.requestToggle(listingId: 9);
+      StoreSessionBoundary.reset();
+      pending.complete(
+        const FavoriteToggleResult(listingId: 9, isFavorite: true),
+      );
+      expect(await action, FavoriteActionOutcome.loginRequired);
+      expect(controller.listingIds, isEmpty);
+      expect(controller.items, isEmpty);
+    },
+  );
+
   test('remote failure is explicit and does not fabricate success', () async {
     final controller = FavoritesController(
       repository: _FakeFavoritesGateway(throwOnToggle: true),
@@ -100,6 +126,7 @@ class _FakeFavoritesGateway implements FavoritesGateway {
   final bool throwOnToggle;
   final Set<int> initialIds;
   final List<int> toggledIds = [];
+  Future<FavoriteToggleResult>? pendingToggle;
 
   @override
   Future<FavoriteSnapshot> load() async =>
@@ -107,6 +134,7 @@ class _FakeFavoritesGateway implements FavoritesGateway {
 
   @override
   Future<FavoriteToggleResult> toggle(int listingId) async {
+    if (pendingToggle != null) return pendingToggle!;
     if (throwOnToggle) throw StateError('network failure');
     toggledIds.add(listingId);
     return FavoriteToggleResult(listingId: listingId, isFavorite: isFavorite);

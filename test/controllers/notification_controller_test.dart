@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:doctor_bike/controller/notification/notification_controller.dart';
 import 'package:doctor_bike/core/classes/store_view_state.dart';
+import 'package:doctor_bike/core/functions/store_session_boundary.dart';
 import 'package:doctor_bike/core/functions/notification_api.dart';
 import 'package:doctor_bike/core/model/notification_model.dart';
 import 'package:doctor_bike/repository/home/home_repository.dart';
@@ -204,6 +205,31 @@ void main() {
       );
       pending.complete(const Response(statusCode: 200, body: {'rows': []}));
       await future;
+    });
+    test('an expired session cannot refill the cleared inbox', () async {
+      controller.onInit();
+      addTearDown(controller.onClose);
+      repository.rows = [row()];
+      await controller.load();
+      final pending = Completer<Response>();
+      repository.notificationResponse = pending.future;
+      final request = controller.load();
+      await Future<void>.delayed(Duration.zero);
+      StoreSessionBoundary.reset();
+      pending.complete(
+        Response(
+          statusCode: 200,
+          body: {
+            'rows': [row()],
+          },
+        ),
+      );
+      await request;
+      expect(controller.notifications, isEmpty);
+      expect(
+        controller.inboxState,
+        isA<StoreInitial<List<NotificationItem>>>(),
+      );
     });
     test('empty state', () async {
       await controller.load();

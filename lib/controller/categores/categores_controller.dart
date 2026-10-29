@@ -9,6 +9,7 @@ import '../../core/classes/store_view_state.dart';
 import '../../core/functions/app_usage_service.dart';
 import '../../core/functions/checkInternet.dart';
 import '../../core/model/get_all_item_model.dart';
+import '../../core/model/store_catalog_page.dart';
 import '../../core/model/supcategores_model.dart';
 import '../../core/widget/custom_snackbar.dart';
 import '../../features/category/category_screen.dart';
@@ -94,9 +95,53 @@ class CategoresControllerImp extends CategoresController {
   RxList<Item> _filteredProducts = <Item>[].obs;
   RxList<Item> get filteredProducts => _filteredProducts;
   int selectedOnlineStoreCategoryId = 0;
+  int _catalogRequest = 0;
+  int _catalogPage = 1;
+  final hasMoreCatalog = false.obs;
+  final loadingMoreCatalog = false.obs;
+  final catalogPageError = RxnString();
+
+  Future<void> loadMoreCatalog() async {
+    if (!hasMoreCatalog.value || loadingMoreCatalog.value) return;
+    final request = _catalogRequest;
+    loadingMoreCatalog.value = true;
+    catalogPageError.value = null;
+    try {
+      final response = await categoriesRepository.catalogPage(
+        categoryId: selectedOnlineStoreCategoryId,
+        page: _catalogPage + 1,
+        filters: filters.value.query,
+      );
+      if (request != _catalogRequest) return;
+      if (response.statusCode != 200 ||
+          response.body is! Map<String, dynamic>) {
+        throw const FormatException();
+      }
+      final page = StoreCatalogPage.fromJson(response.body);
+      if (page.page != _catalogPage + 1) throw const FormatException();
+      final combined =
+          {
+            for (final item in allProducts) item.productId: item,
+            for (final item in page.items) item.productId: item,
+          }.values.toList();
+      _catalogPage = page.page;
+      hasMoreCatalog.value = page.hasMore;
+      allProducts = combined;
+      itemList = ItemsResponse(rows: combined);
+      _filteredProducts.assignAll(combined);
+      catalogState.value = StoreContent(List<Item>.unmodifiable(combined));
+    } catch (_) {
+      if (request == _catalogRequest) {
+        catalogPageError.value = 'storeLoadMoreFailed';
+      }
+    } finally {
+      if (request == _catalogRequest) loadingMoreCatalog.value = false;
+    }
+  }
+
   int get mainCategoresId => selectedOnlineStoreCategoryId;
   set mainCategoresId(int value) => selectedOnlineStoreCategoryId = value;
-  late List<Widget> widgetOption = [CategoryScreen(), const FilterPage()];
+  late List<Widget> widgetOption = [const CategoryScreen(), const FilterPage()];
   var isGrid = false.obs;
   var isTwo = false.obs;
   var showFilter = false.obs;
@@ -147,10 +192,16 @@ class CategoresControllerImp extends CategoresController {
     bool navigate = true,
   }) async {
     selectedOnlineStoreCategoryId = categoryId;
+    final request = ++_catalogRequest;
+    _catalogPage = 1;
+    hasMoreCatalog.value = false;
+    loadingMoreCatalog.value = false;
+    catalogPageError.value = null;
     final previous = itemList?.rows;
     catalogState.value = StoreLoading(previousData: previous);
     isLoading.value = true;
     if (!await CheckInternet.checkInternet()) {
+      if (request != _catalogRequest) return;
       catalogState.value = StoreOffline(
         message: 'Check the internet connection'.tr,
         previousData: previous,
@@ -164,6 +215,7 @@ class CategoresControllerImp extends CategoresController {
             categoryId: categoryId,
             filters: filters.value.query,
           );
+      if (request != _catalogRequest) return;
       if (response.statusCode != 200 ||
           response.body is! Map<String, dynamic>) {
         throw const FormatException('catalog response is incompatible');
@@ -171,6 +223,9 @@ class CategoresControllerImp extends CategoresController {
       final parsed = ItemsResponse.fromJson(
         response.body as Map<String, dynamic>,
       );
+      final page = StoreCatalogPage.fromJson(response.body);
+      _catalogPage = page.page;
+      hasMoreCatalog.value = page.hasMore;
       itemList = parsed;
       allProducts = parsed.rows;
       _filteredProducts.assignAll(parsed.rows);
@@ -179,19 +234,21 @@ class CategoresControllerImp extends CategoresController {
               ? StoreEmpty(message: 'No Item Found'.tr)
               : StoreContent(List<Item>.unmodifiable(parsed.rows));
       if (navigate) Get.toNamed(RouteHelper.categoryScreen);
-    } on FormatException catch (error) {
+    } on FormatException {
+      if (request != _catalogRequest) return;
       catalogState.value = StoreError(
-        message: error.message,
+        message: 'An error occurred. Please try again.'.tr,
         previousData: previous,
         code: 'malformed_catalog',
       );
     } catch (_) {
+      if (request != _catalogRequest) return;
       catalogState.value = StoreError(
         message: 'An error occurred. Please try again.'.tr,
         previousData: previous,
       );
     } finally {
-      isLoading.value = false;
+      if (request == _catalogRequest) isLoading.value = false;
     }
   }
 

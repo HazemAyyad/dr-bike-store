@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -14,7 +15,7 @@ class CheckOutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Directionality(
-    textDirection: TextDirection.rtl,
+    textDirection: Directionality.of(context),
     child: GetBuilder<ShopController>(
       builder: (controller) {
         final stage = controller.checkoutState.stage;
@@ -24,11 +25,20 @@ class CheckOutScreen extends StatelessWidget {
           _ => 2,
         };
         return Scaffold(
-          backgroundColor: StorePalette.background,
+          backgroundColor: StoreColors.resolve(
+            context,
+            StorePalette.background,
+          ),
           appBar: AppBar(
-            backgroundColor: StorePalette.surface,
-            foregroundColor: StorePalette.textPrimary,
-            title: Text('إتمام الطلب', style: StoreTypography.title),
+            backgroundColor: StoreColors.resolve(context, StorePalette.surface),
+            foregroundColor: StoreColors.resolve(
+              context,
+              StorePalette.textPrimary,
+            ),
+            title: Text(
+              'إتمام الطلب'.tr,
+              style: StoreColors.text(context, StoreTypography.title),
+            ),
             centerTitle: true,
             elevation: 0,
           ),
@@ -61,7 +71,7 @@ class _CheckoutProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     padding: const EdgeInsetsDirectional.fromSTEB(22, 10, 22, 14),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,7 +82,10 @@ class _CheckoutProgress extends StatelessWidget {
             child: Container(
               height: 2,
               margin: const EdgeInsets.only(top: 15),
-              color: completed ? StorePalette.purple : StorePalette.border,
+              color:
+                  completed
+                      ? StorePalette.purple
+                      : StoreColors.resolve(context, StorePalette.border),
             ),
           );
         }
@@ -92,13 +105,16 @@ class _CheckoutProgress extends StatelessWidget {
                   color:
                       active || completed
                           ? StorePalette.purple
-                          : StorePalette.background,
+                          : StoreColors.resolve(
+                            context,
+                            StorePalette.background,
+                          ),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color:
                         active || completed
                             ? StorePalette.purple
-                            : StorePalette.border,
+                            : StoreColors.resolve(context, StorePalette.border),
                   ),
                 ),
                 child:
@@ -110,20 +126,34 @@ class _CheckoutProgress extends StatelessWidget {
                         )
                         : Text(
                           '${step + 1}',
-                          style: StoreTypography.label.copyWith(
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.label,
+                          ).copyWith(
                             color:
                                 active
                                     ? Colors.white
-                                    : StorePalette.textSecondary,
+                                    : StoreColors.resolve(
+                                      context,
+                                      StorePalette.textSecondary,
+                                    ),
                           ),
                         ),
               ),
               const SizedBox(height: 4),
               Text(
-                _labels[step],
-                style: StoreTypography.caption.copyWith(
+                _labels[step].tr,
+                style: StoreColors.text(
+                  context,
+                  StoreTypography.caption,
+                ).copyWith(
                   color:
-                      active ? StorePalette.purple : StorePalette.textSecondary,
+                      active
+                          ? StorePalette.purple
+                          : StoreColors.resolve(
+                            context,
+                            StorePalette.textSecondary,
+                          ),
                   fontWeight:
                       active
                           ? StoreTypography.semiBold

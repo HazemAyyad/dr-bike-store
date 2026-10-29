@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -138,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
     StoreDestination.orders => const OrderScreen(embedded: true),
     StoreDestination.support => const StoreSupportHomeScreen(embedded: true),
-    StoreDestination.profile => ProfileScreen(),
+    StoreDestination.profile => const ProfileScreen(),
   };
 
   Future<void> _selectDestination(StoreDestination destination) async {
@@ -187,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return WillPopScope(
       onWillPop: () async => !(await controller.handleShellBack()),
       child: Scaffold(
-        backgroundColor: StorePalette.background,
+        backgroundColor: StoreColors.resolve(context, StorePalette.background),
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -262,7 +263,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (controller.isSearchExpanded.value)
                       Positioned.fill(
                         child: ColoredBox(
-                          color: StorePalette.background,
+                          color: StoreColors.resolve(
+                            context,
+                            StorePalette.background,
+                          ),
                           child: SearchScreen(
                             controller: controller,
                             showSearchField: false,
@@ -340,8 +344,14 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                   child: Center(
                     child: Text(
                       'لا توجد أقسام مطابقة',
-                      style: StoreTypography.body.copyWith(
-                        color: StorePalette.textSecondary,
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.body,
+                      ).copyWith(
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.textSecondary,
+                        ),
                       ),
                     ),
                   ),
@@ -380,7 +390,10 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                       ),
                       child: Text(
                         'أقسام فرعية',
-                        style: StoreTypography.title.copyWith(fontSize: 16),
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.title,
+                        ).copyWith(fontSize: 16),
                       ),
                     ),
                   ),
@@ -394,9 +407,12 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                     sliver: SliverList.separated(
                       itemCount: descendants.length,
                       separatorBuilder:
-                          (_, _) => const Divider(
+                          (_, _) => Divider(
                             height: 1,
-                            color: StorePalette.border,
+                            color: StoreColors.resolve(
+                              context,
+                              StorePalette.border,
+                            ),
                           ),
                       itemBuilder:
                           (context, index) =>
@@ -421,7 +437,10 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Text('الأقسام', style: StoreTypography.title),
+              Text(
+                'الأقسام',
+                style: StoreColors.text(context, StoreTypography.title),
+              ),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: IconButton(
@@ -477,10 +496,13 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                         onChanged:
                             (value) => setState(() => _query = value.trim()),
                         textInputAction: TextInputAction.search,
-                        style: StoreTypography.body,
+                        style: StoreColors.text(context, StoreTypography.body),
                         decoration: InputDecoration(
                           hintText: 'ابحث عن قسم...',
-                          hintStyle: StoreTypography.caption,
+                          hintStyle: StoreColors.text(
+                            context,
+                            StoreTypography.caption,
+                          ),
                           prefixIcon: const Icon(Icons.search, size: 20),
                           suffixIcon:
                               _query.isEmpty
@@ -494,7 +516,10 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                                     icon: const Icon(Icons.close, size: 18),
                                   ),
                           filled: true,
-                          fillColor: StorePalette.surface,
+                          fillColor: StoreColors.resolve(
+                            context,
+                            StorePalette.surface,
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                           ),
@@ -544,6 +569,7 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
             ),
             Icon(
               storeForwardIcon(context),
+              textDirection: TextDirection.ltr,
               size: 16,
               color: StorePalette.textSecondary,
             ),

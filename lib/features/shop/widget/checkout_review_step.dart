@@ -1,3 +1,5 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 import '../../../controller/shop/shop_controller.dart';
@@ -26,53 +28,73 @@ class CheckoutReviewStep extends StatelessWidget {
                 : StoreMessageKind.error,
         title:
             state.stage == CheckoutStage.offline
-                ? 'لا يوجد اتصال بالإنترنت'
+                ? 'لا يوجد اتصال بالإنترنت'.tr
                 : state.stage == CheckoutStage.uncertain
-                ? 'نتيجة الطلب غير مؤكدة'
-                : 'راجع بيانات الطلب',
-        message: state.message ?? 'تعذر إتمام الطلب.',
-        actionLabel: 'إعادة المحاولة',
+                ? 'نتيجة الطلب غير مؤكدة'.tr
+                : 'راجع بيانات الطلب'.tr,
+        message: state.message ?? 'تعذر إتمام الطلب.'.tr,
+        actionLabel: 'إعادة المحاولة'.tr,
         onAction: controller.submitCheckout,
       );
     }
     return ListView(
       padding: const EdgeInsets.all(StoreSpacing.md),
       children: [
-        Text('مراجعة الطلب', style: StoreTypography.headline),
+        Text(
+          'مراجعة الطلب'.tr,
+          style: StoreColors.text(context, StoreTypography.headline),
+        ),
         const SizedBox(height: StoreSpacing.md),
         ...controller.checkoutLines.map(
           (line) => ListTile(
             title: Text(line.nameAr),
-            subtitle: Text('الكمية: ${line.quantity}'),
+            subtitle: Text(
+              'storeQuantityLine'.trParams({'quantity': '${line.quantity}'}),
+            ),
             trailing: Text('${line.total.toStringAsFixed(2)} ₪'),
           ),
         ),
         const Divider(),
         Text(
-          'العنوان: ${controller.addressController.text}',
-          style: StoreTypography.body,
+          'storeAddressLine'.trParams({
+            'address': controller.addressController.text,
+          }),
+          style: StoreColors.text(context, StoreTypography.body),
         ),
         Text(
-          'الوجهة: ${controller.selectedCity ?? ''} — ${controller.selectedVillage ?? ''}',
-          style: StoreTypography.body,
+          'storeDestinationLine'.trParams({
+            'city': controller.selectedCity ?? '',
+            'village': controller.selectedVillage ?? '',
+          }),
+          style: StoreColors.text(context, StoreTypography.body),
         ),
         Text(
-          'عرض التوصيل الحالي: ${controller.selectedCityPrice.toStringAsFixed(2)} ₪',
-          style: StoreTypography.body,
+          'storeQuoteLine'.trParams({
+            'amount': controller.selectedCityPrice.toStringAsFixed(2),
+          }),
+          style: StoreColors.text(context, StoreTypography.body),
         ),
-        Text('الدفع: نقدًا عند الاستلام', style: StoreTypography.body),
         Text(
-          'نوع الحساب: ${state.selectedRole ?? ''}',
-          style: StoreTypography.body,
+          'الدفع: نقدًا عند الاستلام'.tr,
+          style: StoreColors.text(context, StoreTypography.body),
+        ),
+        Text(
+          'storeRoleLine'.trParams({
+            'role':
+                (state.selectedRole == 'seller' ? 'حساب بائع' : 'عميل تجزئة')
+                    .tr,
+          }),
+          style: StoreColors.text(context, StoreTypography.body),
         ),
         const SizedBox(height: StoreSpacing.sm),
         Text(
-          'الأسعار والتوفر ورسوم التوصيل النهائية يعتمدها الخادم عند الإرسال.',
-          style: StoreTypography.caption,
+          'الأسعار والتوفر ورسوم التوصيل النهائية يعتمدها الخادم عند الإرسال.'
+              .tr,
+          style: StoreColors.text(context, StoreTypography.caption),
         ),
         const SizedBox(height: StoreSpacing.lg),
         StoreButton(
-          label: 'تأكيد الطلب',
+          label: 'تأكيد الطلب'.tr,
           isLoading: state.stage == CheckoutStage.submitting,
           onPressed:
               state.stage == CheckoutStage.submitting

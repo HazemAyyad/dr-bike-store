@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/account/account_controller.dart';
@@ -29,7 +30,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     builder: (c) {
       final data = c.conactUsModel?.data;
       return Scaffold(
-        appBar: AppBar(title: const Text('المساعدة والدعم')),
+        appBar: AppBar(title: Text('المساعدة والدعم'.tr)),
         body:
             c.contactLoading && data == null
                 ? const StoreSkeletonList(itemCount: 5)
@@ -45,7 +46,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     padding: const EdgeInsets.all(StoreSpacing.md),
                     children: [
                       Card(
-                        color: StorePalette.lightPurple,
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.lightPurple,
+                        ),
                         child: ListTile(
                           key: const Key('live-support-entry'),
                           leading: const CircleAvatar(
@@ -53,9 +57,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                             foregroundColor: Colors.white,
                             child: Icon(Icons.support_agent),
                           ),
-                          title: const Text('المحادثة المباشرة مع الدعم'),
-                          subtitle: const Text(
-                            'اسأل سؤالاً عاماً أو تابع استفسارك عن منتج',
+                          title: Text('المحادثة المباشرة مع الدعم'.tr),
+                          subtitle: Text(
+                            'اسأل سؤالاً عاماً أو تابع استفسارك عن منتج'.tr,
                           ),
                           trailing: const Icon(
                             Icons.arrow_forward_ios,

@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first, avoid_print, deprecated_member_use, unrelated_type_equality_checks
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 // import 'package:flutter_sms/flutter_sms.dart';
@@ -10,6 +11,10 @@ import 'package:doctor_bike/repository/auth/auth_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/classes/status_request.dart';
 import '../../core/functions/app_usage_service.dart';
+import '../../core/functions/store_logout_queue.dart';
+import '../../core/functions/store_session_boundary.dart';
+import '../../core/functions/store_address_book.dart';
+import '../notification/notification_controller.dart';
 import '../../core/functions/checkInternet.dart';
 import '../../core/functions/theme_services.dart';
 import '../../core/helper/route_helper.dart';
@@ -71,7 +76,7 @@ abstract class AccountController extends GetxController {
   getConactUsAccount();
 }
 
-class AccountControllerImp extends AccountController {
+class AccountControllerImp extends AccountController with StoreSessionAware {
   GlobalKey<FormState> formstate = GlobalKey<FormState>();
   late bool isDarkMode;
   final LocalizationController localizationController = Get.put(
@@ -118,7 +123,9 @@ class AccountControllerImp extends AccountController {
        isDarkMode = initialDarkMode ?? ThemeServices().loadThemeFromBox();
   @override
   getUserById({bool navigate = true}) async {
+    final generation = sessionGeneration;
     token = await AppUsageService.getToken();
+    if (!sessionIsCurrent(generation)) return;
     if (token == null || token!.isEmpty) {
       profileStatus = AccountViewStatus.guest;
       userModel = null;
@@ -133,6 +140,7 @@ class AccountControllerImp extends AccountController {
         update();
         var response = await authRepository.getUser();
         var responseCity = await authRepository.getCity();
+        if (!sessionIsCurrent(generation)) return;
         if (response.statusCode == 200 &&
             response.body is Map<String, dynamic>) {
           userModel = UserModel.fromJson(response.body);
@@ -156,7 +164,7 @@ class AccountControllerImp extends AccountController {
           profileStatus = AccountViewStatus.content;
         } else {
           profileStatus = AccountViewStatus.error;
-          message = 'تعذر تحميل بيانات الحساب';
+          message = 'تعذر تحميل بيانات الحساب'.tr;
         }
 
         if (responseCity.statusCode == 200 && userModel != null) {
@@ -181,8 +189,9 @@ class AccountControllerImp extends AccountController {
           update();
         }
       } catch (e) {
+        if (!sessionIsCurrent(generation)) return;
         profileStatus = AccountViewStatus.error;
-        message = 'تعذر تحميل بيانات الحساب';
+        message = 'تعذر تحميل بيانات الحساب'.tr;
         update();
       } finally {
         update();
@@ -211,7 +220,10 @@ class AccountControllerImp extends AccountController {
 
   @override
   editeUser() async {
-    if (await connectivityChecker()) {
+    final generation = sessionGeneration;
+    final online = await connectivityChecker();
+    if (!sessionIsCurrent(generation)) return;
+    if (online) {
       try {
         mutationStatus = AccountMutationStatus.submitting;
         message = null;
@@ -238,6 +250,7 @@ class AccountControllerImp extends AccountController {
             cityId: selectedCityId.toString(),
             address: addressController.text,
           );
+          if (!sessionIsCurrent(generation)) return;
           if (response.statusCode == 200 &&
               response.body is Map<String, dynamic>) {
             final authoritative = UserModel.fromJson(response.body);
@@ -257,14 +270,15 @@ class AccountControllerImp extends AccountController {
             );
           } else {
             mutationStatus = AccountMutationStatus.failure;
-            message = 'تعذر حفظ بيانات الحساب';
+            message = 'تعذر حفظ بيانات الحساب'.tr;
           }
         } else {
           mutationStatus = AccountMutationStatus.idle;
         }
       } catch (e) {
+        if (!sessionIsCurrent(generation)) return;
         mutationStatus = AccountMutationStatus.failure;
-        message = 'تعذر حفظ بيانات الحساب';
+        message = 'تعذر حفظ بيانات الحساب'.tr;
       } finally {
         update();
       }
@@ -285,13 +299,16 @@ class AccountControllerImp extends AccountController {
   }
 
   Future<void> pickAndUploadProfileImage() async {
+    final generation = sessionGeneration;
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       maxWidth: 1440,
       imageQuality: 86,
     );
-    if (picked == null) return;
-    if (!await connectivityChecker()) {
+    if (picked == null || !sessionIsCurrent(generation)) return;
+    final online = await connectivityChecker();
+    if (!sessionIsCurrent(generation)) return;
+    if (!online) {
       showCustomSnackBar('Check the internet connection'.tr, isError: true);
       return;
     }
@@ -300,6 +317,7 @@ class AccountControllerImp extends AccountController {
     update();
     try {
       final response = await authRepository.uploadProfileImage(picked.path);
+      if (!sessionIsCurrent(generation)) return;
       if (response.statusCode != 200 ||
           response.body is! Map<String, dynamic>) {
         throw const FormatException('profile-image');
@@ -309,9 +327,10 @@ class AccountControllerImp extends AccountController {
       userModel = authoritative;
       _syncHomeProfile(authoritative);
       _populateProfile(authoritative);
-      showCustomSnackBar('تم تحديث الصورة الشخصية', isError: false);
+      showCustomSnackBar('تم تحديث الصورة الشخصية'.tr, isError: false);
     } catch (_) {
-      showCustomSnackBar('تعذر تحديث الصورة الشخصية', isError: true);
+      if (!sessionIsCurrent(generation)) return;
+      showCustomSnackBar('تعذر تحديث الصورة الشخصية'.tr, isError: true);
     } finally {
       uploadingProfileImage = false;
       update();
@@ -320,48 +339,61 @@ class AccountControllerImp extends AccountController {
 
   Future<void> logout({required bool confirmed}) async {
     if (!confirmed) return;
-    await _clearSession();
+    final sessionToken = await AppUsageService.getToken();
+    if (sessionToken?.isNotEmpty == true) {
+      final fcmToken =
+          Get.isRegistered<NotificationController>()
+              ? Get.find<NotificationController>().fcmToken.value
+              : null;
+      await StoreLogoutQueue.instance.enqueue(
+        sessionToken!,
+        fcmToken: fcmToken,
+      );
+    }
+    await _clearSession(sessionToken);
+    unawaited(
+      StoreLogoutQueue.instance
+          .flush(authRepository.revokeSession)
+          .catchError((_) {}),
+    );
   }
 
   Future<bool> deactivateAccount({required bool confirmed}) async {
     if (!confirmed) return false;
+    final generation = sessionGeneration;
+    final sessionToken = await AppUsageService.getToken();
+    if (!sessionIsCurrent(generation)) return false;
     mutationStatus = AccountMutationStatus.submitting;
     update();
     try {
       final response = await authRepository.deleteUserAccount();
+      if (!sessionIsCurrent(generation)) return false;
       final valid = isValidAccountDeletionResponse(response);
       if (!valid) {
         mutationStatus = AccountMutationStatus.failure;
         update();
         return false;
       }
-      await _clearSession();
+      await _clearSession(sessionToken);
       mutationStatus = AccountMutationStatus.success;
       update();
       return true;
     } catch (_) {
+      if (!sessionIsCurrent(generation)) return false;
       mutationStatus = AccountMutationStatus.failure;
       update();
       return false;
     }
   }
 
-  Future<void> _clearSession() async {
-    await Future.wait([
-      AppUsageService.deleteIsLogin(),
-      AppUsageService.deleteToken(),
-      AppUsageService.deleteUserId(),
-      AppUsageService.deleteUserName(),
-      AppUsageService.deleteUserEmail(),
-      AppUsageService.deleteTypeUser(),
-    ]);
-    token = null;
-    userModel = null;
-    profileStatus = AccountViewStatus.guest;
-    if (Get.isRegistered<HomeControllerImp>()) {
-      Get.find<HomeControllerImp>().clearAuthenticatedProfile();
+  Future<void> _clearSession(String? expectedToken) async {
+    if (expectedToken?.isNotEmpty == true) {
+      // Compare and clear the token and its metadata under the vault lock.
+      // A newer login must never be removed by an older logout operation.
+      await AppUsageService.invalidateSessionIfCurrent(expectedToken!);
+    } else {
+      StoreSessionBoundary.reset();
     }
-    update();
   }
 
   void _syncHomeProfile(UserModel profile) {
@@ -370,26 +402,49 @@ class AccountControllerImp extends AccountController {
     }
   }
 
+  @override
+  void clearSessionData() {
+    token = null;
+    userModel = null;
+    addresses = const [];
+    addressVillages = const [];
+    selectedCity = null;
+    selectedCityId = null;
+    profileStatus = AccountViewStatus.guest;
+    mutationStatus = AccountMutationStatus.idle;
+    addressesLoading = false;
+    addressesMessage = null;
+    message = null;
+    for (final field in [
+      nameController,
+      emailController,
+      phoneNumberController,
+      phoneNumber2Controller,
+      addressController,
+      oldPasswordController,
+      newPasswordController,
+      confirmPasswordController,
+    ]) {
+      field.clear();
+    }
+    update();
+  }
+
   Future<bool> deleteUserAccount() => deactivateAccount(confirmed: true);
 
   Future<void> loadAddresses() async {
+    final generation = sessionGeneration;
     addressesLoading = true;
     addressesMessage = null;
     update();
     try {
-      final response = await authRepository.getStoreAddresses();
-      if (response.statusCode != 200 || response.body is! Map) {
-        throw const FormatException('store addresses');
-      }
-      final raw = (response.body as Map)['data'];
-      if (raw is! List) throw const FormatException('store addresses data');
-      addresses = raw
-          .whereType<Map>()
-          .map((row) => StoreAddress.fromJson(Map<String, dynamic>.from(row)))
-          .where((address) => address.id > 0)
-          .toList(growable: false);
+      final loadedAddresses =
+          await StoreAddressBook(authRepository.getStoreAddresses).load();
+      if (!sessionIsCurrent(generation)) return;
+      addresses = loadedAddresses;
     } catch (_) {
-      addressesMessage = 'تعذر تحميل العناوين.';
+      if (!sessionIsCurrent(generation)) return;
+      addressesMessage = 'تعذر تحميل العناوين.'.tr;
     } finally {
       addressesLoading = false;
       update();
@@ -405,13 +460,14 @@ class AccountControllerImp extends AccountController {
     String? phone,
     bool isDefault = false,
   }) async {
+    final generation = sessionGeneration;
     final cleanLabel = label.trim();
     final cleanStreet = streetAddress.trim();
     if (cleanLabel.isEmpty ||
         cleanStreet.isEmpty ||
         city.id <= 0 ||
         village.id <= 0) {
-      addressesMessage = 'اسم العنوان وتفاصيله ومنطقة التوصيل مطلوبة.';
+      addressesMessage = 'اسم العنوان وتفاصيله ومنطقة التوصيل مطلوبة.'.tr;
       update();
       return false;
     }
@@ -436,11 +492,13 @@ class AccountControllerImp extends AccountController {
           current == null
               ? await authRepository.createStoreAddress(body)
               : await authRepository.updateStoreAddress(body);
+      if (!sessionIsCurrent(generation)) return false;
       if ((current == null && response.statusCode != 201) ||
           (current != null && response.statusCode != 200)) {
         throw const FormatException('save store address');
       }
       await loadAddresses();
+      if (!sessionIsCurrent(generation)) return false;
       final defaultAddress = addresses.firstWhereOrNull(
         (address) => address.isDefault,
       );
@@ -449,12 +507,15 @@ class AccountControllerImp extends AccountController {
         addressController.text = defaultAddress.streetAddress;
       }
       showCustomSnackBar(
-        current == null ? 'تمت إضافة العنوان بنجاح.' : 'تم تحديث العنوان.',
+        current == null
+            ? 'تمت إضافة العنوان بنجاح.'.tr
+            : 'تم تحديث العنوان.'.tr,
         isError: false,
       );
       return true;
     } catch (_) {
-      addressesMessage = 'تعذر حفظ العنوان.';
+      if (!sessionIsCurrent(generation)) return false;
+      addressesMessage = 'تعذر حفظ العنوان.'.tr;
       addressesLoading = false;
       update();
       showCustomSnackBar(addressesMessage, isError: true);
@@ -464,7 +525,7 @@ class AccountControllerImp extends AccountController {
 
   Future<bool> makeDefaultAddress(StoreAddress address) async {
     if (!address.isDeliveryReady) {
-      addressesMessage = 'عدّل العنوان وحدد المدينة والقرية قبل اعتماده.';
+      addressesMessage = 'عدّل العنوان وحدد المدينة والقرية قبل اعتماده.'.tr;
       update();
       showCustomSnackBar(addressesMessage, isError: true);
       return false;
@@ -514,7 +575,7 @@ class AccountControllerImp extends AccountController {
         addressVillages = const [];
       }
     } catch (_) {
-      addressesMessage = 'تعذر تحميل مناطق التوصيل.';
+      addressesMessage = 'تعذر تحميل مناطق التوصيل.'.tr;
     } finally {
       addressOptionsLoading = false;
       update();
@@ -537,7 +598,7 @@ class AccountControllerImp extends AccountController {
       ).rows.where((village) => !village.isClosed).toList(growable: false);
     } catch (_) {
       addressVillages = const [];
-      addressesMessage = 'تعذر تحميل قرى التوصيل.';
+      addressesMessage = 'تعذر تحميل قرى التوصيل.'.tr;
     } finally {
       if (notify) {
         addressOptionsLoading = false;
@@ -547,19 +608,23 @@ class AccountControllerImp extends AccountController {
   }
 
   Future<bool> deleteAddress(StoreAddress address) async {
+    final generation = sessionGeneration;
     addressesLoading = true;
     addressesMessage = null;
     update();
     try {
       final response = await authRepository.deleteStoreAddress(address.id);
+      if (!sessionIsCurrent(generation)) return false;
       if (response.statusCode != 200) {
         throw const FormatException('delete store address');
       }
       await loadAddresses();
-      showCustomSnackBar('تم حذف العنوان.', isError: false);
+      if (!sessionIsCurrent(generation)) return false;
+      showCustomSnackBar('تم حذف العنوان.'.tr, isError: false);
       return true;
     } catch (_) {
-      addressesMessage = 'تعذر حذف العنوان.';
+      if (!sessionIsCurrent(generation)) return false;
+      addressesMessage = 'تعذر حذف العنوان.'.tr;
       addressesLoading = false;
       update();
       showCustomSnackBar(addressesMessage, isError: true);
@@ -825,7 +890,7 @@ class AccountControllerImp extends AccountController {
   }
 
   @override
-  void dispose() {
+  void onClose() {
     nameController.dispose();
     emailController.dispose();
     phoneNumberController.dispose();
@@ -834,6 +899,6 @@ class AccountControllerImp extends AccountController {
     oldPasswordController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
-    super.dispose();
+    super.onClose();
   }
 }

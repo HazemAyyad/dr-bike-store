@@ -1,4 +1,5 @@
 import 'package:doctor_bike/core/classes/store_view_state.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:doctor_bike/core/locale/locale.dart';
 import 'package:doctor_bike/core/theme/light.dart';
 import 'package:doctor_bike/core/theme/store_tokens.dart';
@@ -418,7 +419,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(320, 568));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      _TestApp(
+      const _TestApp(
         child: Scaffold(
           body: SizedBox(
             width: 288,
@@ -469,10 +470,9 @@ void main() {
     );
     await tester.pump();
 
-    final image = tester.widget<Image>(find.byType(Image));
-    final provider = image.image as NetworkImage;
+    final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
     expect(
-      provider.url,
+      image.imageUrl,
       'https://dr-bike.shop/OnlineStore/Content/category.jpg',
     );
   });
@@ -529,28 +529,28 @@ class _FoundationShowcase extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _TestApp(
     child: Scaffold(
-      body: Column(
+      body: const Column(
         children: [
-          const StoreTopBar(
+          StoreTopBar(
             displayName: 'أحمد محمد',
             notificationCount: 2,
             cartCount: 3,
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(StoreSpacing.md),
+              padding: EdgeInsets.all(StoreSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('أساس متجر دكتور بايك', style: StoreTypography.headline),
-                  const SizedBox(height: StoreSpacing.sm),
-                  const StoreTextField(
+                  SizedBox(height: StoreSpacing.sm),
+                  StoreTextField(
                     label: 'البحث',
                     hint: 'ابحث عن منتج أو قسم',
                     prefixIcon: Icons.search,
                   ),
-                  const SizedBox(height: StoreSpacing.md),
-                  const Wrap(
+                  SizedBox(height: StoreSpacing.md),
+                  Wrap(
                     spacing: StoreSpacing.xs,
                     runSpacing: StoreSpacing.xs,
                     children: [
@@ -563,8 +563,8 @@ class _FoundationShowcase extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: StoreSpacing.md),
-                  const SizedBox(
+                  SizedBox(height: StoreSpacing.md),
+                  SizedBox(
                     height: 200,
                     child: Row(
                       children: [
@@ -584,8 +584,8 @@ class _FoundationShowcase extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: StoreSpacing.md),
-                  const Row(
+                  SizedBox(height: StoreSpacing.md),
+                  Row(
                     children: [
                       Expanded(
                         child: StoreButton(
@@ -624,17 +624,17 @@ class _CardsShowcase extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _TestApp(
     child: Scaffold(
-      body: Column(
+      body: const Column(
         children: [
-          const StoreTopBar(displayName: 'أحمد محمد', cartCount: 3),
+          StoreTopBar(displayName: 'أحمد محمد', cartCount: 3),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(StoreSpacing.md),
+              padding: EdgeInsets.all(StoreSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('بطاقات المتجر', style: StoreTypography.headline),
-                  const SizedBox(height: StoreSpacing.sm),
+                  SizedBox(height: StoreSpacing.sm),
                   SizedBox(
                     height: 340,
                     child: Row(
@@ -648,21 +648,21 @@ class _CardsShowcase extends StatelessWidget {
                             discountPercent: 15,
                             rating: 4.7,
                             reviewCount: 23,
-                            media: const StoreMediaPlaceholder(
+                            media: StoreMediaPlaceholder(
                               message: 'صورة المنتج',
                               icon: Icons.sports_motorsports_outlined,
                             ),
                             onTap: _noop,
                           ),
                         ),
-                        const SizedBox(width: StoreSpacing.sm),
+                        SizedBox(width: StoreSpacing.sm),
                         Expanded(
                           child: StoreProductCard(
                             name: 'قفازات قيادة مريحة',
                             price: 65,
                             currency: 'شيكل',
                             inStock: false,
-                            media: const Stack(
+                            media: Stack(
                               fit: StackFit.expand,
                               children: [
                                 StoreMediaPlaceholder(
@@ -684,7 +684,7 @@ class _CardsShowcase extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: StoreSpacing.md),
+                  SizedBox(height: StoreSpacing.md),
                   SizedBox(
                     height: 170,
                     child: Row(
@@ -693,7 +693,7 @@ class _CardsShowcase extends StatelessWidget {
                           child: StoreCategoryCard(
                             title: 'إكسسوارات',
                             itemCount: 24,
-                            media: const Icon(
+                            media: Icon(
                               Icons.pedal_bike,
                               size: 48,
                               color: StorePalette.purple,
@@ -701,12 +701,12 @@ class _CardsShowcase extends StatelessWidget {
                             onTap: _noop,
                           ),
                         ),
-                        const SizedBox(width: StoreSpacing.sm),
+                        SizedBox(width: StoreSpacing.sm),
                         Expanded(
                           child: StoreCategoryCard(
                             title: 'معدات السلامة',
                             itemCount: 16,
-                            media: const Icon(
+                            media: Icon(
                               Icons.health_and_safety_outlined,
                               size: 48,
                               color: StorePalette.purple,

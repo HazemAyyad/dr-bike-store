@@ -176,7 +176,7 @@ class _StoreFeedbackOverlayState extends State<_StoreFeedbackOverlay>
             left: 16,
             right: 16,
             child: Directionality(
-              textDirection: TextDirection.rtl,
+              textDirection: Directionality.of(context),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 440),

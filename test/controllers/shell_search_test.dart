@@ -8,6 +8,7 @@ import 'package:doctor_bike/core/model/get_all_item_model.dart';
 import 'package:doctor_bike/core/model/user_data_model.dart';
 import 'package:doctor_bike/core/widget/store_bottom_navigation.dart';
 import 'package:doctor_bike/repository/home/home_repository.dart';
+import 'package:doctor_bike/repository/categories/store_catalog_source.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -318,6 +319,79 @@ void main() {
       );
     },
   );
+
+  Response catalogPage(int page, List<int> ids, {bool more = false}) =>
+      Response(
+        statusCode: 200,
+        body: {
+          'rows': [
+            for (final id in ids)
+              {
+                ..._item(retailPrice: 10, wholesalePrice: 8).toJson(),
+                'id': id,
+                'productId': id,
+                'listingId': id + 100,
+              },
+          ],
+          'paginationInfo': {
+            'page': page,
+            'totalRowsCount': 30,
+            'hasMore': more,
+          },
+        },
+      );
+
+  HomeControllerImp paged(_CatalogSource source) => HomeControllerImp(
+    homeRepository: source,
+    searchHistoryStore: SearchHistoryStore(preferences: preferences),
+    connectivityCheck: () async => true,
+    tokenLoader: () async => null,
+  );
+
+  test(
+    'catalog pages retain existing items on failure and retry without duplicates',
+    () async {
+      var attempts = 0;
+      final source = _CatalogSource((query, page) async {
+        if (page == 1) return catalogPage(1, [1, 2], more: true);
+        if (++attempts == 1) return const Response(statusCode: 503);
+        return catalogPage(2, [2, 3]);
+      });
+      final controller = paged(source);
+      await controller.submitSearch('helmet');
+      await controller.loadMoreSearch();
+      expect(controller.itemListSearch.map((item) => item.productId), [1, 2]);
+      expect(controller.searchPageError, 'storeLoadMoreFailed');
+      await controller.loadMoreSearch();
+      expect(controller.itemListSearch.map((item) => item.productId), [
+        1,
+        2,
+        3,
+      ]);
+      expect(controller.hasMoreSearch, isFalse);
+      expect(controller.searchPageError, isNull);
+    },
+  );
+
+  test(
+    'a page from the previous search cannot enter the newer search results',
+    () async {
+      final pending = Completer<Response>();
+      final source = _CatalogSource((query, page) async {
+        if (query == 'new') return catalogPage(1, [20]);
+        return page == 1 ? catalogPage(1, [1], more: true) : pending.future;
+      });
+      final controller = paged(source);
+      await controller.submitSearch('old');
+      final oldPage = controller.loadMoreSearch();
+      await controller.submitSearch('new');
+      pending.complete(catalogPage(2, [2]));
+      await oldPage;
+      expect(controller.itemListSearch.map((item) => item.productId), [20]);
+      expect(controller.loadingMoreSearch, isFalse);
+      expect(controller.hasMoreSearch, isFalse);
+    },
+  );
 }
 
 HomeControllerImp _controller(
@@ -413,4 +487,16 @@ class _FakeHomeDataSource implements HomeDataSource {
     if (searchHandler != null) return searchHandler!(query);
     return _searchResponses.removeAt(0);
   }
+}
+
+class _CatalogSource extends _FakeHomeDataSource implements StoreCatalogSource {
+  _CatalogSource(this.handler);
+  final Future<Response> Function(String query, int page) handler;
+  @override
+  Future<Response> catalogPage({
+    String? query,
+    int? categoryId,
+    int page = 1,
+    Map<String, String> filters = const {},
+  }) => handler(query ?? '', page);
 }

@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -72,7 +73,7 @@ class _StoreTextFieldState extends State<StoreTextField> {
             ? StorePalette.error
             : isSuccess
             ? StorePalette.success
-            : StorePalette.border;
+            : StoreColors.resolve(context, StorePalette.border);
     final statusText =
         widget.errorText ?? widget.successText ?? widget.helperText;
 
@@ -89,7 +90,7 @@ class _StoreTextFieldState extends State<StoreTextField> {
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onSubmitted,
       validator: widget.validator,
-      style: StoreTypography.body,
+      style: StoreColors.text(context, StoreTypography.body),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
@@ -139,13 +140,19 @@ class _StoreTextFieldState extends State<StoreTextField> {
             const SizedBox(height: StoreSpacing.xxs),
             Text(
               statusText,
-              style: StoreTypography.caption.copyWith(
+              style: StoreColors.text(
+                context,
+                StoreTypography.caption,
+              ).copyWith(
                 color:
                     isError
                         ? StorePalette.error
                         : isSuccess
                         ? StorePalette.success
-                        : StorePalette.textSecondary,
+                        : StoreColors.resolve(
+                          context,
+                          StorePalette.textSecondary,
+                        ),
               ),
             ),
           ],
@@ -189,7 +196,7 @@ class StoreSelectField<T> extends StatelessWidget {
               child: Text(
                 itemLabel(item),
                 overflow: TextOverflow.ellipsis,
-                style: StoreTypography.body,
+                style: StoreColors.text(context, StoreTypography.body),
               ),
             ),
           )

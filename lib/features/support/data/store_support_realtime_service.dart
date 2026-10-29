@@ -64,6 +64,7 @@ class StoreSupportRealtimeService {
     onStateChanged?.call(StoreSupportConnectionState.connecting);
     await _subscription?.cancel();
     await _socket?.sink.close();
+    if (_disposed) return;
     final fallbackHost = Uri.parse(AppConstants.appBaseUrl).host;
     final host = _host.isEmpty ? fallbackHost : _host;
     final uri = Uri(
@@ -82,6 +83,10 @@ class StoreSupportRealtimeService {
       final socket = WebSocketChannel.connect(uri);
       _socket = socket;
       await socket.ready;
+      if (_disposed || _socket != socket) {
+        await socket.sink.close();
+        return;
+      }
       _subscription = socket.stream.listen(
         (frame) => unawaited(
           _handleFrame(frame).catchError((_) => _scheduleReconnect()),
@@ -96,6 +101,7 @@ class StoreSupportRealtimeService {
   }
 
   Future<void> _handleFrame(dynamic frame) async {
+    if (_disposed) return;
     final decoded = jsonDecode(frame.toString());
     if (decoded is! Map) return;
     final event = decoded['event']?.toString();
@@ -137,6 +143,7 @@ class StoreSupportRealtimeService {
     if (socketId == null || conversationId == null) return;
     final channel = 'private-support.conversation.$conversationId';
     final token = await AppUsageService.getToken();
+    if (_disposed || conversationId != _conversationId) return;
     final response = await http.post(
       Uri.parse('${AppConstants.appBaseUrl}/api/broadcasting/auth'),
       headers: {
@@ -146,6 +153,11 @@ class StoreSupportRealtimeService {
       },
       body: {'socket_id': socketId, 'channel_name': channel},
     );
+    if (_disposed ||
+        conversationId != _conversationId ||
+        socketId != _socketId) {
+      return;
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw StateError('Realtime authorization failed');
     }

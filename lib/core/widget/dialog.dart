@@ -20,18 +20,21 @@ class DefaultDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Dialog(
-          backgroundColor: backgroundColor ?? Colors.white,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(radius ?? 25).r),
-          clipBehavior: Clip.antiAliasWithSaveLayer,
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-                vertical: (paddingVerrtical ?? 15).h,
-                horizontal: paddingHorizontal ?? 10.w),
-            child: Child,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Dialog(
+        backgroundColor: backgroundColor ?? Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius ?? 25).r,
+        ),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: (paddingVerrtical ?? 15).h,
+            horizontal: paddingHorizontal ?? 10.w,
           ),
-        ));
+          child: Child,
+        ),
+      ),
+    );
   }
 }

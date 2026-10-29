@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -46,7 +47,10 @@ class SendOtpScreen extends StatelessWidget {
                           controller: controller.otpController,
                           keyboardType: TextInputType.number,
                           animationType: AnimationType.fade,
-                          textStyle: StoreTypography.title,
+                          textStyle: StoreColors.text(
+                            context,
+                            StoreTypography.title,
+                          ),
                           pinTheme: PinTheme(
                             shape: PinCodeFieldShape.box,
                             borderRadius: BorderRadius.circular(StoreRadii.md),
@@ -54,11 +58,23 @@ class SendOtpScreen extends StatelessWidget {
                             fieldWidth: fieldWidth,
                             activeColor: StorePalette.purple,
                             selectedColor: StorePalette.purple,
-                            inactiveColor: StorePalette.border,
+                            inactiveColor: StoreColors.resolve(
+                              context,
+                              StorePalette.border,
+                            ),
                             errorBorderColor: StorePalette.error,
-                            activeFillColor: StorePalette.surface,
-                            selectedFillColor: StorePalette.surface,
-                            inactiveFillColor: StorePalette.surface,
+                            activeFillColor: StoreColors.resolve(
+                              context,
+                              StorePalette.surface,
+                            ),
+                            selectedFillColor: StoreColors.resolve(
+                              context,
+                              StorePalette.surface,
+                            ),
+                            inactiveFillColor: StoreColors.resolve(
+                              context,
+                              StorePalette.surface,
+                            ),
                           ),
                           enableActiveFill: true,
                           animationDuration: StoreMotion.standard,

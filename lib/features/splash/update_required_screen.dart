@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -47,7 +48,7 @@ class UpdateRequiredScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final required = requirement == StoreUpdateRequirement.required;
     return Scaffold(
-      backgroundColor: StorePalette.background,
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -61,8 +62,11 @@ class UpdateRequiredScreen extends StatelessWidget {
                   Container(
                     width: StoreCalibration.authStateIconExtent,
                     height: StoreCalibration.authStateIconExtent,
-                    decoration: const BoxDecoration(
-                      color: StorePalette.lightPurple,
+                    decoration: BoxDecoration(
+                      color: StoreColors.resolve(
+                        context,
+                        StorePalette.lightPurple,
+                      ),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -77,7 +81,7 @@ class UpdateRequiredScreen extends StatelessWidget {
                         ? 'storeUpdateRequiredTitle'.tr
                         : 'storeUpdateRecommendedTitle'.tr,
                     textAlign: TextAlign.center,
-                    style: StoreTypography.headline,
+                    style: StoreColors.text(context, StoreTypography.headline),
                   ),
                   const SizedBox(height: StoreSpacing.xs),
                   Text(
@@ -87,8 +91,14 @@ class UpdateRequiredScreen extends StatelessWidget {
                         ? 'storeUpdateRequiredMessage'.tr
                         : 'storeUpdateRecommendedMessage'.tr,
                     textAlign: TextAlign.center,
-                    style: StoreTypography.body.copyWith(
-                      color: StorePalette.textSecondary,
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.body,
+                    ).copyWith(
+                      color: StoreColors.resolve(
+                        context,
+                        StorePalette.textSecondary,
+                      ),
                     ),
                   ),
                   const SizedBox(height: StoreSpacing.lg),

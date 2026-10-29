@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -20,9 +21,9 @@ class FilterPage extends StatelessWidget {
     );
     if (embedded) return content;
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: StorePalette.surface,
+        backgroundColor: StoreColors.resolve(context, StorePalette.surface),
         body: SafeArea(child: content),
       ),
     );
@@ -36,13 +37,13 @@ Future<void> showProductFilterSheet(
   context: context,
   isScrollControlled: true,
   useSafeArea: true,
-  backgroundColor: StorePalette.surface,
+  backgroundColor: StoreColors.resolve(context, StorePalette.surface),
   shape: const RoundedRectangleBorder(
     borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
   ),
   builder:
       (context) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: FractionallySizedBox(
           heightFactor: 0.76,
           child: _FilterContent(
@@ -100,7 +101,7 @@ class _FilterContentState extends State<_FilterContent> {
                 child: Text(
                   'تصفية المنتجات',
                   textAlign: TextAlign.center,
-                  style: StoreTypography.title,
+                  style: StoreColors.text(context, StoreTypography.title),
                 ),
               ),
               TextButton(onPressed: _reset, child: const Text('إعادة')),
@@ -112,7 +113,10 @@ class _FilterContentState extends State<_FilterContent> {
         child: ListView(
           padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 20),
           children: [
-            Text('السعر', style: StoreTypography.label),
+            Text(
+              'السعر',
+              style: StoreColors.text(context, StoreTypography.label),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -121,7 +125,10 @@ class _FilterContentState extends State<_FilterContent> {
                 Expanded(child: _priceField(maximum, 'إلى')),
               ],
             ),
-            const Divider(height: 30, color: StorePalette.border),
+            Divider(
+              height: 30,
+              color: StoreColors.resolve(context, StorePalette.border),
+            ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               value: availableOnly,
@@ -142,13 +149,16 @@ class _FilterContentState extends State<_FilterContent> {
             Container(
               padding: const EdgeInsets.all(StoreSpacing.sm),
               decoration: BoxDecoration(
-                color: StorePalette.lightPurple,
+                color: StoreColors.resolve(context, StorePalette.lightPurple),
                 borderRadius: BorderRadius.circular(StoreRadii.md),
               ),
               child: Text(
                 'يتم تطبيق التصفية من الخادم على جميع منتجات التصنيف.',
-                style: StoreTypography.caption.copyWith(
-                  color: StorePalette.navy,
+                style: StoreColors.text(
+                  context,
+                  StoreTypography.caption,
+                ).copyWith(
+                  color: StoreColors.resolve(context, StorePalette.navy),
                 ),
               ),
             ),

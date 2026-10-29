@@ -1,11 +1,36 @@
 // ignore_for_file: equal_keys_in_map
 
 import 'package:get/get.dart';
+import 'store_flow_translations.dart';
+import 'store_order_translations.dart';
 
 class MyLocale implements Translations {
   @override
   Map<String, Map<String, String>> get keys => {
     'ar': {
+      'storeDeleteAddressConfirm': 'هل تريد حذف عنوان «@label»؟',
+      'storeQuantityLine': 'الكمية: @quantity',
+      'storeAddressLine': 'العنوان: @address',
+      'storeDestinationLine': 'الوجهة: @city — @village',
+      'storeQuoteLine': 'الشحن: @amount ₪',
+      'storeRoleLine': 'نوع الحساب: @role',
+      'storeExpectedAmount': 'المبلغ المتوقع: @amount ₪',
+      'storeBeforeShipping': 'الإجمالي قبل الشحن: @amount ₪',
+      ...StoreFlowTranslations.ar,
+      ...StoreOrderTranslations.ar,
+      'storeOrderItemsCount': '@count منتج',
+      'storeOrderProductFallback': 'منتج @id',
+      'storeOrderQuantity': 'الكمية @quantity',
+      'storeOrderQuantityMore': 'الكمية @quantity  •  +@count منتج آخر',
+      'storeSupportReadError': 'تعذر تحميل الدعم. أعد المحاولة.',
+      'storeSupportCreateError': 'تعذر بدء المحادثة. أعد المحاولة.',
+      'storeLoadMore': 'عرض المزيد',
+      'storeLoadMoreFailed': 'تعذر تحميل بقية المنتجات. يمكنك إعادة المحاولة.',
+      'storeSessionStorageFailure':
+          'تعذر حفظ جلسة آمنة على هذا الجهاز. يرجى المحاولة مجددًا.',
+      'storeDeliveryQuoteUnavailable':
+          'تعذر احتساب الشحن. أعد المحاولة قبل تأكيد الطلب.',
+      'storeCheckoutReassurance': 'سنحتفظ بسلتك حتى تأكيد الطلب بنجاح.',
       "skip": "تخطي",
 
       "bodySplash1":
@@ -491,6 +516,24 @@ class MyLocale implements Translations {
       "register/log in.": "التسجيل/تسجيل الدخول.",
     },
     "en": {
+      'storeDeleteAddressConfirm': 'Delete the address “@label”?',
+      'storeQuantityLine': 'Quantity: @quantity',
+      'storeAddressLine': 'Address: @address',
+      'storeDestinationLine': 'Destination: @city — @village',
+      'storeQuoteLine': 'Shipping: ₪@amount',
+      'storeRoleLine': 'Account type: @role',
+      'storeExpectedAmount': 'Expected total: ₪@amount',
+      'storeBeforeShipping': 'Total before shipping: ₪@amount',
+      ...StoreFlowTranslations.en,
+      ...StoreOrderTranslations.en,
+      'storeLoadMore': 'Load more',
+      'storeLoadMoreFailed': 'More products could not be loaded. Please retry.',
+      'storeSessionStorageFailure':
+          'A secure session could not be saved on this device. Please try again.',
+      'storeDeliveryQuoteUnavailable':
+          'Shipping could not be calculated. Retry before confirming your order.',
+      'storeCheckoutReassurance':
+          'Your cart is kept until your order is confirmed.',
       "skip": "skip",
       "titleSplash1": "Welcome to Doctor Bike",
       "bodySplash1":
@@ -988,6 +1031,23 @@ class MyLocale implements Translations {
       "register/log in.": "register/log in.",
     },
     "he": {
+      'storeDeleteAddressConfirm': 'למחוק את הכתובת ״@label״?',
+      'storeQuantityLine': 'כמות: @quantity',
+      'storeAddressLine': 'כתובת: @address',
+      'storeDestinationLine': 'יעד: @city — @village',
+      'storeQuoteLine': 'משלוח: ₪@amount',
+      'storeRoleLine': 'סוג חשבון: @role',
+      'storeExpectedAmount': 'סכום צפוי: ₪@amount',
+      'storeBeforeShipping': 'סכום לפני משלוח: ₪@amount',
+      ...StoreFlowTranslations.he,
+      ...StoreOrderTranslations.he,
+      'storeLoadMore': 'הצג עוד',
+      'storeLoadMoreFailed': 'לא ניתן לטעון מוצרים נוספים. נא לנסות שוב.',
+      'storeSessionStorageFailure':
+          'לא ניתן לשמור הפעלה מאובטחת במכשיר זה. נא לנסות שוב.',
+      'storeDeliveryQuoteUnavailable':
+          'לא ניתן לחשב את המשלוח. יש לנסות שוב לפני אישור ההזמנה.',
+      'storeCheckoutReassurance': 'העגלה נשמרת עד לאישור ההזמנה.',
       "skip": "לְדַלֵג",
       "titleSplash1": "ברוכים הבאים לדוקטור בייק",
       "bodySplash1":

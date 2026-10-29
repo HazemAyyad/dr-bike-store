@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -22,19 +23,25 @@ class SimilarItemsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('storeSimilarProducts'.tr, style: StoreTypography.title),
+        Text(
+          'storeSimilarProducts'.tr,
+          style: StoreColors.text(context, StoreTypography.title),
+        ),
         const SizedBox(height: StoreSpacing.sm),
         switch (state) {
           StoreInitial<List<Item>>() ||
           StoreLoading<List<Item>>() => const StoreHorizontalProductsSkeleton(),
           StoreEmpty<List<Item>>(:final message) => Text(
             message.tr,
-            style: StoreTypography.body,
+            style: StoreColors.text(context, StoreTypography.body),
           ),
           StoreOffline<List<Item>>(:final message) ||
           StoreError<List<Item>>(:final message) => Column(
             children: [
-              Text(message.tr, style: StoreTypography.body),
+              Text(
+                message.tr,
+                style: StoreColors.text(context, StoreTypography.body),
+              ),
               TextButton(
                 onPressed: () {
                   final item = controller.itemView;

@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -48,7 +49,7 @@ class StoreBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     elevation: StoreElevation.low,
     child: SafeArea(
       top: false,
@@ -89,7 +90,10 @@ class _DestinationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? StorePalette.purple : StorePalette.textSecondary;
+    final color =
+        selected
+            ? StorePalette.purple
+            : StoreColors.resolve(context, StorePalette.textSecondary);
     return Semantics(
       button: true,
       selected: selected,
@@ -118,7 +122,10 @@ class _DestinationButton extends StatelessWidget {
                 destination.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: StoreTypography.caption.copyWith(
+                style: StoreColors.text(
+                  context,
+                  StoreTypography.caption,
+                ).copyWith(
                   color: color,
                   fontSize: 9.5,
                   fontWeight:

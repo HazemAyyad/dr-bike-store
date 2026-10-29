@@ -31,6 +31,7 @@ class SupcategoryScreen extends StatelessWidget {
           },
           icon: Icon(
             storeBackIcon(context),
+            textDirection: TextDirection.ltr,
             color: Theme.of(context).hoverColor,
           ),
         ),

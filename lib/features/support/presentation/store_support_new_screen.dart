@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,7 +28,7 @@ class _StoreSupportNewScreenState extends State<StoreSupportNewScreen> {
     listingId = args is Map ? int.tryParse('${args['listing_id']}') : null;
     productName = args is Map ? args['product_name']?.toString() : null;
     if (listingId != null) {
-      message.text = 'مرحباً، أريد الاستفسار عن هذا المنتج.';
+      message.text = 'مرحباً، أريد الاستفسار عن هذا المنتج.'.tr;
     }
   }
 
@@ -39,9 +40,11 @@ class _StoreSupportNewScreenState extends State<StoreSupportNewScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: StorePalette.background,
+    backgroundColor: StoreColors.resolve(context, StorePalette.background),
     appBar: AppBar(
-      title: Text(listingId == null ? 'محادثة دعم جديدة' : 'اسأل عن المنتج'),
+      title: Text(
+        listingId == null ? 'محادثة دعم جديدة'.tr : 'اسأل عن المنتج'.tr,
+      ),
     ),
     body: SafeArea(
       child: GetBuilder<StoreSupportController>(
@@ -56,8 +59,8 @@ class _StoreSupportNewScreenState extends State<StoreSupportNewScreen> {
                         Icons.two_wheeler_outlined,
                         color: StorePalette.purple,
                       ),
-                      title: const Text('الاستفسار مرتبط بهذا المنتج'),
-                      subtitle: Text(productName ?? 'منتج المتجر'),
+                      title: Text('الاستفسار مرتبط بهذا المنتج'.tr),
+                      subtitle: Text(productName ?? 'منتج المتجر'.tr),
                     ),
                   ),
                 const SizedBox(height: 12),
@@ -68,9 +71,9 @@ class _StoreSupportNewScreenState extends State<StoreSupportNewScreen> {
                   maxLines: 9,
                   maxLength: 5000,
                   textInputAction: TextInputAction.newline,
-                  decoration: const InputDecoration(
-                    labelText: 'كيف يمكننا مساعدتك؟',
-                    hintText: 'اكتب تفاصيل سؤالك أو المشكلة...',
+                  decoration: InputDecoration(
+                    labelText: 'كيف يمكننا مساعدتك؟'.tr,
+                    hintText: 'اكتب تفاصيل سؤالك أو المشكلة...'.tr,
                     alignLabelWithHint: true,
                     border: OutlineInputBorder(),
                   ),
@@ -86,7 +89,9 @@ class _StoreSupportNewScreenState extends State<StoreSupportNewScreen> {
                   },
                   icon: const Icon(Icons.image_outlined),
                   label: Text(
-                    imagePath == null ? 'إرفاق صورة' : 'تم اختيار صورة · تغيير',
+                    imagePath == null
+                        ? 'إرفاق صورة'.tr
+                        : 'تم اختيار صورة · تغيير'.tr,
                   ),
                 ),
                 if (state.error != null) ...[
@@ -105,7 +110,10 @@ class _StoreSupportNewScreenState extends State<StoreSupportNewScreen> {
                           : () async {
                             if (message.text.trim().isEmpty &&
                                 imagePath == null) {
-                              Get.snackbar('تنبيه', 'اكتب رسالة أو أرفق صورة');
+                              Get.snackbar(
+                                'تنبيه'.tr,
+                                'اكتب رسالة أو أرفق صورة'.tr,
+                              );
                               return;
                             }
                             final conversation = await state.createConversation(
@@ -126,7 +134,7 @@ class _StoreSupportNewScreenState extends State<StoreSupportNewScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                           : const Icon(Icons.send_rounded),
-                  label: const Text('بدء المحادثة'),
+                  label: Text('بدء المحادثة'.tr),
                 ),
               ],
             ),

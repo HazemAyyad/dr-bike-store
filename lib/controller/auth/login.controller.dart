@@ -31,8 +31,8 @@ class AppUsageAuthSessionStore implements AuthSessionStore {
     StoreAuthenticatedSession session, {
     required bool remember,
   }) async {
-    await AppUsageService.saveUserId(session.userId);
     await AppUsageService.saveToken(session.token);
+    await AppUsageService.saveUserId(session.userId);
     await AppUsageService.saveUserName(session.displayName);
     await AppUsageService.saveUserEmail(session.email);
     if (session.typeUser case final typeUser?) {
@@ -94,9 +94,16 @@ class LoginControllerImp extends LoginController {
     );
     switch (result) {
       case AuthSuccess<StoreAuthenticatedSession>(:final data):
-        await _sessionStore.saveAuthenticatedSession(data, remember: checkBox);
-        _setStatus(AuthUiStatus.success, 'storeLoginSuccess');
-        _onAuthenticated();
+        try {
+          await _sessionStore.saveAuthenticatedSession(
+            data,
+            remember: checkBox,
+          );
+          _setStatus(AuthUiStatus.success, 'storeLoginSuccess');
+          _onAuthenticated();
+        } catch (_) {
+          _setStatus(AuthUiStatus.failure, 'storeSessionStorageFailure');
+        }
       case AuthFailure<StoreAuthenticatedSession>(
         :final kind,
         :final messageKey,

@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/store_tokens.dart';
@@ -155,9 +156,11 @@ class StoreOrdersSkeleton extends StatelessWidget {
           height: 132,
           padding: const EdgeInsets.all(StoreSpacing.sm),
           decoration: BoxDecoration(
-            color: StorePalette.surface,
+            color: StoreColors.resolve(context, StorePalette.surface),
             borderRadius: BorderRadius.circular(StoreRadii.lg),
-            border: Border.all(color: StorePalette.border),
+            border: Border.all(
+              color: StoreColors.resolve(context, StorePalette.border),
+            ),
           ),
           child: const Column(
             children: [
@@ -216,9 +219,11 @@ class StoreAddressesSkeleton extends StatelessWidget {
           height: 116,
           padding: const EdgeInsets.all(StoreSpacing.sm),
           decoration: BoxDecoration(
-            color: StorePalette.surface,
+            color: StoreColors.resolve(context, StorePalette.surface),
             borderRadius: BorderRadius.circular(StoreRadii.lg),
-            border: Border.all(color: StorePalette.border),
+            border: Border.all(
+              color: StoreColors.resolve(context, StorePalette.border),
+            ),
           ),
           child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,9 +264,11 @@ class StoreInlineFieldSkeleton extends StatelessWidget {
         height: height,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: StorePalette.surface,
+          color: StoreColors.resolve(context, StorePalette.surface),
           borderRadius: BorderRadius.circular(StoreRadii.md),
-          border: Border.all(color: StorePalette.border),
+          border: Border.all(
+            color: StoreColors.resolve(context, StorePalette.border),
+          ),
         ),
         child: const Row(
           children: [
@@ -318,9 +325,11 @@ class _ProductCardSkeleton extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(StoreSpacing.xs),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
-      border: Border.all(color: StorePalette.border),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
     ),
     child: const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,9 +354,11 @@ class _ProductListCardSkeleton extends StatelessWidget {
     height: 168,
     padding: const EdgeInsets.all(StoreSpacing.sm),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
-      border: Border.all(color: StorePalette.border),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
     ),
     child: const Row(
       children: [
@@ -381,9 +392,11 @@ class _ReviewCardSkeleton extends StatelessWidget {
     width: double.infinity,
     padding: const EdgeInsets.all(StoreSpacing.sm),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(StoreRadii.md),
-      border: Border.all(color: StorePalette.border),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
     ),
     child: const Column(
       crossAxisAlignment: CrossAxisAlignment.start,

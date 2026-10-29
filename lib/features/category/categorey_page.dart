@@ -24,9 +24,9 @@ class _CategoreyPageState extends State<CategoreyPage> {
               ),
           child: Center(
             child: TabBarView(
-              physics: NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               controller: categoresControllerImp.tabViewController,
-              children: [CategoryScreen(), FilterPage()],
+              children: const [CategoryScreen(), FilterPage()],
             ),
           ),
         );

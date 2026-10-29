@@ -56,7 +56,11 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
               Get.back();
               controller.useFiltter = false.obs;
             },
-            icon: Icon(storeBackIcon(context), color: const Color(0xff7f7f7f)),
+            icon: Icon(
+              storeBackIcon(context),
+              textDirection: TextDirection.ltr,
+              color: const Color(0xff7f7f7f),
+            ),
           ),
           title: Text(
             controller.titleMain.toString(),
@@ -69,7 +73,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
           actions: [
             Obx(
               () => Padding(
-                padding: EdgeInsetsDirectional.symmetric(horizontal: 10),
+                padding: const EdgeInsetsDirectional.symmetric(horizontal: 10),
                 child: Center(
                   child: GestureDetector(
                     onTap: () {
@@ -88,7 +92,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                                         height: 2,
                                         color: Theme.of(context).primaryColor,
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
                                           Container(
@@ -108,7 +112,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                                               ),
                                             ),
                                           ),
-                                          SizedBox(width: 4),
+                                          const SizedBox(width: 4),
                                           Container(
                                             width: 10,
                                             height: 10,
@@ -128,7 +132,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                                           ),
                                         ],
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Container(
                                         width: 30,
                                         height: 2,
@@ -147,7 +151,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                                         height: 2,
                                         color: Theme.of(context).primaryColor,
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
                                           Container(
@@ -167,7 +171,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                                               ),
                                             ),
                                           ),
-                                          SizedBox(width: 2),
+                                          const SizedBox(width: 2),
                                           Container(
                                             width: 8,
                                             height: 10,
@@ -185,7 +189,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                                               ),
                                             ),
                                           ),
-                                          SizedBox(width: 2),
+                                          const SizedBox(width: 2),
                                           Container(
                                             width: 8,
                                             height: 10,
@@ -205,7 +209,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                                           ),
                                         ],
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Container(
                                         width: 30,
                                         height: 2,
@@ -214,7 +218,7 @@ class _CategoryAndFiltterState extends State<CategoryAndFiltter> {
                                     ],
                                   ),
                                 )
-                            : SizedBox(),
+                            : const SizedBox(),
                   ),
                 ),
               ),

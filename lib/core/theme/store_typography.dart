@@ -4,6 +4,7 @@ import 'store_tokens.dart';
 
 abstract final class StoreTypography {
   static const fontFamily = 'Cairo';
+  static const fontFamilyFallback = ['NotoSansHebrew'];
 
   static const light = FontWeight.w300;
   static const regular = FontWeight.w400;
@@ -13,6 +14,7 @@ abstract final class StoreTypography {
 
   static const display = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 28,
     height: 1.35,
     fontWeight: bold,
@@ -20,6 +22,7 @@ abstract final class StoreTypography {
   );
   static const headline = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 22,
     height: 1.4,
     fontWeight: bold,
@@ -27,6 +30,7 @@ abstract final class StoreTypography {
   );
   static const title = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 18,
     height: 1.45,
     fontWeight: semiBold,
@@ -34,6 +38,7 @@ abstract final class StoreTypography {
   );
   static const body = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14,
     height: 1.55,
     fontWeight: regular,
@@ -41,6 +46,7 @@ abstract final class StoreTypography {
   );
   static const bodyMedium = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14,
     height: 1.55,
     fontWeight: medium,
@@ -48,6 +54,7 @@ abstract final class StoreTypography {
   );
   static const label = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 13,
     height: 1.4,
     fontWeight: semiBold,
@@ -55,6 +62,7 @@ abstract final class StoreTypography {
   );
   static const caption = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12,
     height: 1.45,
     fontWeight: regular,

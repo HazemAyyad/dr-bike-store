@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -86,7 +87,7 @@ class _StoreTopBarState extends State<StoreTopBar> {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     child: SafeArea(
       bottom: false,
       child: Padding(
@@ -123,7 +124,10 @@ class _StoreTopBarState extends State<StoreTopBar> {
                           radius: 25,
                           child: CircleAvatar(
                             radius: 22,
-                            backgroundColor: StorePalette.lightPurple,
+                            backgroundColor: StoreColors.resolve(
+                              context,
+                              StorePalette.lightPurple,
+                            ),
                             child:
                                 widget.avatar ??
                                 const Icon(
@@ -153,13 +157,19 @@ class _StoreTopBarState extends State<StoreTopBar> {
                               children: [
                                 Text(
                                   widget.greeting ?? 'storeGreeting'.tr,
-                                  style: StoreTypography.caption,
+                                  style: StoreColors.text(
+                                    context,
+                                    StoreTypography.caption,
+                                  ),
                                 ),
                                 Text(
                                   widget.displayName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: StoreTypography.title,
+                                  style: StoreColors.text(
+                                    context,
+                                    StoreTypography.title,
+                                  ),
                                 ),
                               ],
                             ),
@@ -258,7 +268,7 @@ class _TopBarSkeletonBox extends StatelessWidget {
       height: height,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: StorePalette.border,
+          color: StoreColors.resolve(context, StorePalette.border),
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),

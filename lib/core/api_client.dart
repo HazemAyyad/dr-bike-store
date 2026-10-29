@@ -7,6 +7,7 @@ import 'package:get/get_connect/http/src/request/request.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../controller/LocalizationController.dart';
 import 'functions/app_usage_service.dart';
@@ -31,7 +32,7 @@ class ApiClient {
       _logRequest('GET', url);
       final requestUri = Uri.parse(url).replace(queryParameters: query);
       http.Response response = await http
-          .get(requestUri, headers: _jsonHeaders(headers))
+          .get(requestUri, headers: await _jsonHeaders(headers))
           .timeout(Duration(seconds: timeoutInSeconds));
       _logRawResponse(response);
       return handleResponse(response, uri);
@@ -48,7 +49,7 @@ class ApiClient {
     dynamic body,
   }) async {
     final url = AppConstants.appBaseUrl + uri;
-    final requestHeaders = _jsonHeaders(headers);
+    final requestHeaders = await _jsonHeaders(headers);
     try {
       _logRequest('POST', url, headers: requestHeaders, body: body);
       http.Response response = await http
@@ -71,7 +72,7 @@ class ApiClient {
     final url = AppConstants.appBaseUrl + uri;
     try {
       final request = http.MultipartRequest('POST', Uri.parse(url));
-      request.headers.addAll(headers ?? const {});
+      request.headers.addAll(await _multipartHeaders(headers));
       request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
       _logRequest('POST', url, headers: request.headers);
       final streamed = await request.send().timeout(
@@ -96,7 +97,7 @@ class ApiClient {
     final url = AppConstants.appBaseUrl + uri;
     try {
       final request = http.MultipartRequest('POST', Uri.parse(url));
-      request.headers.addAll({'Accept': 'application/json', ...?headers});
+      request.headers.addAll(await _multipartHeaders(headers));
       request.fields.addAll(fields);
       for (final path in filePaths) {
         request.files.add(await http.MultipartFile.fromPath(fieldName, path));
@@ -115,6 +116,17 @@ class ApiClient {
   }
 
   Response handleResponse(http.Response response, String uri) {
+    if (response.statusCode == 204) return const Response(statusCode: 204);
+    if (response.statusCode == 401) {
+      final authorization = response.request?.headers['authorization'];
+      if (authorization?.startsWith('Bearer ') == true) {
+        unawaited(
+          AppUsageService.invalidateSessionIfCurrent(
+            authorization!.substring(7),
+          ),
+        );
+      }
+    }
     dynamic body;
     try {
       if (response.headers['content-type']?.contains('application/json') ??
@@ -122,7 +134,7 @@ class ApiClient {
         body = jsonDecode(response.body);
       } else {
         _logApiClientMessage(
-          'UNEXPECTED_CONTENT_TYPE ${response.statusCode} ${response.request?.url} content-type=${response.headers['content-type']} body=${_shortText(response.body)}',
+          'UNEXPECTED_CONTENT_TYPE status=${response.statusCode} content-type=${response.headers['content-type']}',
         );
         return Response(
           statusCode: response.statusCode,
@@ -132,7 +144,7 @@ class ApiClient {
       }
     } catch (e) {
       _logApiClientMessage(
-        'JSON_DECODE_FAILED ${response.statusCode} ${response.request?.url} error=$e body=${_shortText(response.body)}',
+        'JSON_DECODE_FAILED status=${response.statusCode} error=${e.runtimeType}',
       );
       return Response(
         statusCode: response.statusCode,
@@ -143,11 +155,14 @@ class ApiClient {
     Response response0 = Response(
       body: body ?? response.body,
       bodyString: response.body.toString(),
-      request: Request(
-        headers: response.request!.headers,
-        method: response.request!.method,
-        url: response.request!.url,
-      ),
+      request:
+          response.request == null
+              ? null
+              : Request(
+                headers: response.request!.headers,
+                method: response.request!.method,
+                url: response.request!.url,
+              ),
       headers: response.headers,
       statusCode: response.statusCode,
       statusText: response.reasonPhrase,
@@ -176,7 +191,7 @@ class ApiClient {
 
     if (kDebugMode) {
       _logApiClientMessage(
-        'PARSED ${response0.request?.method ?? response.request?.method} ${response0.request?.url ?? response.request?.url} status=${response0.statusCode} statusText=${response0.statusText} parsedBody=${_bodySummary(response0.body)}',
+        'PARSED ${response.request?.method} ${_logUrl(response.request?.url)} status=${response0.statusCode} parsedBody=${_bodySummary(response0.body)}',
       );
     }
 
@@ -190,11 +205,7 @@ class ApiClient {
     dynamic body,
   }) async {
     final url = AppConstants.appBaseUrl + uri;
-    final requestHeaders = _jsonHeaders({
-      'content-type': 'application/json',
-      'authorization': 'Bearer ${AppUsageService.getToken()}',
-      'Accept-Language': Get.find<LocalizationController>().locale.languageCode,
-    });
+    final requestHeaders = await _jsonHeaders(headers);
     try {
       _logRequest('PUT', url, headers: requestHeaders, body: body);
       http.Response response = await http
@@ -215,10 +226,7 @@ class ApiClient {
     dynamic body,
   }) async {
     final url = AppConstants.appBaseUrl + uri;
-    final requestHeaders = _jsonHeaders({
-      'content-type': 'application/json',
-      'Accept-Language': Get.find<LocalizationController>().locale.languageCode,
-    });
+    final requestHeaders = await _jsonHeaders(headers);
     try {
       _logRequest('PATCH', url, headers: requestHeaders, body: body);
       http.Response response = await http
@@ -243,63 +251,78 @@ class ApiClient {
     dynamic body,
   }) {
     if (!kDebugMode) return;
-    _logApiClientMessage('REQUEST $method $url');
+    _logApiClientMessage('REQUEST $method ${_logUrl(url)}');
     if (headers != null) {
       _logApiClientMessage('REQUEST_HEADERS ${_redactHeaders(headers)}');
     }
     if (body != null) {
-      _logApiClientMessage('REQUEST_BODY ${_shortObject(_redactBody(body))}');
+      _logApiClientMessage('REQUEST_BODY ${_bodySummary(body)}');
     }
   }
 
   void _logRawResponse(http.Response response) {
     if (!kDebugMode) return;
     _logApiClientMessage(
-      'RESPONSE ${response.request?.method} ${response.request?.url} status=${response.statusCode} content-type=${response.headers['content-type']} bodyLength=${response.body.length}',
+      'RESPONSE ${response.request?.method} ${_logUrl(response.request?.url)} status=${response.statusCode} content-type=${response.headers['content-type']} bodyLength=${response.body.length}',
     );
   }
 
   void _logError(String method, String url, Object error) {
     if (!kDebugMode) return;
-    _logApiClientMessage('ERROR $method $url error=$error');
+    _logApiClientMessage(
+      'ERROR $method ${_logUrl(url)} type=${error.runtimeType}',
+    );
   }
 
-  Map<String, String> _jsonHeaders(Map<String, String>? headers) {
+  String _logUrl(Object? value) {
+    final uri = Uri.tryParse(value?.toString() ?? '');
+    if (uri == null) return '';
+    return '${uri.scheme}://${uri.host}${uri.path}';
+  }
+
+  Future<Map<String, String>> _jsonHeaders(Map<String, String>? headers) async {
     final normalizedHeaders = Map<String, String>.from(headers ?? {});
     normalizedHeaders.putIfAbsent('Content-Type', () => 'application/json');
     normalizedHeaders.putIfAbsent('Accept', () => 'application/json');
+    normalizedHeaders.putIfAbsent('X-Request-ID', () => const Uuid().v4());
+    if (!normalizedHeaders.keys.any(
+      (key) => key.toLowerCase() == 'authorization',
+    )) {
+      final token = await AppUsageService.getToken();
+      if (token?.isNotEmpty == true) {
+        normalizedHeaders['Authorization'] = 'Bearer $token';
+      }
+    }
+    if (Get.isRegistered<LocalizationController>()) {
+      normalizedHeaders.putIfAbsent(
+        'Accept-Language',
+        () => Get.find<LocalizationController>().locale.languageCode,
+      );
+    }
     return normalizedHeaders;
+  }
+
+  Future<Map<String, String>> _multipartHeaders(
+    Map<String, String>? headers,
+  ) async {
+    final result = await _jsonHeaders(headers);
+    result.removeWhere((key, _) => key.toLowerCase() == 'content-type');
+    return result;
   }
 
   Map<String, String> _redactHeaders(Map<String, String> headers) {
     final copy = Map<String, String>.from(headers);
     for (final key in copy.keys.toList()) {
       final lower = key.toLowerCase();
-      if (lower == 'authorization') {
-        final value = copy[key] ?? '';
-        copy[key] =
-            value.length <= 16 ? '***' : '${value.substring(0, 16)}...***';
-      }
-    }
-    return copy;
-  }
-
-  dynamic _redactBody(dynamic body) {
-    if (body is! Map) return body;
-    final copy = Map<dynamic, dynamic>.from(body);
-    for (final key in copy.keys.toList()) {
-      final lower = key.toString().toLowerCase();
-      if (lower.contains('password') ||
+      if (lower == 'authorization' ||
+          lower == 'cookie' ||
           lower.contains('token') ||
-          lower == 'otp' ||
-          lower == 'resetproof') {
+          lower.contains('key')) {
         copy[key] = '***';
       }
     }
     return copy;
   }
-
-  String _shortObject(dynamic value) => _shortText(value.toString());
 
   String _bodySummary(dynamic value) {
     if (value is Map) {
@@ -311,22 +334,11 @@ class ApiClient {
       if (value.containsKey('totalNotFiltered')) {
         parts.add('totalNotFiltered=${value['totalNotFiltered']}');
       }
-      if (value.containsKey('id')) parts.add('id=${value['id']}');
-      if (value.containsKey('serialNumber')) {
-        parts.add('serialNumber=${value['serialNumber']}');
-      }
-      if (value.containsKey('orderNumber')) {
-        parts.add('orderNumber=${value['orderNumber']}');
-      }
       if (parts.isNotEmpty) return '{${parts.join(', ')}}';
+      return '{keys=${value.keys.join(', ')}}';
     }
-    return _shortObject(_redactBody(value));
-  }
-
-  String _shortText(String value) {
-    const maxLength = 450;
-    if (value.length <= maxLength) return value;
-    return '${value.substring(0, maxLength)}...<truncated ${value.length - maxLength} chars>';
+    if (value is List) return 'list(length=${value.length})';
+    return value == null ? 'null' : value.runtimeType.toString();
   }
 
   void _logApiClientMessage(String message) {

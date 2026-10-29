@@ -97,7 +97,7 @@ class _BuildTwoItemState extends State<BuildTwoItem> {
                         ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(width: 200),
+                            const SizedBox(width: 200),
                             Text(
                               '${"Size".tr}: ${widget.item.itemSizeSelect}',
 
@@ -117,7 +117,7 @@ class _BuildTwoItemState extends State<BuildTwoItem> {
                             ),
                           ],
                         )
-                        : SizedBox(),
+                        : const SizedBox(),
                     Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -138,7 +138,7 @@ class _BuildTwoItemState extends State<BuildTwoItem> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 5),
+                          const SizedBox(height: 5),
                           Container(
                             height: 27.h,
                             width: 100.w,
