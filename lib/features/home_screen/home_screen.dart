@@ -343,7 +343,7 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                   hasScrollBody: false,
                   child: Center(
                     child: Text(
-                      'لا توجد أقسام مطابقة',
+                      'لا توجد أقسام مطابقة'.tr,
                       style: StoreColors.text(
                         context,
                         StoreTypography.body,
@@ -389,7 +389,7 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                         8,
                       ),
                       child: Text(
-                        'أقسام فرعية',
+                        'أقسام فرعية'.tr,
                         style: StoreColors.text(
                           context,
                           StoreTypography.title,
@@ -438,13 +438,13 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
             alignment: Alignment.center,
             children: [
               Text(
-                'الأقسام',
+                'الأقسام'.tr,
                 style: StoreColors.text(context, StoreTypography.title),
               ),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: IconButton(
-                  tooltip: 'الرجوع',
+                  tooltip: 'الرجوع'.tr,
                   onPressed: widget.onBack,
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
                 ),
@@ -452,7 +452,7 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
               Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: IconButton(
-                  tooltip: _searchExpanded ? 'إغلاق البحث' : 'بحث',
+                  tooltip: _searchExpanded ? 'إغلاق البحث'.tr : 'بحث'.tr,
                   onPressed: () {
                     setState(() {
                       _searchExpanded = !_searchExpanded;
@@ -498,7 +498,7 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                         textInputAction: TextInputAction.search,
                         style: StoreColors.text(context, StoreTypography.body),
                         decoration: InputDecoration(
-                          hintText: 'ابحث عن قسم...',
+                          hintText: 'ابحث عن قسم...'.tr,
                           hintStyle: StoreColors.text(
                             context,
                             StoreTypography.caption,
@@ -508,7 +508,7 @@ class _CategoriesDestinationState extends State<_CategoriesDestination> {
                               _query.isEmpty
                                   ? null
                                   : IconButton(
-                                    tooltip: 'مسح البحث',
+                                    tooltip: 'مسح البحث'.tr,
                                     onPressed: () {
                                       _search.clear();
                                       setState(() => _query = '');

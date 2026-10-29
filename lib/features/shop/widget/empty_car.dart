@@ -15,7 +15,7 @@ class EmptyCar extends StatelessWidget {
       kind: StoreMessageKind.empty,
       icon: Icons.shopping_cart_outlined,
       title: 'Your shopping cart is empty'.tr,
-      message: 'أضف المنتجات التي تريد الاحتفاظ بها لإتمام الطلب لاحقًا.',
+      message: 'أضف المنتجات التي تريد الاحتفاظ بها لإتمام الطلب لاحقًا.'.tr,
     ),
   );
 }

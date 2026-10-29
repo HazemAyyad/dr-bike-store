@@ -296,7 +296,7 @@ class _ViewerHeader extends StatelessWidget {
                   (Get.locale?.languageCode ??
                               Localizations.localeOf(context).languageCode) ==
                           'ar'
-                      ? 'ملء الشاشة'
+                      ? 'ملء الشاشة'.tr
                       : 'Fullscreen',
               onPressed: onFullscreen,
               color: Colors.white,

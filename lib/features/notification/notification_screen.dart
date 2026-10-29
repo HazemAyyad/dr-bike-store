@@ -37,7 +37,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       backgroundColor: StoreColors.resolve(context, StorePalette.background),
       appBar: AppBar(
         title: Text(
-          'الإشعارات',
+          'الإشعارات'.tr,
           style: StoreColors.text(context, StoreTypography.title),
         ),
       ),
@@ -78,7 +78,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'كل جديد في مكان واحد',
+                                'كل جديد في مكان واحد'.tr,
                                 style: StoreColors.text(
                                   context,
                                   StoreTypography.title,
@@ -86,8 +86,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                               Text(
                                 controller.unreadCount == 0
-                                    ? 'لا توجد إشعارات غير مقروءة'
-                                    : '${controller.unreadCount} إشعار غير مقروء',
+                                    ? 'لا توجد إشعارات غير مقروءة'.tr
+                                    : '@count إشعار غير مقروء'.trParams({
+                                      'count': '${controller.unreadCount}',
+                                    }),
                                 style: StoreColors.text(
                                   context,
                                   StoreTypography.caption,
@@ -97,7 +99,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           ),
                         ),
                         StoreFilterChip(
-                          label: 'الكل',
+                          label: 'الكل'.tr,
                           selected: true,
                           compact: true,
                           onSelected: (_) {},

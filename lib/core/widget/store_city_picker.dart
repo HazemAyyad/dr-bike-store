@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -85,7 +86,7 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
                 children: [
                   Expanded(
                     child: Text(
-                      'اختر المدينة',
+                      'اختر المدينة'.tr,
                       style: TextStyle(
                         color: StoreColors.resolve(
                           context,
@@ -96,7 +97,7 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'إغلاق',
+                    tooltip: 'إغلاق'.tr,
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
                     color: StoreColors.resolve(
@@ -112,8 +113,8 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
                 style: TextStyle(
                   color: StoreColors.resolve(context, StorePalette.textPrimary),
                 ),
-                decoration: const InputDecoration(
-                  hintText: 'ابحث عن مدينة',
+                decoration: InputDecoration(
+                  hintText: 'ابحث عن مدينة'.tr,
                   prefixIcon: Icon(Icons.search),
                 ),
                 onChanged:
@@ -127,7 +128,7 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
                         ? Padding(
                           padding: const EdgeInsets.all(24),
                           child: Text(
-                            'لا توجد مدن مطابقة',
+                            'لا توجد مدن مطابقة'.tr,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: StoreColors.resolve(

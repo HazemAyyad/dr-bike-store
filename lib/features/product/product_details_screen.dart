@@ -677,7 +677,7 @@ class _PurchaseSection extends StatelessWidget {
                     flex: 3,
                     child: StoreButton(
                       key: const Key('product-add-to-cart'),
-                      label: inCart ? 'في السلة' : 'storeAddToCart'.tr,
+                      label: inCart ? 'في السلة'.tr : 'storeAddToCart'.tr,
                       height: 42,
                       icon:
                           inCart

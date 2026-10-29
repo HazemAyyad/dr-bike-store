@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 import '../../../controller/order/order_controller.dart';
@@ -27,7 +28,7 @@ class OrderActions extends StatelessWidget {
       children: [
         if (canTrack)
           StoreButton(
-            label: 'تتبع الشحنة',
+            label: 'تتبع الشحنة'.tr,
             icon: Icons.local_shipping_outlined,
             variant: StoreButtonVariant.secondary,
             onPressed: onTrack,
@@ -35,7 +36,7 @@ class OrderActions extends StatelessWidget {
         if (canTrack && canCancel) const SizedBox(height: 9),
         if (canCancel)
           StoreButton(
-            label: 'طلب إلغاء الطلب',
+            label: 'طلب إلغاء الطلب'.tr,
             icon: Icons.cancel_outlined,
             variant: StoreButtonVariant.destructive,
             isLoading:
@@ -51,18 +52,19 @@ class OrderActions extends StatelessWidget {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('طلب إلغاء الطلب؟'),
-            content: const Text(
-              'سيتحقق الخادم من إمكانية الإلغاء حسب حالة الطلب الحالية. لن تتغير الحالة محليًا قبل موافقة الخادم.',
+            title: Text('طلب إلغاء الطلب؟'.tr),
+            content: Text(
+              'يمكن طلب الإلغاء حسب حالة الطلب. سيبقى طلبك دون تغيير حتى تأكيد الإلغاء.'
+                  .tr,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('تراجع'),
+                child: Text('تراجع'.tr),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('إرسال الطلب'),
+                child: Text('إرسال الطلب'.tr),
               ),
             ],
           ),

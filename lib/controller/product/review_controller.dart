@@ -65,8 +65,12 @@ class ReviewController extends GetxController {
   }
 
   String? validate() {
-    if (rating < 1 || rating > 5) return 'اختر تقييماً من 1 إلى 5.';
-    if (commentController.text.length > 5000) return 'التعليق يتجاوز 5000 حرف.';
+    if (rating < 1 || rating > 5) {
+      return 'اختر تقييماً من 1 إلى 5.'.tr;
+    }
+    if (commentController.text.length > 5000) {
+      return 'التعليق يتجاوز 5000 حرف.'.tr;
+    }
     return null;
   }
 
@@ -115,7 +119,7 @@ class ReviewController extends GetxController {
       );
       ownState =
           reviews.isEmpty
-              ? const StoreEmpty(message: 'لا يوجد تقييم شخصي.')
+              ? StoreEmpty(message: 'لا يوجد تقييم شخصي.'.tr)
               : StoreContent(reviews);
     } catch (_) {
       ownState = const StoreError(message: 'storeGenericError');
@@ -127,7 +131,8 @@ class ReviewController extends GetxController {
     final id = productId;
     message = validate();
     if (id == null || message != null || !canSubmit) {
-      message ??= isGuest ? 'يجب تسجيل الدخول أولاً.' : 'يلزم حساب عميل نشط.';
+      message ??=
+          isGuest ? 'يجب تسجيل الدخول أولاً.'.tr : 'يلزم حساب عميل نشط.'.tr;
       mutationState = ReviewMutationState.failure;
       update();
       return false;
@@ -146,8 +151,8 @@ class ReviewController extends GetxController {
       mutationState = ReviewMutationState.success;
       message =
           parsed.status == ReviewStatus.pending
-              ? 'تم إرسال تقييمك للمراجعة'
-              : 'تم حفظ التقييم.';
+              ? 'تم إرسال تقييمك للمراجعة'.tr
+              : 'تم حفظ التقييم.'.tr;
       update();
       return true;
     } on ReviewSubmissionException catch (error) {
@@ -159,7 +164,7 @@ class ReviewController extends GetxController {
     } catch (_) {
       ownReview = original;
       mutationState = ReviewMutationState.failure;
-      message = 'تعذر إرسال التقييم.';
+      message = 'تعذر إرسال التقييم.'.tr;
       update();
       return false;
     }
@@ -184,7 +189,7 @@ class ReviewController extends GetxController {
     } catch (_) {
       ownReview = current;
       mutationState = ReviewMutationState.failure;
-      message = 'تعذر تحديث التقييم.';
+      message = 'تعذر تحديث التقييم.'.tr;
       update();
       return false;
     }
@@ -198,10 +203,10 @@ class ReviewController extends GetxController {
       ownReview = refreshed;
       ownState = StoreContent(reviews);
       mutationState = ReviewMutationState.success;
-      message = 'تم تحديث تقييمك وهو قيد المراجعة.';
+      message = 'تم تحديث تقييمك وهو قيد المراجعة.'.tr;
     } catch (_) {
       mutationState = ReviewMutationState.syncRequired;
-      message = 'تم حفظ التقييم، لكن تعذر تحديث حالته. أعد المحاولة.';
+      message = 'تم حفظ التقييم، لكن تعذر تحديث حالته. أعد المحاولة.'.tr;
     }
     update();
     return true;
@@ -233,19 +238,19 @@ class ReviewController extends GetxController {
       final serverMessage =
           body is Map ? (body['message'] ?? body['error'])?.toString() : null;
       throw ReviewSubmissionException(switch (response.statusCode) {
-        401 => 'انتهت الجلسة. سجّل الدخول ثم حاول مجددًا.',
-        403 => 'يلزم حساب عميل نشط لإرسال التقييم.',
+        401 => 'انتهت الجلسة. سجّل الدخول ثم حاول مجددًا.'.tr,
+        403 => 'يلزم حساب عميل نشط لإرسال التقييم.'.tr,
         422 =>
           serverMessage?.trim().isNotEmpty == true
               ? serverMessage!
-              : 'راجع التقييم والتعليق ثم حاول مجددًا.',
-        _ => 'تعذر إرسال التقييم. حاول مجددًا.',
+              : 'راجع التقييم والتعليق ثم حاول مجددًا.'.tr,
+        _ => 'تعذر إرسال التقييم. حاول مجددًا.'.tr,
       });
     }
     final data = (response.body as Map)['data'];
     if (data is! Map) {
-      throw const ReviewSubmissionException(
-        'تم استلام رد غير مكتمل من الخادم. حاول مجددًا.',
+      throw ReviewSubmissionException(
+        'تعذر تأكيد حالة التقييم. حاول مجددًا.'.tr,
       );
     }
     return Review.fromOwnJson(Map<String, dynamic>.from(data));

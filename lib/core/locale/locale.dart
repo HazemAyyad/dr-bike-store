@@ -1,6 +1,7 @@
 // ignore_for_file: equal_keys_in_map
 
 import 'package:get/get.dart';
+import 'store_browse_translations.dart';
 import 'store_flow_translations.dart';
 import 'store_order_translations.dart';
 
@@ -17,6 +18,7 @@ class MyLocale implements Translations {
       'storeExpectedAmount': 'المبلغ المتوقع: @amount ₪',
       'storeBeforeShipping': 'الإجمالي قبل الشحن: @amount ₪',
       ...StoreFlowTranslations.ar,
+      ...StoreBrowseTranslations.ar,
       ...StoreOrderTranslations.ar,
       'storeOrderItemsCount': '@count منتج',
       'storeOrderProductFallback': 'منتج @id',
@@ -525,6 +527,7 @@ class MyLocale implements Translations {
       'storeExpectedAmount': 'Expected total: ₪@amount',
       'storeBeforeShipping': 'Total before shipping: ₪@amount',
       ...StoreFlowTranslations.en,
+      ...StoreBrowseTranslations.en,
       ...StoreOrderTranslations.en,
       'storeLoadMore': 'Load more',
       'storeLoadMoreFailed': 'More products could not be loaded. Please retry.',
@@ -1040,6 +1043,7 @@ class MyLocale implements Translations {
       'storeExpectedAmount': 'סכום צפוי: ₪@amount',
       'storeBeforeShipping': 'סכום לפני משלוח: ₪@amount',
       ...StoreFlowTranslations.he,
+      ...StoreBrowseTranslations.he,
       ...StoreOrderTranslations.he,
       'storeLoadMore': 'הצג עוד',
       'storeLoadMoreFailed': 'לא ניתן לטעון מוצרים נוספים. נא לנסות שוב.',

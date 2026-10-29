@@ -67,7 +67,7 @@ class ItemShopCar extends StatelessWidget {
                     SizedBox.square(
                       dimension: 34,
                       child: IconButton(
-                        tooltip: 'حذف',
+                        tooltip: 'حذف'.tr,
                         padding: EdgeInsets.zero,
                         color: StorePalette.error,
                         onPressed: () => _confirmRemove(context, controller),
@@ -87,7 +87,10 @@ class ItemShopCar extends StatelessWidget {
                     style: StoreColors.text(context, StoreTypography.caption),
                   ),
                 Text(
-                  'رمز المنتج: ${line.itemSnapshot.model.trim().isEmpty ? line.productId : line.itemSnapshot.model}',
+                  'رمز المنتج: @code'.trParams({
+                    'code':
+                        '${line.itemSnapshot.model.trim().isEmpty ? line.productId : line.itemSnapshot.model}',
+                  }),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: StoreColors.text(
@@ -97,7 +100,7 @@ class ItemShopCar extends StatelessWidget {
                 ),
                 if (line.requiresRevalidation)
                   Text(
-                    'يتم التحقق من التوفر قبل الطلب',
+                    'يتم التحقق من التوفر قبل الطلب'.tr,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: StoreColors.text(
@@ -186,7 +189,8 @@ class ItemShopCar extends StatelessWidget {
   }
 
   String get _optionLabel => [
-    if (line.sizeLabel?.trim().isNotEmpty == true) 'الخيار: ${line.sizeLabel}',
+    if (line.sizeLabel?.trim().isNotEmpty == true)
+      'الخيار: @option'.trParams({'option': line.sizeLabel!}),
     if (line.colorLabel?.trim().isNotEmpty == true) line.colorLabel!,
   ].join(' • ');
 
@@ -204,16 +208,16 @@ class ItemShopCar extends StatelessWidget {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('حذف المنتج؟'),
-            content: const Text('سيتم حذف هذا الخيار فقط من السلة.'),
+            title: Text('حذف المنتج؟'.tr),
+            content: Text('سيتم حذف هذا الخيار فقط من السلة.'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('إلغاء'),
+                child: Text('إلغاء'.tr),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('حذف'),
+                child: Text('حذف'.tr),
               ),
             ],
           ),
@@ -251,7 +255,7 @@ class _QuantityStepper extends StatelessWidget {
           icon: Icons.remove_rounded,
           enabled: canDecrement,
           onPressed: onDecrement,
-          label: 'إنقاص الكمية',
+          label: 'إنقاص الكمية'.tr,
         ),
         SizedBox(
           width: 28,
@@ -265,7 +269,7 @@ class _QuantityStepper extends StatelessWidget {
           icon: Icons.add_rounded,
           enabled: canIncrement,
           onPressed: onIncrement,
-          label: 'زيادة الكمية',
+          label: 'زيادة الكمية'.tr,
         ),
       ],
     ),

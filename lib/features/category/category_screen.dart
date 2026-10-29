@@ -66,11 +66,11 @@ class CategoryScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          tooltip: 'الرجوع',
+          tooltip: 'الرجوع'.tr,
           onPressed: Get.back,
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
         ),
-        title: const Text('قائمة المنتجات'),
+        title: Text('قائمة المنتجات'.tr),
         titleTextStyle: StoreColors.text(
           context,
           StoreTypography.label,
@@ -113,7 +113,7 @@ class CategoryScreen extends StatelessWidget {
     };
     if (state is StoreEmpty<List<Item>> || products.isEmpty) {
       return _refreshableMessage(
-        message: 'لا توجد منتجات في هذا القسم',
+        message: 'لا توجد منتجات في هذا القسم'.tr,
         icon: Icons.inventory_2_outlined,
       );
     }
@@ -293,7 +293,9 @@ class CategoryScreen extends StatelessWidget {
           children: [
             Expanded(
               child: _CatalogControl(
-                label: 'تصفية (${controller.filters.value.activeCount})',
+                label: 'تصفية (@count)'.trParams({
+                  'count': '${controller.filters.value.activeCount}',
+                }),
                 icon: Icons.tune_rounded,
                 emphasized: true,
                 onTap: () => showProductFilterSheet(context, controller),
@@ -302,7 +304,7 @@ class CategoryScreen extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: _CatalogControl(
-                label: 'ترتيب',
+                label: 'ترتيب'.tr,
                 icon: Icons.swap_vert_rounded,
                 onTap: () => _showSort(context),
               ),
@@ -311,7 +313,7 @@ class CategoryScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '$count منتج',
+          'storeOrderItemsCount'.trParams({'count': '$count'}),
           style: StoreColors.text(context, StoreTypography.caption).copyWith(
             color: StoreColors.resolve(context, StorePalette.textPrimary),
             fontWeight: StoreTypography.medium,
@@ -323,7 +325,7 @@ class CategoryScreen extends StatelessWidget {
 
   String get _title {
     final value = controller.titleMain?.trim();
-    return value == null || value.isEmpty ? 'المنتجات' : value;
+    return value == null || value.isEmpty ? 'المنتجات'.tr : value;
   }
 
   Future<void> _reload() => controller.getProductsByOnlineStoreCategory(
@@ -376,11 +378,11 @@ class CategoryScreen extends StatelessWidget {
   }
 
   String _sortLabel(CatalogSort sort) => switch (sort) {
-    CatalogSort.recommended => 'الترتيب المقترح',
-    CatalogSort.newest => 'الأحدث أولاً',
-    CatalogSort.priceAsc => 'السعر: من الأقل للأعلى',
-    CatalogSort.priceDesc => 'السعر: من الأعلى للأقل',
-    CatalogSort.name => 'الاسم',
+    CatalogSort.recommended => 'الترتيب المقترح'.tr,
+    CatalogSort.newest => 'الأحدث أولاً'.tr,
+    CatalogSort.priceAsc => 'السعر: من الأقل للأعلى'.tr,
+    CatalogSort.priceDesc => 'السعر: من الأعلى للأقل'.tr,
+    CatalogSort.name => 'الاسم'.tr,
   };
 }
 
@@ -458,10 +460,7 @@ class _CatalogMessage extends StatelessWidget {
             style: StoreColors.text(context, StoreTypography.body),
           ),
           const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: onRetry,
-            child: const Text('إعادة المحاولة'),
-          ),
+          OutlinedButton(onPressed: onRetry, child: Text('إعادة المحاولة'.tr)),
         ],
       ),
     ),

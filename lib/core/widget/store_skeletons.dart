@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -258,7 +259,7 @@ class StoreInlineFieldSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: label ?? 'جاري التحميل',
+    label: label ?? 'جاري التحميل'.tr,
     child: ExcludeSemantics(
       child: Container(
         height: height,

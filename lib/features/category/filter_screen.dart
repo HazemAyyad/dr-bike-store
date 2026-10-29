@@ -88,23 +88,23 @@ class _FilterContentState extends State<_FilterContent> {
     children: [
       Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 8, 4),
-        child: SizedBox(
-          height: 48,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
           child: Row(
             children: [
               IconButton(
-                tooltip: 'إغلاق',
+                tooltip: 'إغلاق'.tr,
                 onPressed: widget.onClose,
                 icon: const Icon(Icons.close_rounded),
               ),
               Expanded(
                 child: Text(
-                  'تصفية المنتجات',
+                  'تصفية المنتجات'.tr,
                   textAlign: TextAlign.center,
                   style: StoreColors.text(context, StoreTypography.title),
                 ),
               ),
-              TextButton(onPressed: _reset, child: const Text('إعادة')),
+              TextButton(onPressed: _reset, child: Text('إعادة'.tr)),
             ],
           ),
         ),
@@ -114,15 +114,15 @@ class _FilterContentState extends State<_FilterContent> {
           padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 20),
           children: [
             Text(
-              'السعر',
+              'السعر'.tr,
               style: StoreColors.text(context, StoreTypography.label),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: _priceField(minimum, 'من')),
+                Expanded(child: _priceField(context, minimum, 'من'.tr)),
                 const SizedBox(width: 10),
-                Expanded(child: _priceField(maximum, 'إلى')),
+                Expanded(child: _priceField(context, maximum, 'إلى'.tr)),
               ],
             ),
             Divider(
@@ -133,7 +133,7 @@ class _FilterContentState extends State<_FilterContent> {
               contentPadding: EdgeInsets.zero,
               value: availableOnly,
               activeColor: StorePalette.purple,
-              title: const Text('المنتجات المتاحة للشراء فقط'),
+              title: Text('المنتجات المتاحة للشراء فقط'.tr),
               secondary: const Icon(Icons.inventory_2_outlined),
               onChanged: (value) => setState(() => availableOnly = value),
             ),
@@ -141,7 +141,7 @@ class _FilterContentState extends State<_FilterContent> {
               contentPadding: EdgeInsets.zero,
               value: onSale,
               activeColor: StorePalette.purple,
-              title: const Text('العروض والخصومات فقط'),
+              title: Text('العروض والخصومات فقط'.tr),
               secondary: const Icon(Icons.local_offer_outlined),
               onChanged: (value) => setState(() => onSale = value),
             ),
@@ -149,11 +149,11 @@ class _FilterContentState extends State<_FilterContent> {
             Container(
               padding: const EdgeInsets.all(StoreSpacing.sm),
               decoration: BoxDecoration(
-                color: StoreColors.resolve(context, StorePalette.lightPurple),
+                color: StoreColors.resolve(context, StorePalette.background),
                 borderRadius: BorderRadius.circular(StoreRadii.md),
               ),
               child: Text(
-                'يتم تطبيق التصفية من الخادم على جميع منتجات التصنيف.',
+                'ابحث عن المنتجات حسب السعر والتوفر والعروض.'.tr,
                 style: StoreColors.text(
                   context,
                   StoreTypography.caption,
@@ -169,7 +169,7 @@ class _FilterContentState extends State<_FilterContent> {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
         child: SizedBox(
           width: double.infinity,
-          height: 46,
+          height: 56,
           child: FilledButton(
             onPressed: _apply,
             style: FilledButton.styleFrom(
@@ -178,28 +178,33 @@ class _FilterContentState extends State<_FilterContent> {
                 borderRadius: BorderRadius.circular(StoreRadii.md),
               ),
             ),
-            child: const Text('تطبيق الفلاتر'),
+            child: Text('تطبيق الفلاتر'.tr),
           ),
         ),
       ),
     ],
   );
 
-  Widget _priceField(TextEditingController controller, String label) =>
-      TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(
-          labelText: label,
-          suffixText: '₪',
-          filled: true,
-          fillColor: StorePalette.background,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(StoreRadii.md),
-            borderSide: const BorderSide(color: StorePalette.border),
-          ),
+  Widget _priceField(
+    BuildContext context,
+    TextEditingController controller,
+    String label,
+  ) => TextField(
+    controller: controller,
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    decoration: InputDecoration(
+      labelText: label,
+      suffixText: '₪',
+      filled: true,
+      fillColor: StoreColors.resolve(context, StorePalette.background),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(StoreRadii.md),
+        borderSide: BorderSide(
+          color: StoreColors.resolve(context, StorePalette.border),
         ),
-      );
+      ),
+    ),
+  );
 
   Future<void> _apply() async {
     final min = double.tryParse(minimum.text.trim());
@@ -207,7 +212,7 @@ class _FilterContentState extends State<_FilterContent> {
     if ((min != null && min < 0) ||
         (max != null && max < 0) ||
         (min != null && max != null && min > max)) {
-      showCustomSnackBar('تحقق من نطاق السعر المدخل.', isError: true);
+      showCustomSnackBar('تحقق من نطاق السعر المدخل.'.tr, isError: true);
       return;
     }
     widget.onClose();

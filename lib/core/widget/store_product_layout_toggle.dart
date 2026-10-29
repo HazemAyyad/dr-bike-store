@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -27,13 +28,13 @@ class StoreProductLayoutToggle extends StatelessWidget {
       children: [
         _button(
           icon: Icons.view_list_rounded,
-          label: 'عرض قائمة',
+          label: 'عرض قائمة'.tr,
           selected: !isGrid,
           onTap: () => onChanged(false),
         ),
         _button(
           icon: Icons.grid_view_rounded,
-          label: 'عرض شبكة',
+          label: 'عرض شبكة'.tr,
           selected: isGrid,
           onTap: () => onChanged(true),
         ),

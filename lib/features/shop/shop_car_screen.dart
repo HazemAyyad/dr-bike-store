@@ -37,7 +37,7 @@ class ShopCarScreen extends StatelessWidget {
               elevation: 0,
               centerTitle: true,
               leading: IconButton(
-                tooltip: 'الرجوع',
+                tooltip: 'الرجوع'.tr,
                 onPressed: Get.back,
                 icon: Icon(
                   storeBackIcon(context),
@@ -45,7 +45,11 @@ class ShopCarScreen extends StatelessWidget {
                   size: 19,
                 ),
               ),
-              title: Text('سلة المشتريات (${controller.cartQuantity})'),
+              title: Text(
+                'سلة المشتريات (@count)'.trParams({
+                  'count': '${controller.cartQuantity}',
+                }),
+              ),
               titleTextStyle: StoreColors.text(
                 context,
                 StoreTypography.title,
@@ -54,13 +58,13 @@ class ShopCarScreen extends StatelessWidget {
                 const StoreSearchAction(),
                 if (controller.cartLines.isNotEmpty)
                   PopupMenuButton<String>(
-                    tooltip: 'خيارات السلة',
+                    tooltip: 'خيارات السلة'.tr,
                     onSelected: (_) => _confirmClear(context, controller),
                     itemBuilder:
-                        (_) => const [
+                        (_) => [
                           PopupMenuItem(
                             value: 'clear',
-                            child: Text('مسح السلة'),
+                            child: Text('مسح السلة'.tr),
                           ),
                         ],
                   ),
@@ -128,7 +132,7 @@ class ShopCarScreen extends StatelessWidget {
                           boxShadow: const [StoreElevation.lowShadow],
                         ),
                         child: StoreButton(
-                          label: 'إتمام الطلب',
+                          label: 'إتمام الطلب'.tr,
                           height: 46,
                           isLoading: controller.isLoading,
                           onPressed:
@@ -150,16 +154,16 @@ class ShopCarScreen extends StatelessWidget {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('مسح السلة؟'),
-            content: const Text('سيتم حذف جميع المنتجات المحتفظ بها من السلة.'),
+            title: Text('مسح السلة؟'.tr),
+            content: Text('سيتم حذف جميع المنتجات المحتفظ بها من السلة.'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('إلغاء'),
+                child: Text('إلغاء'.tr),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('مسح'),
+                child: Text('مسح'.tr),
               ),
             ],
           ),
@@ -186,7 +190,7 @@ class _CouponSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'كوبون خصم',
+          'كوبون خصم'.tr,
           style: StoreColors.text(context, StoreTypography.label),
         ),
         const SizedBox(height: 8),
@@ -202,7 +206,7 @@ class _CouponSection extends StatelessWidget {
                   onSubmitted: controller.retainCouponIntent,
                   style: StoreColors.text(context, StoreTypography.body),
                   decoration: InputDecoration(
-                    hintText: 'أدخل رمز الخصم',
+                    hintText: 'أدخل رمز الخصم'.tr,
                     hintStyle: StoreColors.text(
                       context,
                       StoreTypography.caption,
@@ -242,7 +246,9 @@ class _CouponSection extends StatelessWidget {
                   ),
                   textStyle: StoreColors.text(context, StoreTypography.label),
                 ),
-                child: Text(controller.activeCode == true ? 'مفعّل' : 'تطبيق'),
+                child: Text(
+                  controller.activeCode == true ? 'مفعّل'.tr : 'تطبيق'.tr,
+                ),
               ),
             ),
           ],
@@ -251,7 +257,11 @@ class _CouponSection extends StatelessWidget {
             controller.couponModel != null) ...[
           const SizedBox(height: 6),
           Text(
-            'تم تطبيق خصم ${controller.couponModel!.discountAmount.toStringAsFixed(2)} ₪، وسيعيد الخادم التحقق عند إنشاء الطلب.',
+            'خصم @amount ₪. سيتم تأكيد الإجمالي عند إتمام الطلب.'.trParams({
+              'amount': controller.couponModel!.discountAmount.toStringAsFixed(
+                2,
+              ),
+            }),
             style: StoreColors.text(
               context,
               StoreTypography.caption,

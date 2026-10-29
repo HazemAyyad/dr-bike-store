@@ -253,9 +253,9 @@ class StoreProductCard extends StatelessWidget {
                               label:
                                   inStock
                                       ? isInCart
-                                          ? 'في السلة'
+                                          ? 'في السلة'.tr
                                           : 'storeAddToCart'.tr
-                                      : 'غير متوفر',
+                                      : 'غير متوفر'.tr,
                               child:
                                   denseGrid
                                       ? Icon(
@@ -279,9 +279,9 @@ class StoreProductCard extends StatelessWidget {
                                             child: Text(
                                               inStock
                                                   ? isInCart
-                                                      ? 'في السلة'
-                                                      : 'أضف للسلة'
-                                                  : 'غير متوفر',
+                                                      ? 'في السلة'.tr
+                                                      : 'أضف للسلة'.tr
+                                                  : 'غير متوفر'.tr,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -622,7 +622,7 @@ class _StoreProductActions extends StatelessWidget {
         SizedBox.square(
           dimension: dimension,
           child: IconButton.filled(
-            tooltip: isInCart ? 'تمت الإضافة للسلة' : 'storeAddToCart'.tr,
+            tooltip: isInCart ? 'تمت الإضافة للسلة'.tr : 'storeAddToCart'.tr,
             onPressed: inStock ? onAddToCart : null,
             padding: EdgeInsets.zero,
             iconSize: iconSize,

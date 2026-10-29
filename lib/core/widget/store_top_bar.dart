@@ -115,9 +115,9 @@ class _StoreTopBarState extends State<StoreTopBar> {
                   else
                     Semantics(
                       button: true,
-                      label: 'فتح الملف الشخصي',
+                      label: 'فتح الملف الشخصي'.tr,
                       child: Tooltip(
-                        message: 'فتح الملف الشخصي',
+                        message: 'فتح الملف الشخصي'.tr,
                         excludeFromSemantics: true,
                         child: InkResponse(
                           onTap: widget.onProfile,
