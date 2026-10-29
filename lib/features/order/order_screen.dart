@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
@@ -30,11 +31,17 @@ class OrderScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'طلباتي',
-                      style: StoreTypography.headline.copyWith(fontSize: 20),
+                      'طلباتي'.tr,
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.headline,
+                      ).copyWith(fontSize: 20),
                     ),
                   ),
-                  Text('اسحب للأسفل للتحديث', style: StoreTypography.caption),
+                  Text(
+                    'اسحب للأسفل للتحديث'.tr,
+                    style: StoreColors.text(context, StoreTypography.caption),
+                  ),
                 ],
               ),
             ),
@@ -44,14 +51,23 @@ class OrderScreen extends StatelessWidget {
         ],
       );
       if (embedded) {
-        return ColoredBox(color: StorePalette.background, child: body);
+        return ColoredBox(
+          color: StoreColors.resolve(context, StorePalette.background),
+          child: body,
+        );
       }
       return Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: Scaffold(
-          backgroundColor: StorePalette.background,
+          backgroundColor: StoreColors.resolve(
+            context,
+            StorePalette.background,
+          ),
           appBar: AppBar(
-            title: Text('طلباتي', style: StoreTypography.title),
+            title: Text(
+              'طلباتي'.tr,
+              style: StoreColors.text(context, StoreTypography.title),
+            ),
             centerTitle: true,
             elevation: 0,
           ),
@@ -69,22 +85,22 @@ class OrderScreen extends StatelessWidget {
       controller,
       StoreMessageState(
         kind: StoreMessageKind.offline,
-        message: 'تحقق من الاتصال ثم اسحب للأسفل لإعادة المحاولة.',
+        message: 'تحقق من الاتصال ثم اسحب للأسفل لإعادة المحاولة.'.tr,
       ),
     ),
     OrderListStatus.error => _refreshable(
       controller,
       StoreMessageState(
         kind: StoreMessageKind.error,
-        message: controller.message ?? 'تعذر تحميل الطلبات.',
+        message: controller.message ?? 'تعذر تحميل الطلبات.'.tr,
       ),
     ),
     OrderListStatus.empty => _refreshable(
       controller,
-      const StoreMessageState(
+      StoreMessageState(
         kind: StoreMessageKind.empty,
-        title: 'لا توجد طلبات',
-        message: 'لا توجد طلبات ضمن هذه الحالة. اسحب للأسفل للتحديث.',
+        title: 'لا توجد طلبات'.tr,
+        message: 'لا توجد طلبات ضمن هذه الحالة. اسحب للأسفل للتحديث.'.tr,
       ),
     ),
     OrderListStatus.content => RefreshIndicator(
@@ -123,40 +139,56 @@ class _OrderFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    color: StorePalette.background,
+    color: StoreColors.resolve(context, StorePalette.background),
     padding: const EdgeInsetsDirectional.fromSTEB(14, 2, 14, 5),
     child: Container(
       height: 38,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: StorePalette.surface,
-        border: Border.all(color: StorePalette.border),
+        color: StoreColors.resolve(context, StorePalette.surface),
+        border: Border.all(
+          color: StoreColors.resolve(context, StorePalette.border),
+        ),
         borderRadius: BorderRadius.circular(StoreRadii.md),
       ),
       child: Row(
         children: [
-          Expanded(child: _segment(OrderListFilter.current, 'الحالية')),
-          Expanded(child: _segment(OrderListFilter.completed, 'المكتملة')),
-          Expanded(child: _segment(OrderListFilter.canceled, 'الملغاة')),
+          Expanded(
+            child: _segment(context, OrderListFilter.current, 'الحالية'),
+          ),
+          Expanded(
+            child: _segment(context, OrderListFilter.completed, 'المكتملة'),
+          ),
+          Expanded(
+            child: _segment(context, OrderListFilter.canceled, 'الملغاة'),
+          ),
         ],
       ),
     ),
   );
 
-  Widget _segment(OrderListFilter filter, String label) {
+  Widget _segment(BuildContext context, OrderListFilter filter, String label) {
     final selected = controller.selectedFilter == filter;
     return Material(
-      color: selected ? StorePalette.lightPurple : Colors.transparent,
+      color:
+          selected
+              ? StoreColors.resolve(context, StorePalette.lightPurple)
+              : Colors.transparent,
       borderRadius: BorderRadius.circular(StoreRadii.sm),
       child: InkWell(
         onTap: () => controller.load(filter: filter),
         borderRadius: BorderRadius.circular(StoreRadii.sm),
         child: Center(
           child: Text(
-            label,
-            style: StoreTypography.caption.copyWith(
+            label.tr,
+            style: StoreColors.text(context, StoreTypography.caption).copyWith(
               color:
-                  selected ? StorePalette.purple : StorePalette.textSecondary,
+                  selected
+                      ? StorePalette.purple
+                      : StoreColors.resolve(
+                        context,
+                        StorePalette.textSecondary,
+                      ),
               fontWeight:
                   selected ? StoreTypography.semiBold : StoreTypography.regular,
             ),
@@ -175,7 +207,7 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     borderRadius: BorderRadius.circular(StoreRadii.lg),
     child: InkWell(
       borderRadius: BorderRadius.circular(StoreRadii.lg),
@@ -186,7 +218,9 @@ class _OrderCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
-          border: Border.all(color: StorePalette.border),
+          border: Border.all(
+            color: StoreColors.resolve(context, StorePalette.border),
+          ),
           borderRadius: BorderRadius.circular(StoreRadii.lg),
           boxShadow: const [StoreElevation.lowShadow],
         ),
@@ -203,13 +237,22 @@ class _OrderCard extends StatelessWidget {
                         '#${order.orderNumber}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: StoreTypography.bodyMedium.copyWith(
-                          color: StorePalette.navy,
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.bodyMedium,
+                        ).copyWith(
+                          color: StoreColors.resolve(
+                            context,
+                            StorePalette.navy,
+                          ),
                         ),
                       ),
                       Text(
                         _displayDate(order.dateAdd),
-                        style: StoreTypography.caption,
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.caption,
+                        ),
                       ),
                     ],
                   ),
@@ -224,13 +267,21 @@ class _OrderCard extends StatelessWidget {
               children: [
                 Text(
                   '${_price(order.grandTotal)} ₪',
-                  style: StoreTypography.label.copyWith(
-                    color: StorePalette.navy,
+                  style: StoreColors.text(
+                    context,
+                    StoreTypography.label,
+                  ).copyWith(
+                    color: StoreColors.resolve(context, StorePalette.navy),
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text('${order.itemCount} منتج', style: StoreTypography.caption),
+                Text(
+                  'storeOrderItemsCount'.trParams({
+                    'count': '${order.itemCount}',
+                  }),
+                  style: StoreColors.text(context, StoreTypography.caption),
+                ),
                 const Spacer(),
                 if (order.hasTracking) ...[
                   const Icon(
@@ -243,19 +294,24 @@ class _OrderCard extends StatelessWidget {
                     child: Text(
                       order.shiplyTracking != null
                           ? _shiplyStatusLabel(order.shiplyTracking!)
-                          : 'يتوفر تتبع للشحنة',
+                          : 'يتوفر تتبع للشحنة'.tr,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: StoreTypography.caption.copyWith(
-                        color: StorePalette.purple,
-                      ),
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.caption,
+                      ).copyWith(color: StorePalette.purple),
                     ),
                   ),
                 ] else
                   Icon(
                     storeForwardIcon(context),
+                    textDirection: TextDirection.ltr,
                     size: 15,
-                    color: StorePalette.textSecondary,
+                    color: StoreColors.resolve(
+                      context,
+                      StorePalette.textSecondary,
+                    ),
                   ),
               ],
             ),
@@ -274,12 +330,15 @@ class _OrderProductPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (order.details.isEmpty) {
-      return Text('تفاصيل المنتجات غير متاحة', style: StoreTypography.caption);
+      return Text(
+        'تفاصيل المنتجات غير متاحة'.tr,
+        style: StoreColors.text(context, StoreTypography.caption),
+      );
     }
     final line = order.details.first;
     final name =
         line.item.nameAr.trim().isEmpty
-            ? 'منتج ${line.itemId}'
+            ? 'storeOrderProductFallback'.trParams({'id': '${line.itemId}'})
             : line.item.nameAr;
     return SizedBox(
       height: 46,
@@ -290,9 +349,11 @@ class _OrderProductPreview extends StatelessWidget {
             height: 46,
             margin: const EdgeInsetsDirectional.only(end: 8),
             decoration: BoxDecoration(
-              color: StorePalette.background,
+              color: StoreColors.resolve(context, StorePalette.background),
               borderRadius: BorderRadius.circular(StoreRadii.sm),
-              border: Border.all(color: StorePalette.border),
+              border: Border.all(
+                color: StoreColors.resolve(context, StorePalette.border),
+              ),
             ),
             clipBehavior: Clip.antiAlias,
             child: StoreNetworkMedia(
@@ -310,15 +371,20 @@ class _OrderProductPreview extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: StoreTypography.bodyMedium,
+                  style: StoreColors.text(context, StoreTypography.bodyMedium),
                 ),
                 Text(
                   order.details.length > 1
-                      ? 'الكمية ${line.quantity}  •  +${order.details.length - 1} منتج آخر'
-                      : 'الكمية ${line.quantity}',
+                      ? 'storeOrderQuantityMore'.trParams({
+                        'quantity': '${line.quantity}',
+                        'count': '${order.details.length - 1}',
+                      })
+                      : 'storeOrderQuantity'.trParams({
+                        'quantity': '${line.quantity}',
+                      }),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: StoreTypography.caption,
+                  style: StoreColors.text(context, StoreTypography.caption),
                 ),
               ],
             ),
@@ -338,24 +404,30 @@ class _OrderStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final presentation = switch (order.statusKind) {
       StoreOrderStatusKind.current => (
-        label: 'قيد التجهيز',
+        label: 'قيد التجهيز'.tr,
         foreground: StorePalette.purple,
-        background: StorePalette.lightPurple,
+        background: StoreColors.resolve(context, StorePalette.lightPurple),
       ),
       StoreOrderStatusKind.completed => (
-        label: 'مكتمل',
+        label: 'مكتمل'.tr,
         foreground: StorePalette.success,
-        background: StorePalette.derivedSuccessSurface,
+        background: StoreColors.resolve(
+          context,
+          StorePalette.derivedSuccessSurface,
+        ),
       ),
       StoreOrderStatusKind.canceled => (
-        label: 'ملغى',
+        label: 'ملغى'.tr,
         foreground: StorePalette.error,
-        background: StorePalette.derivedErrorSurface,
+        background: StoreColors.resolve(
+          context,
+          StorePalette.derivedErrorSurface,
+        ),
       ),
       StoreOrderStatusKind.unknown => (
-        label: order.rawStatus.isEmpty ? 'غير معروف' : order.rawStatus,
-        foreground: StorePalette.textSecondary,
-        background: StorePalette.background,
+        label: order.rawStatus.isEmpty ? 'غير معروف'.tr : order.rawStatus,
+        foreground: StoreColors.resolve(context, StorePalette.textSecondary),
+        background: StoreColors.resolve(context, StorePalette.background),
       ),
     };
     return Container(
@@ -366,7 +438,7 @@ class _OrderStatusBadge extends StatelessWidget {
       ),
       child: Text(
         presentation.label,
-        style: StoreTypography.caption.copyWith(
+        style: StoreColors.text(context, StoreTypography.caption).copyWith(
           color: presentation.foreground,
           fontSize: 10.5,
           fontWeight: StoreTypography.semiBold,
@@ -387,15 +459,15 @@ String _displayDate(String raw) {
 
 String _shiplyStatusLabel(OrderShiplyTracking tracking) => switch (tracking
     .currentStatusId) {
-  1 => 'تم إنشاء الشحنة',
-  2 => 'تم إرسالها لشركة الشحن',
-  3 => 'في الطريق',
-  4 => 'محاولة تسليم',
-  5 => 'معلقة',
-  6 => 'تم التسليم',
-  7 => 'مرتجعة',
+  1 => 'تم إنشاء الشحنة'.tr,
+  2 => 'تم إرسالها لشركة الشحن'.tr,
+  3 => 'في الطريق'.tr,
+  4 => 'محاولة تسليم'.tr,
+  5 => 'معلقة'.tr,
+  6 => 'تم التسليم'.tr,
+  7 => 'مرتجعة'.tr,
   _ =>
     tracking.currentStatusLabel.isEmpty
-        ? 'حالة الشحنة'
+        ? 'حالة الشحنة'.tr
         : tracking.currentStatusLabel,
 };

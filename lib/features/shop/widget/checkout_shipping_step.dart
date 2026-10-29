@@ -1,5 +1,7 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 
 import '../../../controller/shop/shop_controller.dart';
 import '../../../core/model/checkout_flow_model.dart';
@@ -21,12 +23,15 @@ class CheckoutShippingStep extends StatelessWidget {
     key: const PageStorageKey<String>('checkout-shipping-scroll'),
     padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 22),
     children: [
-      Text('طريقة الشحن', style: StoreTypography.title),
+      Text(
+        'طريقة الشحن'.tr,
+        style: StoreColors.text(context, StoreTypography.title),
+      ),
       const SizedBox(height: 10),
       Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: StorePalette.surface,
+          color: StoreColors.resolve(context, StorePalette.surface),
           borderRadius: BorderRadius.circular(StoreRadii.lg),
           border: Border.all(color: StorePalette.purple, width: 1.3),
         ),
@@ -38,15 +43,21 @@ class CheckoutShippingStep extends StatelessWidget {
               size: 20,
             ),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('التوصيل عبر Shiply', style: StoreTypography.bodyMedium),
-                  SizedBox(height: 2),
                   Text(
-                    'تُحسب التكلفة من المنطقة المختارة',
-                    style: StoreTypography.caption,
+                    'التوصيل عبر Shiply'.tr,
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.bodyMedium,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'تُحسب التكلفة من المنطقة المختارة'.tr,
+                    style: StoreColors.text(context, StoreTypography.caption),
                   ),
                 ],
               ),
@@ -59,7 +70,10 @@ class CheckoutShippingStep extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 16),
-      Text('منطقة التوصيل', style: StoreTypography.title),
+      Text(
+        'منطقة التوصيل'.tr,
+        style: StoreColors.text(context, StoreTypography.title),
+      ),
       const SizedBox(height: 10),
       StoreCityPicker(
         cities: controller.cities,
@@ -68,11 +82,11 @@ class CheckoutShippingStep extends StatelessWidget {
                 .where((c) => c.id.toString() == controller.selectedCityId)
                 .firstOrNull,
         onChanged: controller.onCitySelected,
-        decoration: _decoration('المدينة', Icons.location_city_outlined),
+        decoration: _decoration('المدينة'.tr, Icons.location_city_outlined),
       ),
       const SizedBox(height: 9),
       if (controller.isVillagesLoading)
-        const StoreInlineFieldSkeleton(label: 'جارٍ تحميل مناطق التوصيل')
+        StoreInlineFieldSkeleton(label: 'جارٍ تحميل مناطق التوصيل'.tr)
       else
         DropdownButtonFormField<ShiplyVillage>(
           value:
@@ -96,20 +110,20 @@ class CheckoutShippingStep extends StatelessWidget {
                   : (village) {
                     if (village != null) controller.onVillageSelected(village);
                   },
-          decoration: _decoration('القرية / المنطقة', Icons.place_outlined),
+          decoration: _decoration('القرية / المنطقة'.tr, Icons.place_outlined),
         ),
       const SizedBox(height: 10),
       if (controller.isDeliveryLoading)
-        const StoreInlineFieldSkeleton(
+        StoreInlineFieldSkeleton(
           height: 48,
-          label: 'جارٍ احتساب تكلفة الشحن',
+          label: 'جارٍ احتساب تكلفة الشحن'.tr,
         )
       else if (controller.selectedVillageId != null &&
           controller.hasAuthoritativeDeliveryQuote)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: StorePalette.lightPurple,
+            color: StoreColors.resolve(context, StorePalette.lightPurple),
             borderRadius: BorderRadius.circular(StoreRadii.md),
           ),
           child: Row(
@@ -120,14 +134,18 @@ class CheckoutShippingStep extends StatelessWidget {
                 color: StorePalette.purple,
               ),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text('تكلفة الشحن الحالية', style: StoreTypography.body),
+              Expanded(
+                child: Text(
+                  'تكلفة الشحن الحالية'.tr,
+                  style: StoreColors.text(context, StoreTypography.body),
+                ),
               ),
               Text(
                 '${_price(controller.selectedCityPrice)} ₪',
-                style: StoreTypography.label.copyWith(
-                  color: StorePalette.purple,
-                ),
+                style: StoreColors.text(
+                  context,
+                  StoreTypography.label,
+                ).copyWith(color: StorePalette.purple),
               ),
             ],
           ),
@@ -138,28 +156,43 @@ class CheckoutShippingStep extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(11),
           decoration: BoxDecoration(
-            color: StorePalette.derivedWarningSurface,
+            color: StoreColors.resolve(
+              context,
+              StorePalette.derivedWarningSurface,
+            ),
             borderRadius: BorderRadius.circular(StoreRadii.md),
           ),
           child: Text(
             controller.deliveryQuoteMessage ??
-                'سيعتمد الخادم رسوم الشحن عند إنشاء الطلب.',
-            style: StoreTypography.caption.copyWith(
-              color: StorePalette.textPrimary,
+                'storeDeliveryQuoteUnavailable'.tr,
+            style: StoreColors.text(context, StoreTypography.caption).copyWith(
+              color: StoreColors.resolve(context, StorePalette.textPrimary),
             ),
           ),
         ),
+      if (!controller.isDeliveryLoading &&
+          controller.selectedVillageId != null &&
+          !controller.hasAuthoritativeDeliveryQuote)
+        TextButton(
+          onPressed: controller.calculateDeliveryFeeForSelectedVillage,
+          child: Text('storeRetry'.tr),
+        ),
       const SizedBox(height: 18),
-      Text('ملخص الطلب', style: StoreTypography.title),
+      Text(
+        'ملخص الطلب'.tr,
+        style: StoreColors.text(context, StoreTypography.title),
+      ),
       const SizedBox(height: 10),
       CartSummary(controller: controller, forCheckout: true),
       const SizedBox(height: 18),
       StoreButton(
-        label: 'متابعة الدفع',
+        label: 'متابعة الدفع'.tr,
         icon: Icons.arrow_forward_rounded,
         iconAtEnd: true,
         onPressed:
-            controller.selectedVillageId == null || controller.isDeliveryLoading
+            controller.selectedVillageId == null ||
+                    controller.isDeliveryLoading ||
+                    !controller.hasAuthoritativeDeliveryQuote
                 ? null
                 : () => controller.setCheckoutStage(CheckoutStage.payment),
       ),

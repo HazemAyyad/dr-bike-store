@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -179,7 +180,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: StorePalette.surface,
+      backgroundColor: StoreColors.resolve(context, StorePalette.surface),
       body:
           _error == null
               ? _AnimatedBrand(animation: _animation)
@@ -191,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                       maxWidth: StoreCalibration.authContentMaxWidth,
                     ),
                     decoration: BoxDecoration(
-                      color: StorePalette.surface,
+                      color: StoreColors.resolve(context, StorePalette.surface),
                       borderRadius: BorderRadius.circular(StoreRadii.lg),
                     ),
                     child: StoreMessageState(
@@ -282,7 +283,10 @@ class _AnimatedBrandState extends State<_AnimatedBrand> {
                               borderRadius: BorderRadius.circular(
                                 StoreRadii.round,
                               ),
-                              backgroundColor: StorePalette.lightPurple,
+                              backgroundColor: StoreColors.resolve(
+                                context,
+                                StorePalette.lightPurple,
+                              ),
                               valueColor: const AlwaysStoppedAnimation(
                                 StorePalette.purple,
                               ),
@@ -292,8 +296,14 @@ class _AnimatedBrandState extends State<_AnimatedBrand> {
                     const SizedBox(height: StoreSpacing.sm),
                     Text(
                       'storeSplashLoading'.tr,
-                      style: StoreTypography.caption.copyWith(
-                        color: StorePalette.textSecondary,
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.caption,
+                      ).copyWith(
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.textSecondary,
+                        ),
                       ),
                     ),
                   ],

@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -90,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final items = _items;
     return Scaffold(
-      backgroundColor: StorePalette.background,
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
       body: SafeArea(
         child: Column(
           children: [
@@ -153,7 +154,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             color:
                                 index == _currentPage
                                     ? StorePalette.purple
-                                    : StorePalette.border,
+                                    : StoreColors.resolve(
+                                      context,
+                                      StorePalette.border,
+                                    ),
                             borderRadius: BorderRadius.circular(
                               StoreRadii.round,
                             ),
@@ -250,8 +254,14 @@ class _OnboardingPage extends StatelessWidget {
                         Text(
                           'storeBrandName'.tr,
                           textDirection: TextDirection.ltr,
-                          style: StoreTypography.title.copyWith(
-                            color: StorePalette.navy,
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.title,
+                          ).copyWith(
+                            color: StoreColors.resolve(
+                              context,
+                              StorePalette.navy,
+                            ),
                             fontSize: 14,
                             height: 1,
                           ),
@@ -301,7 +311,7 @@ class _OnboardingPage extends StatelessWidget {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.bolt_rounded,
                                     color: StorePalette.purple,
                                     size: 26,
@@ -323,8 +333,11 @@ class _OnboardingPage extends StatelessWidget {
                 Text(
                   item.title,
                   textAlign: TextAlign.center,
-                  style: StoreTypography.headline.copyWith(
-                    color: StorePalette.navy,
+                  style: StoreColors.text(
+                    context,
+                    StoreTypography.headline,
+                  ).copyWith(
+                    color: StoreColors.resolve(context, StorePalette.navy),
                     fontSize: compact ? 22 : 27,
                     height: 1.35,
                   ),
@@ -333,8 +346,14 @@ class _OnboardingPage extends StatelessWidget {
                 Text(
                   item.description,
                   textAlign: TextAlign.center,
-                  style: StoreTypography.body.copyWith(
-                    color: StorePalette.textSecondary,
+                  style: StoreColors.text(
+                    context,
+                    StoreTypography.body,
+                  ).copyWith(
+                    color: StoreColors.resolve(
+                      context,
+                      StorePalette.textSecondary,
+                    ),
                     fontSize: compact ? 13 : 16,
                   ),
                 ),
@@ -369,8 +388,8 @@ class _OnboardingCallout extends StatelessWidget {
         boxShadow: const [StoreElevation.lowShadow],
       ),
       child: DefaultTextStyle(
-        style: StoreTypography.caption.copyWith(
-          color: StorePalette.navy,
+        style: StoreColors.text(context, StoreTypography.caption).copyWith(
+          color: StoreColors.resolve(context, StorePalette.navy),
           fontWeight: StoreTypography.semiBold,
           height: 1.45,
         ),
@@ -416,7 +435,10 @@ class _OnboardingPrimaryButton extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(StoreRadii.lg),
             ),
-            textStyle: StoreTypography.title.copyWith(
+            textStyle: StoreColors.text(
+              context,
+              StoreTypography.title,
+            ).copyWith(
               color: Colors.white,
               fontWeight: StoreTypography.semiBold,
             ),

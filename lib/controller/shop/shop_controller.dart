@@ -3,6 +3,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../core/functions/store_session_boundary.dart';
+import '../../core/functions/store_cart_storage.dart';
+import '../../core/functions/store_address_book.dart';
+import '../../core/functions/store_delivery_quotes.dart';
 
 import 'package:doctor_bike/core/model/get_all_item_model.dart';
 import 'package:get_storage/get_storage.dart';
@@ -25,10 +29,17 @@ import '../../repository/shop/shop_repository.dart';
 import '../LocalizationController.dart';
 import '../order/order_controller.dart';
 
-class ShopController extends GetxController {
-  static const cartStorageKey = 'store_cart_v2';
-  static const couponIntentStorageKey = 'store_cart_coupon_intent';
-  final CheckoutAttempt _checkoutAttempt = CheckoutAttempt();
+class ShopController extends GetxController with StoreSessionAware {
+  static const cartStorageKey = StoreCartStorage.cartKey;
+  static const couponIntentStorageKey = StoreCartStorage.couponKey;
+  late final StoreCartStorage _cartStorage = StoreCartStorage(box);
+  late final StoreAddressBook _addressBook = StoreAddressBook(
+    shopRepository.getStoreAddresses,
+  );
+  late final StoreDeliveryQuotes _deliveryQuotes = StoreDeliveryQuotes(
+    shopRepository.calculateDeliveryFee,
+  );
+  CheckoutAttempt _checkoutAttempt = CheckoutAttempt();
   CheckoutFlowState checkoutState = const CheckoutFlowState();
   CheckoutPaymentCapability get paymentCapability =>
       CheckoutPaymentCapability.cash;
@@ -106,35 +117,15 @@ class ShopController extends GetxController {
 
   void saveCart() {
     _syncLinesFromItems();
-    box.write(
-      cartStorageKey,
-      cartLines.map((line) => line.toJson()).toList(growable: false),
-    );
-    box.write(couponIntentStorageKey, couponIntent);
+    _cartStorage.save(cartLines, couponIntent);
     update();
   }
 
   void loadCart() {
-    final savedLines = box.read<List<dynamic>>(cartStorageKey);
-    final restored = <CartLine>[];
-    if (savedLines != null) {
-      for (final raw in savedLines) {
-        try {
-          if (raw is! Map) continue;
-          restored.add(CartLine.fromJson(Map<String, dynamic>.from(raw)));
-        } on FormatException {
-          // Invalid/legacy rows fail closed; productId is never a listing fallback.
-        } catch (_) {
-          // A malformed retained row must not crash app startup.
-        }
-      }
-    } else {
-      _migrateLegacyCart();
-      return;
-    }
-    cartLines.assignAll(restored);
+    final snapshot = _cartStorage.load();
+    cartLines.assignAll(snapshot.lines);
     _syncItemsFromLines();
-    couponIntent = box.read<String>(couponIntentStorageKey) ?? '';
+    couponIntent = snapshot.couponIntent;
   }
 
   Future<void> refreshCart() async {
@@ -193,6 +184,38 @@ class ShopController extends GetxController {
   ShopController({required this.shopRepository, GetStorage? storage})
     : box = storage ?? GetStorage();
 
+  @override
+  void clearSessionData() {
+    _checkoutAttempt = CheckoutAttempt();
+    checkoutState = const CheckoutFlowState();
+    couponModel = null;
+    activeCode = null;
+    discoundCodeId = null;
+    discoundCodePercent = null;
+    token = null;
+    userModel = null;
+    checkoutAddresses = const [];
+    selectedStoreAddress = null;
+    selectedVillage = null;
+    selectedVillageId = null;
+    selectedCity = null;
+    selectedCityId = null;
+    checkoutAddressesLoading = false;
+    checkoutAddressesMessage = null;
+    _buyNowCheckoutLines = null;
+    _invalidateDeliveryQuote();
+    for (final field in [
+      nameController,
+      emailController,
+      phoneNumberController,
+      phoneNumber2Controller,
+      addressController,
+    ]) {
+      field.clear();
+    }
+    update();
+  }
+
   Future<void> getUserById() async {
     _buyNowCheckoutLines = null;
     await _openCheckout();
@@ -223,6 +246,7 @@ class ShopController extends GetxController {
   }
 
   Future<bool> _openCheckout() async {
+    final generation = sessionGeneration;
     checkoutAddresses = const [];
     selectedStoreAddress = null;
     checkoutAddressesMessage = null;
@@ -237,6 +261,7 @@ class ShopController extends GetxController {
         statusRequest = StatusRequest.loading;
         var response = await shopRepository.getUser();
         var responseCity = await shopRepository.getCity();
+        if (!sessionIsCurrent(generation)) return false;
         if (response.statusCode == 200 && responseCity.statusCode == 200) {
           userModel = UserModel.fromJson(response.body);
           nameController.text =
@@ -532,34 +557,22 @@ class ShopController extends GetxController {
   }
 
   Future<void> loadCheckoutAddresses({bool notify = true}) async {
+    final generation = sessionGeneration;
     checkoutAddressesLoading = true;
     checkoutAddressesMessage = null;
     if (notify) update();
     try {
-      final response = await shopRepository.getStoreAddresses();
-      if (response.statusCode != 200 || response.body is! Map) {
-        throw const FormatException('checkout addresses');
-      }
-      final raw = (response.body as Map)['data'];
-      if (raw is! List) throw const FormatException('checkout addresses data');
-      checkoutAddresses = raw
-          .whereType<Map>()
-          .map((row) => StoreAddress.fromJson(Map<String, dynamic>.from(row)))
-          .where((address) => address.id > 0)
-          .toList(growable: false);
+      final addresses = await _addressBook.load();
+      if (!sessionIsCurrent(generation)) return;
+      checkoutAddresses = addresses;
       selectedStoreAddress = null;
-      final preferred =
-          checkoutAddresses.firstWhereOrNull(
-            (address) => address.isDefault && address.isDeliveryReady,
-          ) ??
-          checkoutAddresses.firstWhereOrNull(
-            (address) => address.isDeliveryReady,
-          );
+      final preferred = StoreAddressBook.preferred(checkoutAddresses);
       if (preferred != null) {
         await selectCheckoutAddress(preferred, notify: false);
       }
     } catch (_) {
-      checkoutAddressesMessage = 'تعذر تحميل العناوين المحفوظة.';
+      if (!sessionIsCurrent(generation)) return;
+      checkoutAddressesMessage = 'تعذر تحميل العناوين المحفوظة.'.tr;
     } finally {
       checkoutAddressesLoading = false;
       if (notify) update();
@@ -572,7 +585,7 @@ class ShopController extends GetxController {
   }) async {
     if (!address.isDeliveryReady) {
       checkoutAddressesMessage =
-          'هذا العنوان غير مكتمل. عدّله وحدد المدينة والقرية.';
+          'هذا العنوان غير مكتمل. عدّله وحدد المدينة والقرية.'.tr;
       if (notify) update();
       return;
     }
@@ -597,40 +610,31 @@ class ShopController extends GetxController {
 
   Future<void> calculateDeliveryFeeForSelectedVillage() async {
     if (selectedVillageId == null) return;
+    final request = _deliveryQuotes.begin();
+    final village = selectedVillageId;
+    final price = deliveryQuotePrice();
+    hasAuthoritativeDeliveryQuote = false;
+    selectedCityPrice = 0;
+    deliveryQuoteMessage = null;
     isDeliveryLoading = true;
     update();
-    try {
-      final response = await shopRepository.calculateDeliveryFee(
-        villageId: selectedVillageId!,
-        price: deliveryQuotePrice(),
-      );
-      if (response.statusCode == 200 && response.body is Map<String, dynamic>) {
-        final body = response.body as Map<String, dynamic>;
-        final quotedPrice =
-            (body['deliveryCost'] as num?)?.toDouble() ??
-            (body['priceDelivery'] as num?)?.toDouble() ??
-            ((body['fees'] is Map<String, dynamic>)
-                ? (body['fees']['delivery_cost'] as num?)?.toDouble()
-                : null);
-        if (quotedPrice != null) {
-          selectedCityPrice = quotedPrice;
-          hasAuthoritativeDeliveryQuote = true;
-        } else {
-          deliveryQuoteMessage = 'سيعتمد الخادم رسوم الشحن عند إنشاء الطلب.';
-        }
-      } else {
-        deliveryQuoteMessage =
-            'تعذر جلب عرض الشحن الآن. سيعيد الخادم حسابه عند الطلب.';
-      }
-    } catch (e) {
-      hasAuthoritativeDeliveryQuote = false;
-      deliveryQuoteMessage =
-          'تعذر جلب عرض الشحن الآن. سيعيد الخادم حسابه عند الطلب.';
-      debugPrint('[STORE_SHIPLY] delivery fee error=$e');
-    } finally {
-      isDeliveryLoading = false;
+    final quotedPrice = await _deliveryQuotes.quote(
+      villageId: village!,
+      price: price,
+    );
+    if (!_deliveryQuotes.isCurrent(request)) return;
+    isDeliveryLoading = false;
+    if (selectedVillageId != village || deliveryQuotePrice() != price) {
       update();
+      return;
     }
+    if (quotedPrice != null) {
+      selectedCityPrice = quotedPrice;
+      hasAuthoritativeDeliveryQuote = true;
+    } else {
+      deliveryQuoteMessage = 'storeDeliveryQuoteUnavailable'.tr;
+    }
+    update();
   }
 
   double deliveryQuotePrice() {
@@ -793,6 +797,8 @@ class ShopController extends GetxController {
   }
 
   void _invalidateDeliveryQuote() {
+    _deliveryQuotes.invalidate();
+    isDeliveryLoading = false;
     selectedCityPrice = 0;
     hasAuthoritativeDeliveryQuote = false;
     deliveryQuoteMessage = null;
@@ -833,33 +839,13 @@ class ShopController extends GetxController {
     }
   }
 
-  void _migrateLegacyCart() {
-    final legacy = box.read<List<dynamic>>('cart');
-    final migrated = <CartLine>[];
-    for (final raw in legacy ?? const <dynamic>[]) {
-      try {
-        if (raw is! Map) continue;
-        final item = Item.fromJson2(Map<String, dynamic>.from(raw));
-        migrated.add(
-          CartLine.fromItem(item)..status = CartLineStatus.needsValidation,
-        );
-      } catch (_) {
-        // Legacy lines without a valid listing identity are deliberately dropped.
-      }
-    }
-    cartLines.assignAll(migrated);
-    _syncItemsFromLines();
-    box.remove('cart');
-    saveCart();
-  }
-
   Future<String?> _resolveCheckoutAccountRole() async {
     if (userModel == null) {
       final response = await shopRepository.getUser();
       if (response.statusCode != 200 ||
           response.body is! Map<String, dynamic>) {
         showCustomSnackBar(
-          'تعذر تحديث بيانات حساب المتجر. يرجى المحاولة مرة أخرى.',
+          'تعذر تحديث بيانات حساب المتجر. يرجى المحاولة مرة أخرى.'.tr,
           isError: true,
         );
         return null;
@@ -870,7 +856,8 @@ class ShopController extends GetxController {
     final resolution = resolveCheckoutRoles(userModel!.accountRoles);
     if (resolution.requirement == CheckoutRoleRequirement.unavailable) {
       showCustomSnackBar(
-        'لا يوجد حساب بيع معتمد مرتبط بحساب المتجر. يرجى التواصل مع الإدارة.',
+        'لا يوجد حساب بيع معتمد مرتبط بحساب المتجر. يرجى التواصل مع الإدارة.'
+            .tr,
         isError: true,
       );
       return null;
@@ -881,17 +868,17 @@ class ShopController extends GetxController {
 
     final selectedRole = await Get.dialog<String>(
       AlertDialog(
-        title: const Text('اختر نوع الطلب'),
-        content: const Text('هل تريد تنفيذ الطلب كتجزئة أم جملة؟'),
+        title: Text('اختر نوع الطلب'.tr),
+        content: Text('هل تريد تنفيذ الطلب كتجزئة أم جملة؟'.tr),
         actions: [
-          TextButton(onPressed: Get.back, child: const Text('إلغاء')),
+          TextButton(onPressed: Get.back, child: Text('إلغاء'.tr)),
           TextButton(
             onPressed: () => Get.back(result: 'customer'),
-            child: const Text('تجزئة'),
+            child: Text('تجزئة'.tr),
           ),
           TextButton(
             onPressed: () => Get.back(result: 'seller'),
-            child: const Text('جملة'),
+            child: Text('جملة'.tr),
           ),
         ],
       ),
@@ -912,14 +899,25 @@ class ShopController extends GetxController {
   }
 
   Future<void> submitCheckout() async {
+    final generation = sessionGeneration;
     if (!_checkoutAttempt.begin()) return;
+    if (!hasAuthoritativeDeliveryQuote || isDeliveryLoading) {
+      _checkoutAttempt.finish(successful: false);
+      checkoutState = checkoutState.copyWith(
+        stage: CheckoutStage.validationError,
+        message: 'storeDeliveryQuoteUnavailable'.tr,
+      );
+      update();
+      return;
+    }
     final role =
         checkoutState.selectedRole ?? await _resolveCheckoutAccountRole();
+    if (!sessionIsCurrent(generation)) return;
     if (role == null || selectedCityId == null || selectedVillageId == null) {
       _checkoutAttempt.finish(successful: false);
       checkoutState = checkoutState.copyWith(
         stage: CheckoutStage.validationError,
-        message: 'يرجى استكمال العنوان والشحن ونوع الحساب.',
+        message: 'يرجى استكمال العنوان والشحن ونوع الحساب.'.tr,
       );
       update();
       return;
@@ -931,33 +929,39 @@ class ShopController extends GetxController {
       final transport = await runCheckoutTransport(
         connectivityCheck:
             () async => await CheckInternet.checkInternet() == true,
-        submit:
-            () => shopRepository.submitNativeCheckout(
-              _checkoutAttempt.attachTo(
-                buildNativeCheckoutPayload(
-                  items: checkoutItems,
-                  accountRole: role,
-                  customerAddress: addressController.text,
-                  shiplyCityId: int.parse(selectedCityId!),
-                  shiplyVillageId: int.parse(selectedVillageId!),
-                  partnerAddressId:
-                      role == 'customer' ? selectedStoreAddress?.id : null,
-                  couponCode: coupon,
-                ),
+        submit: () {
+          if (!sessionIsCurrent(generation)) {
+            throw StateError('Session changed');
+          }
+          return shopRepository.submitNativeCheckout(
+            _checkoutAttempt.attachTo(
+              buildNativeCheckoutPayload(
+                items: checkoutItems,
+                accountRole: role,
+                customerAddress: addressController.text,
+                shiplyCityId: int.parse(selectedCityId!),
+                shiplyVillageId: int.parse(selectedVillageId!),
+                partnerAddressId:
+                    role == 'customer' ? selectedStoreAddress?.id : null,
+                couponCode: coupon,
               ),
             ),
+          );
+        },
       );
+      if (!sessionIsCurrent(generation)) return;
       if (transport.kind == CheckoutTransportKind.offline) {
         checkoutState = checkoutState.copyWith(
           stage: CheckoutStage.offline,
-          message: 'لا يوجد اتصال بالإنترنت. تحقق من الاتصال ثم أعد المحاولة.',
+          message:
+              'لا يوجد اتصال بالإنترنت. تحقق من الاتصال ثم أعد المحاولة.'.tr,
         );
         return;
       }
       if (transport.kind == CheckoutTransportKind.uncertain) {
         checkoutState = checkoutState.copyWith(
           stage: CheckoutStage.uncertain,
-          message: 'قد يكون الطلب وصل إلى الخادم. أعد المحاولة للتحقق.',
+          message: 'قد يكون الطلب وصل إلى الخادم. أعد المحاولة للتحقق.'.tr,
         );
         return;
       }
@@ -995,646 +999,39 @@ class ShopController extends GetxController {
         checkoutState = checkoutState.copyWith(
           stage: CheckoutStage.validationError,
           validationKind: classifyCheckoutValidation(response.body),
-          message: 'تعذر اعتماد بعض بيانات الطلب. راجع البيانات وحاول مجددًا.',
+          message:
+              'تعذر اعتماد بعض بيانات الطلب. راجع البيانات وحاول مجددًا.'.tr,
         );
       } else if (response.statusCode == 200 || response.statusCode == 201) {
         checkoutState = checkoutState.copyWith(
           stage: CheckoutStage.uncertain,
-          message: 'وصل رد غير مكتمل. أعد المحاولة بنفس رقم المحاولة.',
+          message: 'وصل رد غير مكتمل. أعد المحاولة بنفس رقم المحاولة.'.tr,
         );
       } else {
         checkoutState = checkoutState.copyWith(
           stage: CheckoutStage.error,
-          message: 'تعذر إتمام الطلب. لم يتم تغيير السلة.',
+          message: 'تعذر إتمام الطلب. لم يتم تغيير السلة.'.tr,
         );
       }
     } catch (_) {
+      if (!sessionIsCurrent(generation)) return;
       checkoutState = checkoutState.copyWith(
         stage: CheckoutStage.uncertain,
-        message: 'قد يكون الطلب وصل إلى الخادم. أعد المحاولة للتحقق.',
+        message: 'قد يكون الطلب وصل إلى الخادم. أعد المحاولة للتحقق.'.tr,
       );
     } finally {
-      if (checkoutState.stage != CheckoutStage.success) {
-        _checkoutAttempt.finish(successful: false);
+      if (sessionIsCurrent(generation)) {
+        if (checkoutState.stage != CheckoutStage.success) {
+          _checkoutAttempt.finish(successful: false);
+        }
+        update();
       }
-      update();
     }
   }
 
   createOrder() => submitCheckout();
 
-  // ignore: unused_element
-  _legacyCreateOrder() async {
-    if (selectedCityId == null || selectedVillageId == null) {
-      showCustomSnackBar('Choose city and village'.tr, isError: true);
-      return;
-    }
-    if (items.any((item) => item.listingId == null)) {
-      showCustomSnackBar(
-        'أحد المنتجات غير متاح حاليًا للطلب عبر المتجر. يرجى تحديث السلة.',
-        isError: true,
-      );
-      return;
-    }
-    final accountRole = await _resolveCheckoutAccountRole();
-    if (accountRole == null) return;
-    if (!_checkoutAttempt.begin()) return;
-
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        OverlayLoadingProgress.start();
-        await editeUser();
-        totalPriceWithDiscountOrders = 0;
-        totalPriceWithOutDiscountOrders = 0;
-        List<Map> details =
-            items.map((item) {
-              totalPriceWithDiscount = 0;
-              totalPriceWithOutDiscount = 0;
-              if (item.isSize) {
-                if (item.itemSizediscount != 0 &&
-                    item.itemSizediscount != null) {
-                  totalPriceWithDiscount =
-                      ((item.count * item.itemSizeColorsprice!) *
-                          (1 - (item.itemSizediscount! / 100)));
-                  totalPriceWithOutDiscount =
-                      (item.count * item.itemSizeColorsprice!);
-                  totalPriceWithDiscountOrders =
-                      totalPriceWithDiscountOrders +
-                      ((item.count * item.itemSizeColorsprice!) *
-                          (1 - (item.itemSizediscount! / 100)));
-                  totalPriceWithOutDiscountOrders =
-                      totalPriceWithOutDiscountOrders +
-                      (item.count * item.itemSizeColorsprice!);
-                } else {
-                  totalPriceWithDiscount =
-                      (item.count * item.itemSizeColorsprice!);
-                  totalPriceWithOutDiscount =
-                      (item.count * item.itemSizeColorsprice!);
-                  totalPriceWithDiscountOrders =
-                      totalPriceWithDiscountOrders +
-                      (item.count * item.itemSizeColorsprice!);
-                  totalPriceWithOutDiscountOrders =
-                      totalPriceWithOutDiscountOrders +
-                      (item.count * item.itemSizeColorsprice!);
-                }
-              } else {
-                if (item.discount > 0) {
-                  totalPriceWithDiscount =
-                      ((item.count *
-                              (token == null
-                                  ? item.normailPrice
-                                  : (isNormail
-                                      ? item.normailPrice
-                                      : item.wholesalePrice))) *
-                          (1 - (item.discount / 100)));
-                  totalPriceWithOutDiscount =
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                  totalPriceWithDiscountOrders =
-                      totalPriceWithDiscountOrders +
-                      ((item.count *
-                              (token == null
-                                  ? item.normailPrice
-                                  : (isNormail
-                                      ? item.normailPrice
-                                      : item.wholesalePrice))) *
-                          (1 - (item.discount / 100)));
-                  totalPriceWithOutDiscountOrders =
-                      totalPriceWithOutDiscountOrders +
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                } else {
-                  totalPriceWithDiscount =
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                  totalPriceWithOutDiscount =
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                  totalPriceWithDiscountOrders =
-                      totalPriceWithDiscountOrders +
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                  totalPriceWithOutDiscountOrders =
-                      totalPriceWithOutDiscountOrders +
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                }
-              }
-
-              return {
-                "id": 0,
-                "orderId": 0,
-                "itemId": item.id,
-                "isOrderSize": item.isSize,
-                "itemSizeId": item.itemSizeId,
-                "itemSizeColorId": item.itemSizeColorId,
-                "quantity": item.count,
-                "itemPrice":
-                    (item.isSize
-                        ? item.itemSizeColorsprice
-                        : (token == null
-                            ? item.normailPrice
-                            : (isNormail
-                                ? item.normailPrice
-                                : item.wholesalePrice))),
-                "totalPriceWithDiscound": totalPriceWithDiscount.toDouble(),
-                "totalPriceWithOutDiscound":
-                    totalPriceWithOutDiscount.toDouble(),
-              };
-            }).toList();
-
-        if (details.length != items.length) {
-          throw StateError('Unable to prepare all checkout items.');
-        }
-
-        var response = await shopRepository.createOrder(
-          body: _checkoutAttempt.attachTo(
-            buildNativeCheckoutPayload(
-              items: items,
-              accountRole: accountRole,
-              customerAddress: addressController.text,
-              shiplyCityId: int.parse(selectedCityId!),
-              shiplyVillageId: int.parse(selectedVillageId!),
-              partnerAddressId:
-                  accountRole == 'customer' ? selectedStoreAddress?.id : null,
-            ),
-          ),
-        );
-
-        final success = completeCheckoutAttempt(
-          _checkoutAttempt,
-          response.statusCode,
-          response.body,
-        );
-        if (success != null) {
-          OrderId = success.orderId;
-          Get.offNamed(RouteHelper.checkOutDone);
-          clearCart();
-          totalPriceWithDiscountOrders = 0;
-          totalPriceWithOutDiscountOrders = 0;
-          totalPriceWithDiscount = 0;
-          totalPriceWithOutDiscount = 0;
-          totalPrice = 0;
-          priceItems = 0;
-          quantity = 0;
-          selectedCity = null;
-          selectedCityId = null;
-          selectedVillage = null;
-          selectedVillageId = null;
-          villages = [];
-          villagesList.clear();
-          selectedCityPrice = 0;
-          update();
-        } else if (response.statusCode == 200 || response.statusCode == 201) {
-          showCustomSnackBar(
-            'تعذر تأكيد الطلب. يرجى إعادة المحاولة دون تغيير السلة.',
-            isError: true,
-          );
-        } else if (response.statusCode == 400) {
-          showCustomSnackBar(response.body["message"], isError: true);
-        }
-        update();
-      } catch (e) {
-        showCustomSnackBar(e.toString(), isError: true);
-      } finally {}
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-    _checkoutAttempt.finish(successful: false);
-    OverlayLoadingProgress.stop();
-  }
-
   createOrderWithCode() => submitCheckout();
-
-  // ignore: unused_element
-  _legacyCreateOrderWithCode() async {
-    if (selectedCityId == null || selectedVillageId == null) {
-      showCustomSnackBar('Choose city and village'.tr, isError: true);
-      return;
-    }
-    if (items.any((item) => item.listingId == null)) {
-      showCustomSnackBar(
-        'أحد المنتجات غير متاح حاليًا للطلب عبر المتجر. يرجى تحديث السلة.',
-        isError: true,
-      );
-      return;
-    }
-    final accountRole = await _resolveCheckoutAccountRole();
-    if (accountRole == null) return;
-    if (!_checkoutAttempt.begin()) return;
-
-    if (await CheckInternet.checkInternet()) {
-      OverlayLoadingProgress.start();
-      try {
-        OverlayLoadingProgress.start();
-        await editeUser();
-        totalPriceWithDiscountOrders = 0;
-        totalPriceWithOutDiscountOrders = 0;
-        List<Map> details =
-            items.map((item) {
-              totalPriceWithDiscount = 0;
-              totalPriceWithOutDiscount = 0;
-              if (item.isSize) {
-                if (item.itemSizediscount != 0 &&
-                    item.itemSizediscount != null) {
-                  totalPriceWithDiscount =
-                      ((item.count * item.itemSizeColorsprice!) *
-                          (1 - (item.itemSizediscount! / 100)));
-                  totalPriceWithOutDiscount =
-                      (item.count * item.itemSizeColorsprice!);
-                  totalPriceWithDiscountOrders =
-                      totalPriceWithDiscountOrders +
-                      ((item.count * item.itemSizeColorsprice!) *
-                          (1 - (item.itemSizediscount! / 100)));
-                  totalPriceWithOutDiscountOrders =
-                      totalPriceWithOutDiscountOrders +
-                      (item.count * item.itemSizeColorsprice!);
-                } else {
-                  totalPriceWithDiscount =
-                      (item.count * item.itemSizeColorsprice!);
-                  totalPriceWithOutDiscount =
-                      (item.count * item.itemSizeColorsprice!);
-                  totalPriceWithDiscountOrders =
-                      totalPriceWithDiscountOrders +
-                      (item.count * item.itemSizeColorsprice!);
-                  totalPriceWithOutDiscountOrders =
-                      totalPriceWithOutDiscountOrders +
-                      (item.count * item.itemSizeColorsprice!);
-                }
-              } else {
-                if (item.discount > 0) {
-                  totalPriceWithDiscount =
-                      ((item.count *
-                              (token == null
-                                  ? item.normailPrice
-                                  : (isNormail
-                                      ? item.normailPrice
-                                      : item.wholesalePrice))) *
-                          (1 - (item.discount / 100)));
-                  totalPriceWithOutDiscount =
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                  totalPriceWithDiscountOrders =
-                      totalPriceWithDiscountOrders +
-                      ((item.count *
-                              (token == null
-                                  ? item.normailPrice
-                                  : (isNormail
-                                      ? item.normailPrice
-                                      : item.wholesalePrice))) *
-                          (1 - (item.discount / 100)));
-                  totalPriceWithOutDiscountOrders =
-                      totalPriceWithOutDiscountOrders +
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                } else {
-                  totalPriceWithDiscount =
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                  totalPriceWithOutDiscount =
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                  totalPriceWithDiscountOrders =
-                      totalPriceWithDiscountOrders +
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                  totalPriceWithOutDiscountOrders =
-                      totalPriceWithOutDiscountOrders +
-                      (item.count *
-                          (token == null
-                              ? item.normailPrice
-                              : (isNormail
-                                  ? item.normailPrice
-                                  : item.wholesalePrice)));
-                }
-              }
-
-              return {
-                "id": 0,
-                "orderId": 0,
-                "itemId": item.id,
-                "isOrderSize": item.isSize,
-                "itemSizeId": item.itemSizeId,
-                "itemSizeColorId": item.itemSizeColorId,
-                "quantity": item.count,
-                "itemPrice":
-                    (item.isSize
-                        ? item.itemSizeColorsprice
-                        : (token == null
-                            ? item.normailPrice
-                            : (isNormail
-                                ? item.normailPrice
-                                : item.wholesalePrice))),
-                "totalPriceWithDiscound": totalPriceWithDiscount.toDouble(),
-                "totalPriceWithOutDiscound":
-                    totalPriceWithOutDiscount.toDouble(),
-              };
-            }).toList();
-
-        if (details.length != items.length) {
-          throw StateError('Unable to prepare all checkout items.');
-        }
-
-        var response = await shopRepository.createOrder(
-          body: _checkoutAttempt.attachTo(
-            buildNativeCheckoutPayload(
-              items: items,
-              accountRole: accountRole,
-              customerAddress: addressController.text,
-              shiplyCityId: int.parse(selectedCityId!),
-              shiplyVillageId: int.parse(selectedVillageId!),
-              partnerAddressId:
-                  accountRole == 'customer' ? selectedStoreAddress?.id : null,
-              couponCode: couponModel!.code,
-            ),
-          ),
-        );
-
-        final success = completeCheckoutAttempt(
-          _checkoutAttempt,
-          response.statusCode,
-          response.body,
-        );
-        if (success != null) {
-          OrderId = success.orderId;
-          Get.offNamed(RouteHelper.checkOutDone);
-          clearCart();
-          totalPriceWithDiscountOrders = 0;
-          totalPriceWithOutDiscountOrders = 0;
-          totalPriceWithDiscount = 0;
-          totalPriceWithOutDiscount = 0;
-          totalPrice = 0;
-          priceItems = 0;
-          quantity = 0;
-          selectedCity = null;
-          selectedCityId = null;
-          selectedVillage = null;
-          selectedVillageId = null;
-          villages = [];
-          villagesList.clear();
-          selectedCityPrice = 0;
-          couponModel = null;
-          activeCode = null;
-          update();
-        } else if (response.statusCode == 200 || response.statusCode == 201) {
-          showCustomSnackBar(
-            'تعذر تأكيد الطلب. يرجى إعادة المحاولة دون تغيير السلة.',
-            isError: true,
-          );
-        } else if (response.statusCode == 400) {
-          showCustomSnackBar(response.body["message"], isError: true);
-        }
-        update();
-      } catch (e) {
-        showCustomSnackBar(e.toString(), isError: true);
-      } finally {}
-    } else {
-      OverlayLoadingProgress.stop();
-      showCustomSnackBar('Check the internet connection'.tr, isError: true);
-    }
-    _checkoutAttempt.finish(successful: false);
-    OverlayLoadingProgress.stop();
-  }
-
-  // createOrderWithCode() async {
-  //   DateTime now = DateTime.now().toUtc();
-  //   String formattedDate = DateFormat(
-  //     "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-  //   ).format(now);
-
-  //   if (await CheckInternet.checkInternet()) {
-  //     OverlayLoadingProgress.start();
-  //     try {
-  //       OverlayLoadingProgress.start();
-  //       await editeUser();
-  //       List<Map> details =
-  //           items.map((item) {
-  //             totalPriceWithDiscount = 0;
-  //             totalPriceWithOutDiscount = 0;
-  //             if (item.isSize) {
-  //               if (item.itemSizediscount != 0 &&
-  //                   item.itemSizediscount != null) {
-  //                 totalPriceWithDiscount =
-  //                     ((item.count * item.itemSizeColorsprice!) *
-  //                         (1 - (item.itemSizediscount! / 100)));
-  //                 totalPriceWithOutDiscount =
-  //                     (item.count * item.itemSizeColorsprice!);
-  //                 totalPriceWithDiscountOrders =
-  //                     totalPriceWithDiscountOrders +
-  //                     ((item.count * item.itemSizeColorsprice!) *
-  //                         (1 - (item.itemSizediscount! / 100)));
-  //                 totalPriceWithOutDiscountOrders =
-  //                     totalPriceWithOutDiscountOrders +
-  //                     (item.count * item.itemSizeColorsprice!);
-  //               } else {
-  //                 totalPriceWithDiscount =
-  //                     (item.count * item.itemSizeColorsprice!);
-  //                 totalPriceWithOutDiscount =
-  //                     (item.count * item.itemSizeColorsprice!);
-  //                 totalPriceWithDiscountOrders =
-  //                     totalPriceWithDiscountOrders +
-  //                     (item.count * item.itemSizeColorsprice!);
-  //                 totalPriceWithOutDiscountOrders =
-  //                     totalPriceWithOutDiscountOrders +
-  //                     (item.count * item.itemSizeColorsprice!);
-  //               }
-  //             } else {
-  //               if (item.discount > 0) {
-  //                 totalPriceWithDiscount =
-  //                     ((item.count *
-  //                             (token == null
-  //                                 ? item.normailPrice
-  //                                 : (isNormail
-  //                                     ? item.normailPrice
-  //                                     : item.wholesalePrice))) *
-  //                         (1 - (item.discount / 100)));
-  //                 totalPriceWithOutDiscount =
-  //                     (item.count *
-  //                         (token == null
-  //                             ? item.normailPrice
-  //                             : (isNormail
-  //                                 ? item.normailPrice
-  //                                 : item.wholesalePrice)));
-  //                 totalPriceWithDiscountOrders =
-  //                     totalPriceWithDiscountOrders +
-  //                     ((item.count *
-  //                             (token == null
-  //                                 ? item.normailPrice
-  //                                 : (isNormail
-  //                                     ? item.normailPrice
-  //                                     : item.wholesalePrice))) *
-  //                         (1 - (item.discount / 100)));
-  //                 totalPriceWithOutDiscountOrders =
-  //                     totalPriceWithOutDiscountOrders +
-  //                     (item.count *
-  //                         (token == null
-  //                             ? item.normailPrice
-  //                             : (isNormail
-  //                                 ? item.normailPrice
-  //                                 : item.wholesalePrice)));
-  //               } else {
-  //                 totalPriceWithDiscount =
-  //                     (item.count *
-  //                         (token == null
-  //                             ? item.normailPrice
-  //                             : (isNormail
-  //                                 ? item.normailPrice
-  //                                 : item.wholesalePrice)));
-  //                 totalPriceWithOutDiscount =
-  //                     (item.count *
-  //                         (token == null
-  //                             ? item.normailPrice
-  //                             : (isNormail
-  //                                 ? item.normailPrice
-  //                                 : item.wholesalePrice)));
-  //                 totalPriceWithDiscountOrders =
-  //                     totalPriceWithDiscountOrders +
-  //                     (item.count *
-  //                         (token == null
-  //                             ? item.normailPrice
-  //                             : (isNormail
-  //                                 ? item.normailPrice
-  //                                 : item.wholesalePrice)));
-  //                 totalPriceWithOutDiscountOrders =
-  //                     totalPriceWithOutDiscountOrders +
-  //                     (item.count *
-  //                         (token == null
-  //                             ? item.normailPrice
-  //                             : (isNormail
-  //                                 ? item.normailPrice
-  //                                 : item.wholesalePrice)));
-  //               }
-  //             }
-  //             return {
-  //               "id": 0,
-  //               "orderId": 0,
-  //               "itemId": item.id,
-  //               "isOrderSize": item.isSize,
-  //               "itemSizeId": item.isSize ? item.itemSizeId : 'null',
-  //               "itemSizeColorId":
-  //                   item.isSize ? item.itemSizeColorId.toString() : 'null',
-  //               "quantity": item.count,
-  //               "itemPrice":
-  //                   item.isSize
-  //                       ? item.itemSizeColorsprice
-  //                       : (token == null
-  //                           ? item.normailPrice
-  //                           : (isNormail
-  //                               ? item.normailPrice
-  //                               : item.wholesalePrice)),
-  //               "totalPriceWithDiscound": totalPriceWithDiscount.toDouble(),
-  //               "totalPriceWithOutDiscound": totalPriceWithOutDiscount,
-  //             };
-  //           }).toList();
-  //       debugPrint("details == $details", wrapWidth: 1024);
-  //       var response = await shopRepository.createOrder(
-  //         body: {
-  //           "id": 0,
-  //           "customerId": userModel!.id,
-  //           "customerName": nameController.text,
-  //           "phoneNum1": phoneNumberController.text,
-  //           "phoneNum2": phoneNumber2Controller.text,
-  //           "cityId": selectedCityId,
-  //           "address": addressController.text,
-  //           "status": "New",
-  //           "isWholesale":
-  //               (userModel!.typeUser).toString() == "Normail" ? false : true,
-  //           "priceDelivery": selectedCityPrice,
-  //           "totalPriceWithDiscound": totalPriceWithDiscountOrders,
-  //           "totalPriceWithOutDiscound": totalPriceWithDiscountOrders,
-  //           "discoundCodeId": couponModel!.id,
-  //           "discoundCodePercent": couponModel!.discountPercent,
-  //           "discoundCode": couponModel!.code,
-  //           "totalPriceWithDiscoundCode":
-  //               totalPriceWithDiscountOrders *
-  //               (1 - (couponModel!.discountPercent / 100)),
-  //           "userAddId": userModel!.id,
-  //           "dateAdd": formattedDate,
-  //           "userUpdate": userModel!.id,
-  //           "dateUpdate": formattedDate,
-  //           "details": details.toList(),
-  //         },
-  //       );
-  //       if (response.statusCode == 200) {
-  //         OrderId = response.body['id'].toString();
-  //         Get.toNamed(RouteHelper.checkOutDone);
-  //       } else if (response.statusCode == 400) {
-  //         showCustomSnackBar(response.body, isError: true);
-  //       }
-  //       print(response.statusCode);
-  //       totalPriceWithDiscountOrders = 0;
-  //       totalPriceWithOutDiscountOrders = 0;
-  //       totalPriceWithDiscount = 0;
-  //       totalPriceWithOutDiscount = 0;
-  //       totalPrice = 0;
-  //       priceItems = 0;
-  //       quantity = 0;
-  //       activeCode = null;
-  //       selectedCity = null;
-  //       selectedCityId = null;
-  //       selectedCityPrice = 0;
-  //       discoundCodeId = null;
-  //       discoundCodePercent = null;
-  //       update();
-  //       // items = [];
-  //       // saveCart();
-  //       // clearCart();
-  //     } catch (e) {
-  //       showCustomSnackBar(e.toString(), isError: true);
-  //       print(e);
-  //     } finally {}
-  //   } else {
-  //     OverlayLoadingProgress.stop();
-  //     showCustomSnackBar('Check the internet connection'.tr, isError: true);
-  //   }
-  //   OverlayLoadingProgress.stop();
-  // }
 
   Future<void> checkCode() async {
     final code = discountCodeController.text.trim();
@@ -1647,7 +1044,7 @@ class ShopController extends GetxController {
     }
 
     if (!canCheckout) {
-      showCustomSnackBar('أضف منتجًا صالحًا للسلة أولًا.', isError: true);
+      showCustomSnackBar('أضف منتجًا صالحًا للسلة أولًا.'.tr, isError: true);
       return;
     }
 
@@ -1795,7 +1192,8 @@ class ShopController extends GetxController {
   }
 
   @override
-  void dispose() {
+  void onClose() {
+    _deliveryQuotes.invalidate();
     emailController.dispose();
     nameController.dispose();
     phoneNumberController.dispose();
@@ -1805,6 +1203,6 @@ class ShopController extends GetxController {
     quantity = 0;
     priceItems = 0;
     activeCode = null;
-    super.dispose();
+    super.onClose();
   }
 }

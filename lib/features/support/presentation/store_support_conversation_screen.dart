@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -49,9 +50,9 @@ class _StoreSupportConversationScreenState
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
       final conversation = state.activeConversation;
       return Scaffold(
-        backgroundColor: StorePalette.background,
+        backgroundColor: StoreColors.resolve(context, StorePalette.background),
         appBar: AppBar(
-          title: Text(conversation?.subject ?? 'محادثة الدعم'),
+          title: Text(conversation?.subject ?? 'محادثة الدعم'.tr),
           bottom:
               _ConversationStatusBar.isVisible(state, conversation)
                   ? PreferredSize(
@@ -89,16 +90,16 @@ class _StoreSupportConversationScreenState
                               ),
                     ),
                     if (conversation?.isClosed == true)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.all(14),
-                        child: Text('تم إغلاق هذه المحادثة'),
+                        child: Text('تم إغلاق هذه المحادثة'.tr),
                       )
                     else
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (state.supportIsTyping)
-                            const _TypingLabel(text: 'الدعم يكتب الآن...'),
+                            _TypingLabel(text: 'الدعم يكتب الآن...'.tr),
                           _Composer(
                             controller: input,
                             hasImage: imagePath != null,
@@ -162,10 +163,10 @@ class _ConversationStatusBar extends StatelessWidget {
     final automatic = state.showingAutomaticRefreshNotice && !unavailable;
     final label =
         unavailable
-            ? 'لا يوجد اتصال'
+            ? 'لا يوجد اتصال'.tr
             : automatic
-            ? 'يتم تحديث الرسائل تلقائيًا'
-            : 'الدعم متصل الآن';
+            ? 'يتم تحديث الرسائل تلقائيًا'.tr
+            : 'الدعم متصل الآن'.tr;
     final color =
         unavailable
             ? Colors.red.shade700
@@ -195,7 +196,7 @@ class _ConversationStatusBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text('إعادة المحاولة'),
+              child: Text('إعادة المحاولة'.tr),
             ),
           ],
         ],
@@ -213,9 +214,11 @@ class _ProductContextCard extends StatelessWidget {
     margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
     padding: const EdgeInsets.all(10),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: StorePalette.border),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
     ),
     child: Row(
       children: [
@@ -239,7 +242,7 @@ class _ProductContextCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('المحادثة حول المنتج', style: TextStyle(fontSize: 11)),
+              Text('المحادثة حول المنتج'.tr, style: TextStyle(fontSize: 11)),
               Text(
                 product.name,
                 maxLines: 2,
@@ -267,9 +270,17 @@ class _MessageBubble extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: message.isMine ? StorePalette.purple : StorePalette.surface,
+        color:
+            message.isMine
+                ? StorePalette.purple
+                : StoreColors.resolve(context, StorePalette.surface),
         borderRadius: BorderRadius.circular(15),
-        border: message.isMine ? null : Border.all(color: StorePalette.border),
+        border:
+            message.isMine
+                ? null
+                : Border.all(
+                  color: StoreColors.resolve(context, StorePalette.border),
+                ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,14 +295,14 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
           if (message.localImagePath != null && message.attachments.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(bottom: 7),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.image_outlined, size: 18),
                   SizedBox(width: 5),
-                  Text('صورة مرفقة'),
+                  Text('صورة مرفقة'.tr),
                 ],
               ),
             ),
@@ -299,7 +310,13 @@ class _MessageBubble extends StatelessWidget {
             Text(
               message.body,
               style: TextStyle(
-                color: message.isMine ? Colors.white : StorePalette.textPrimary,
+                color:
+                    message.isMine
+                        ? Colors.white
+                        : StoreColors.resolve(
+                          context,
+                          StorePalette.textPrimary,
+                        ),
               ),
             ),
           const SizedBox(height: 4),
@@ -316,7 +333,7 @@ class _MessageBubble extends StatelessWidget {
           ),
           if (message.delivery == StoreSupportDelivery.sending)
             Text(
-              'جاري الإرسال...',
+              'جاري الإرسال...'.tr,
               style: TextStyle(
                 fontSize: 10,
                 color: message.isMine ? Colors.white70 : Colors.grey,
@@ -326,7 +343,7 @@ class _MessageBubble extends StatelessWidget {
             TextButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh, size: 15),
-              label: const Text('تعذر الإرسال · إعادة المحاولة'),
+              label: Text('تعذر الإرسال · إعادة المحاولة'.tr),
             ),
         ],
       ),
@@ -353,9 +370,13 @@ class _Composer extends StatelessWidget {
     top: false,
     child: Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-      decoration: const BoxDecoration(
-        color: StorePalette.surface,
-        border: Border(top: BorderSide(color: StorePalette.border)),
+      decoration: BoxDecoration(
+        color: StoreColors.resolve(context, StorePalette.surface),
+        border: Border(
+          top: BorderSide(
+            color: StoreColors.resolve(context, StorePalette.border),
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -374,7 +395,8 @@ class _Composer extends StatelessWidget {
               minLines: 1,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: hasImage ? 'أضف وصفاً للصورة...' : 'اكتب رسالة...',
+                hintText:
+                    hasImage ? 'أضف وصفاً للصورة...'.tr : 'اكتب رسالة...'.tr,
                 border: InputBorder.none,
               ),
             ),
@@ -398,7 +420,7 @@ class _TypingLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
     child: Text(
       text,

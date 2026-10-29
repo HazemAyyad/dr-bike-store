@@ -30,7 +30,7 @@ class PersonalDetailsPage extends StatelessWidget {
             controller.profileStatus == AccountViewStatus.offline
                 ? StoreMessageKind.offline
                 : StoreMessageKind.error,
-        message: controller.message ?? 'تعذر تحميل البيانات',
+        message: controller.message ?? 'تعذر تحميل البيانات'.tr,
         actionLabel: 'storeRetry'.tr,
         onAction: () => controller.getUserById(navigate: false),
       );
@@ -71,7 +71,7 @@ class PersonalDetailsPage extends StatelessWidget {
                   end: -4,
                   bottom: -4,
                   child: IconButton.filled(
-                    tooltip: 'تغيير الصورة الشخصية',
+                    tooltip: 'تغيير الصورة الشخصية'.tr,
                     onPressed:
                         controller.uploadingProfileImage
                             ? null
@@ -157,7 +157,7 @@ class PersonalDetailsPage extends StatelessWidget {
           StoreButton(
             label:
                 controller.mutationStatus == AccountMutationStatus.submitting
-                    ? 'جارٍ الحفظ…'
+                    ? 'جارٍ الحفظ…'.tr
                     : 'save'.tr,
             onPressed:
                 controller.mutationStatus == AccountMutationStatus.submitting

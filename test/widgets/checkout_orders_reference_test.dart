@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:doctor_bike/controller/order/order_controller.dart';
 import 'package:doctor_bike/controller/shop/shop_controller.dart';
@@ -16,6 +17,8 @@ import 'package:doctor_bike/repository/auth/auth_repository.dart';
 import 'package:doctor_bike/repository/shop/shop_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:doctor_bike/core/theme/store_typography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -30,6 +33,11 @@ void main() {
   late ApiClient apiClient;
 
   setUpAll(() async {
+    await (FontLoader(StoreTypography.fontFamily)
+      ..addFont(rootBundle.load('assets/font/Cairo-Variable.ttf'))).load();
+    await (FontLoader('NotoSansHebrew')..addFont(
+      rootBundle.load('assets/font/NotoSansHebrew-Variable.ttf'),
+    )).load();
     storageDirectory = Directory(
       '${Directory.systemTemp.path}${Platform.pathSeparator}'
       'doctor-bike-checkout-orders-reference-test',
@@ -58,6 +66,118 @@ void main() {
   });
 
   tearDown(Get.reset);
+
+  for (final language in ['ar', 'en', 'he']) {
+    for (final night in [false, true]) {
+      for (final stage in [
+        CheckoutStage.address,
+        CheckoutStage.shipping,
+        CheckoutStage.payment,
+        CheckoutStage.success,
+      ]) {
+        testWidgets(
+          'checkout $stage in $language dark=$night fits 320px at 1.6 text scale',
+          (tester) async {
+            final controller = _shopController(apiClient);
+            controller.checkoutState = CheckoutFlowState(
+              stage: stage,
+              selectedRole: 'customer',
+              availableRoles: const ['customer'],
+              orderId: '123',
+              orderNumber: 'DB-123',
+            );
+            controller.nameController.text = 'Customer';
+            controller.addressController.text = 'Delivery address';
+            controller.selectedCity = 'City';
+            controller.selectedCityId = '10';
+            controller.selectedVillage = 'Village';
+            controller.selectedVillageId = '20';
+            controller.hasAuthoritativeDeliveryQuote = true;
+            controller.selectedCityPrice = 20;
+            await tester.binding.setSurfaceSize(const Size(320, 640));
+            addTearDown(() => tester.binding.setSurfaceSize(null));
+            await tester.pumpWidget(
+              _TestApp(
+                language: language,
+                night: night,
+                textScale: 1.6,
+                child:
+                    stage == CheckoutStage.success
+                        ? const CheckOutDone()
+                        : const CheckOutScreen(),
+              ),
+            );
+            await tester.pumpAndSettle();
+            final screen =
+                stage == CheckoutStage.success
+                    ? find.byType(CheckOutDone)
+                    : find.byType(CheckOutScreen);
+            final renderedContext = tester.element(
+              find
+                  .descendant(of: screen, matching: find.byType(Scaffold))
+                  .first,
+            );
+            expect(
+              Directionality.of(renderedContext),
+              language == 'en' ? TextDirection.ltr : TextDirection.rtl,
+            );
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
+
+  testWidgets('new shipping retry wins even for the same village and price', (
+    tester,
+  ) async {
+    final repository = _QuoteRepository(apiClient: apiClient);
+    final controller = Get.put(
+      ShopController(
+        shopRepository: repository,
+        storage: GetStorage('checkout-orders-reference-test'),
+      ),
+    );
+    controller.selectedVillageId = '20';
+    final first = controller.calculateDeliveryFeeForSelectedVillage();
+    final latest = controller.calculateDeliveryFeeForSelectedVillage();
+    repository.requests[1].complete(
+      const Response(statusCode: 200, body: {'deliveryCost': 25}),
+    );
+    await latest;
+    repository.requests[0].complete(
+      const Response(statusCode: 200, body: {'deliveryCost': 0}),
+    );
+    await first;
+    expect(controller.selectedCityPrice, 25);
+    expect(controller.hasAuthoritativeDeliveryQuote, isTrue);
+    expect(controller.isDeliveryLoading, isFalse);
+  });
+
+  testWidgets('an old failed quote cannot stop a newer quote loading', (
+    tester,
+  ) async {
+    final repository = _QuoteRepository(apiClient: apiClient);
+    final controller = Get.put(
+      ShopController(
+        shopRepository: repository,
+        storage: GetStorage('checkout-orders-reference-test'),
+      ),
+    );
+    controller.selectedVillageId = '20';
+    final first = controller.calculateDeliveryFeeForSelectedVillage();
+    final latest = controller.calculateDeliveryFeeForSelectedVillage();
+    repository.requests[0].completeError(StateError('offline'));
+    await first;
+    expect(controller.isDeliveryLoading, isTrue);
+    expect(controller.deliveryQuoteMessage, isNull);
+    repository.requests[1].complete(
+      const Response(statusCode: 200, body: {'deliveryCost': 0}),
+    );
+    await latest;
+    expect(controller.selectedCityPrice, 0);
+    expect(controller.hasAuthoritativeDeliveryQuote, isTrue);
+  });
 
   for (final size in const <Size>[
     Size(320, 568),
@@ -239,15 +359,36 @@ Future<void> _pumpAt(WidgetTester tester, Size size, Widget child) async {
 }
 
 class _TestApp extends StatelessWidget {
-  const _TestApp({required this.child});
+  const _TestApp({
+    required this.child,
+    this.language = 'ar',
+    this.night = false,
+    this.textScale = 1,
+  });
 
   final Widget child;
+  final String language;
+  final bool night;
+  final double textScale;
 
   @override
   Widget build(BuildContext context) => GetMaterialApp(
     debugShowCheckedModeBanner: false,
-    theme: light(),
-    locale: const Locale('ar'),
+    theme: night ? dark() : light(),
+    locale: Locale(language),
+    supportedLocales: const [Locale('ar'), Locale('en'), Locale('he')],
+    localizationsDelegates: const [
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    builder:
+        (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
     translations: MyLocale(),
     home: child,
   );
@@ -381,4 +522,18 @@ Order _order() => Order.fromJson({
 
 class _OrdersRepository extends AuthRepository {
   _OrdersRepository({required super.apiClient});
+}
+
+class _QuoteRepository extends ShopRepository {
+  _QuoteRepository({required super.apiClient});
+  final requests = <Completer<Response>>[];
+  @override
+  Future<Response> calculateDeliveryFee({
+    required String villageId,
+    required double price,
+  }) {
+    final pending = Completer<Response>();
+    requests.add(pending);
+    return pending.future;
+  }
 }

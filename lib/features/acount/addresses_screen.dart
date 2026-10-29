@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -33,19 +34,25 @@ class _AddressesScreenState extends State<AddressesScreen> {
   @override
   Widget build(BuildContext context) {
     if (!Get.isRegistered<AccountControllerImp>()) {
-      return const Scaffold(
+      return Scaffold(
         body: StoreMessageState(
           kind: StoreMessageKind.error,
-          message: 'تعذر فتح العناوين. أعد تشغيل التطبيق وحاول مجددًا.',
+          message: 'تعذر فتح العناوين. أعد تشغيل التطبيق وحاول مجددًا.'.tr,
         ),
       );
     }
     return GetBuilder<AccountControllerImp>(
       builder:
           (controller) => Scaffold(
-            backgroundColor: StorePalette.background,
+            backgroundColor: StoreColors.resolve(
+              context,
+              StorePalette.background,
+            ),
             appBar: AppBar(
-              title: Text('العناوين الشخصية', style: StoreTypography.title),
+              title: Text(
+                'العناوين الشخصية'.tr,
+                style: StoreColors.text(context, StoreTypography.title),
+              ),
               centerTitle: true,
             ),
             floatingActionButton: FloatingActionButton.extended(
@@ -54,7 +61,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       ? null
                       : () => _openEditor(context, controller),
               icon: const Icon(Icons.add_location_alt_outlined),
-              label: const Text('إضافة عنوان'),
+              label: Text('إضافة عنوان'.tr),
             ),
             body: SafeArea(child: _body(context, controller)),
           ),
@@ -69,16 +76,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
       return StoreMessageState(
         kind: StoreMessageKind.error,
         message: controller.addressesMessage!,
-        actionLabel: 'إعادة المحاولة',
+        actionLabel: 'إعادة المحاولة'.tr,
         onAction: controller.loadAddresses,
       );
     }
     if (controller.addresses.isEmpty) {
       return StoreMessageState(
         kind: StoreMessageKind.empty,
-        title: 'لا توجد عناوين محفوظة',
-        message: 'أضف عنوان المنزل أو العمل لاستخدامه لاحقًا.',
-        actionLabel: 'إضافة عنوان',
+        title: 'لا توجد عناوين محفوظة'.tr,
+        message: 'أضف عنوان المنزل أو العمل لاستخدامه لاحقًا.'.tr,
+        actionLabel: 'إضافة عنوان'.tr,
         onAction: () => _openEditor(context, controller),
       );
     }
@@ -120,7 +127,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
   }) async {
     await controller.prepareAddressOptions(current: current);
     if (!context.mounted) return;
-    final label = TextEditingController(text: current?.label ?? 'المنزل');
+    final label = TextEditingController(text: current?.label ?? 'المنزل'.tr);
     final street = TextEditingController(
       text: current?.streetAddress ?? controller.profile?.address ?? '',
     );
@@ -137,7 +144,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: StorePalette.surface,
+      backgroundColor: StoreColors.resolve(context, StorePalette.surface),
       builder:
           (sheetContext) => StatefulBuilder(
             builder:
@@ -158,7 +165,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
                             width: 42,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: StorePalette.border,
+                              color: StoreColors.resolve(
+                                context,
+                                StorePalette.border,
+                              ),
                               borderRadius: BorderRadius.circular(
                                 StoreRadii.pill,
                               ),
@@ -168,27 +178,34 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         const SizedBox(height: 14),
                         Text(
                           current == null
-                              ? 'إضافة عنوان جديد'
-                              : 'تعديل العنوان',
-                          style: StoreTypography.title,
+                              ? 'إضافة عنوان جديد'.tr
+                              : 'تعديل العنوان'.tr,
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.title,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: label,
                           textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'اسم العنوان',
-                            hintText: 'المنزل، العمل…',
-                            prefixIcon: Icon(Icons.bookmark_border_rounded),
+                          decoration: InputDecoration(
+                            labelText: 'اسم العنوان'.tr,
+                            hintText: 'المنزل، العمل…'.tr,
+                            prefixIcon: const Icon(
+                              Icons.bookmark_border_rounded,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 10),
                         StoreCityPicker(
                           cities: controller.cities,
                           value: selectedCity,
-                          decoration: const InputDecoration(
-                            labelText: 'المدينة',
-                            prefixIcon: Icon(Icons.location_city_outlined),
+                          decoration: InputDecoration(
+                            labelText: 'المدينة'.tr,
+                            prefixIcon: const Icon(
+                              Icons.location_city_outlined,
+                            ),
                           ),
                           onChanged: (city) async {
                             setSheetState(() {
@@ -209,7 +226,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   : null,
                           isExpanded: true,
                           decoration: InputDecoration(
-                            labelText: 'القرية أو منطقة التوصيل',
+                            labelText: 'القرية أو منطقة التوصيل'.tr,
                             prefixIcon: const Icon(Icons.map_outlined),
                             suffixIcon:
                                 controller.addressOptionsLoading
@@ -244,24 +261,24 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           controller: street,
                           minLines: 2,
                           maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'العنوان بالتفصيل',
-                            prefixIcon: Icon(Icons.location_on_outlined),
+                          decoration: InputDecoration(
+                            labelText: 'العنوان بالتفصيل'.tr,
+                            prefixIcon: const Icon(Icons.location_on_outlined),
                           ),
                         ),
                         const SizedBox(height: 10),
                         TextField(
                           controller: phone,
                           keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            labelText: 'رقم الهاتف',
-                            prefixIcon: Icon(Icons.phone_outlined),
+                          decoration: InputDecoration(
+                            labelText: 'رقم الهاتف'.tr,
+                            prefixIcon: const Icon(Icons.phone_outlined),
                           ),
                         ),
                         CheckboxListTile(
                           value: isDefault,
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('استخدامه كعنوان افتراضي'),
+                          title: Text('استخدامه كعنوان افتراضي'.tr),
                           onChanged:
                               (value) => setSheetState(
                                 () => isDefault = value ?? false,
@@ -269,12 +286,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         ),
                         StoreButton(
                           label:
-                              current == null ? 'حفظ العنوان' : 'حفظ التعديلات',
+                              current == null
+                                  ? 'حفظ العنوان'.tr
+                                  : 'حفظ التعديلات'.tr,
                           onPressed: () async {
                             if (selectedCity == null ||
                                 selectedVillage == null) {
                               showCustomSnackBar(
-                                'حدد المدينة ومنطقة التوصيل.',
+                                'حدد المدينة ومنطقة التوصيل.'.tr,
                                 isError: true,
                               );
                               return;
@@ -314,16 +333,18 @@ class _AddressesScreenState extends State<AddressesScreen> {
       context: context,
       builder:
           (dialogContext) => AlertDialog(
-            title: const Text('حذف العنوان'),
-            content: Text('هل تريد حذف عنوان «${address.label}»؟'),
+            title: Text('حذف العنوان'.tr),
+            content: Text(
+              'storeDeleteAddressConfirm'.trParams({'label': address.label}),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('إلغاء'),
+                child: Text('إلغاء'.tr),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('حذف'),
+                child: Text('حذف'.tr),
               ),
             ],
           ),
@@ -349,10 +370,13 @@ class _AddressCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
       border: Border.all(
-        color: address.isDefault ? StorePalette.purple : StorePalette.border,
+        color:
+            address.isDefault
+                ? StorePalette.purple
+                : StoreColors.resolve(context, StorePalette.border),
       ),
       boxShadow: const [StoreElevation.lowShadow],
     ),
@@ -362,8 +386,8 @@ class _AddressCard extends StatelessWidget {
         Container(
           width: 40,
           height: 40,
-          decoration: const BoxDecoration(
-            color: StorePalette.background,
+          decoration: BoxDecoration(
+            color: StoreColors.resolve(context, StorePalette.background),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -379,7 +403,10 @@ class _AddressCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(address.label, style: StoreTypography.label),
+                    child: Text(
+                      address.label,
+                      style: StoreColors.text(context, StoreTypography.label),
+                    ),
                   ),
                   if (address.isDefault)
                     Container(
@@ -388,15 +415,18 @@ class _AddressCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: StorePalette.derivedSuccessSurface,
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.derivedSuccessSurface,
+                        ),
                         borderRadius: BorderRadius.circular(StoreRadii.pill),
                       ),
                       child: Text(
-                        'افتراضي',
-                        style: StoreTypography.caption.copyWith(
-                          color: StorePalette.success,
-                          fontSize: 10,
-                        ),
+                        'افتراضي'.tr,
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.caption,
+                        ).copyWith(color: StorePalette.success, fontSize: 10),
                       ),
                     ),
                   if (!address.isDeliveryReady)
@@ -406,25 +436,37 @@ class _AddressCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: StorePalette.derivedWarningSurface,
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.derivedWarningSurface,
+                        ),
                         borderRadius: BorderRadius.circular(StoreRadii.pill),
                       ),
                       child: Text(
-                        'غير مكتمل للشحن',
-                        style: StoreTypography.caption.copyWith(
-                          color: StorePalette.warning,
-                          fontSize: 10,
-                        ),
+                        'غير مكتمل للشحن'.tr,
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.caption,
+                        ).copyWith(color: StorePalette.warning, fontSize: 10),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(address.streetAddress, style: StoreTypography.body),
+              Text(
+                address.streetAddress,
+                style: StoreColors.text(context, StoreTypography.body),
+              ),
               if (address.locationLabel.isNotEmpty)
-                Text(address.locationLabel, style: StoreTypography.caption),
+                Text(
+                  address.locationLabel,
+                  style: StoreColors.text(context, StoreTypography.caption),
+                ),
               if (address.phone?.trim().isNotEmpty == true)
-                Text(address.phone!, style: StoreTypography.caption),
+                Text(
+                  address.phone!,
+                  style: StoreColors.text(context, StoreTypography.caption),
+                ),
               const SizedBox(height: 7),
               Wrap(
                 spacing: 6,
@@ -432,18 +474,18 @@ class _AddressCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit_outlined, size: 17),
-                    label: const Text('تعديل'),
+                    label: Text('تعديل'.tr),
                   ),
                   if (!address.isDefault)
                     TextButton.icon(
                       onPressed: onDefault,
                       icon: const Icon(Icons.check_circle_outline, size: 17),
-                      label: const Text('افتراضي'),
+                      label: Text('افتراضي'.tr),
                     ),
                   TextButton.icon(
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline, size: 17),
-                    label: const Text('حذف'),
+                    label: Text('حذف'.tr),
                     style: TextButton.styleFrom(
                       foregroundColor: StorePalette.error,
                     ),

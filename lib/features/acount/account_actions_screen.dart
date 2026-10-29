@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/account/account_controller.dart';
@@ -13,19 +14,26 @@ class AccountActionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!Get.isRegistered<AccountControllerImp>()) {
-      return const Scaffold(
+      return Scaffold(
         body: StoreMessageState(
           kind: StoreMessageKind.error,
-          message: 'تعذر تحميل إجراءات الحساب. أعد تشغيل التطبيق وحاول مجددًا.',
+          message:
+              'تعذر تحميل إجراءات الحساب. أعد تشغيل التطبيق وحاول مجددًا.'.tr,
         ),
       );
     }
     return GetBuilder<AccountControllerImp>(
       builder:
           (c) => Scaffold(
-            backgroundColor: StorePalette.background,
+            backgroundColor: StoreColors.resolve(
+              context,
+              StorePalette.background,
+            ),
             appBar: AppBar(
-              title: Text('إجراءات الحساب', style: StoreTypography.title),
+              title: Text(
+                'إجراءات الحساب'.tr,
+                style: StoreColors.text(context, StoreTypography.title),
+              ),
               centerTitle: true,
             ),
             body: SafeArea(
@@ -34,8 +42,8 @@ class AccountActionsScreen extends StatelessWidget {
                 children: [
                   _ActionCard(
                     icon: Icons.logout_rounded,
-                    title: 'تسجيل الخروج',
-                    subtitle: 'إنهاء الجلسة الحالية على هذا الجهاز.',
+                    title: 'تسجيل الخروج'.tr,
+                    subtitle: 'إنهاء الجلسة الحالية على هذا الجهاز.'.tr,
                     onTap: () async {
                       final confirmed = await _confirm(
                         context,
@@ -48,7 +56,7 @@ class AccountActionsScreen extends StatelessWidget {
                         Get.offAllNamed(RouteHelper.homePage);
                       } catch (_) {
                         showCustomSnackBar(
-                          'تعذر تسجيل الخروج. حاول مجددًا.',
+                          'تعذر تسجيل الخروج. حاول مجددًا.'.tr,
                           isError: true,
                         );
                       }
@@ -57,8 +65,8 @@ class AccountActionsScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   _ActionCard(
                     icon: Icons.person_off_outlined,
-                    title: 'حذف/تعطيل الحساب',
-                    subtitle: 'يتم تعطيل الحساب على الخادم قبل حذف الجلسة.',
+                    title: 'حذف/تعطيل الحساب'.tr,
+                    subtitle: 'يتم تعطيل الحساب على الخادم قبل حذف الجلسة.'.tr,
                     danger: true,
                     loading:
                         c.mutationStatus == AccountMutationStatus.submitting,
@@ -74,13 +82,13 @@ class AccountActionsScreen extends StatelessWidget {
                           Get.offAllNamed(RouteHelper.homePage);
                         } else {
                           showCustomSnackBar(
-                            'تعذر تعطيل الحساب. لم يتم حذف جلستك.',
+                            'تعذر تعطيل الحساب. لم يتم حذف جلستك.'.tr,
                             isError: true,
                           );
                         }
                       } catch (_) {
                         showCustomSnackBar(
-                          'تعذر تعطيل الحساب. لم يتم حذف جلستك.',
+                          'تعذر تعطيل الحساب. لم يتم حذف جلستك.'.tr,
                           isError: true,
                         );
                       }
@@ -102,16 +110,16 @@ class AccountActionsScreen extends StatelessWidget {
         context: context,
         builder:
             (context) => AlertDialog(
-              title: Text(title),
-              content: Text(body),
+              title: Text(title.tr),
+              content: Text(body.tr),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('إلغاء'),
+                  child: Text('إلغاء'.tr),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('تأكيد'),
+                  child: Text('تأكيد'.tr),
                 ),
               ],
             ),
@@ -138,7 +146,7 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     borderRadius: BorderRadius.circular(StoreRadii.lg),
     child: InkWell(
       onTap: loading ? null : onTap,
@@ -148,7 +156,10 @@ class _ActionCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(StoreRadii.lg),
           border: Border.all(
-            color: danger ? StorePalette.error : StorePalette.border,
+            color:
+                danger
+                    ? StorePalette.error
+                    : StoreColors.resolve(context, StorePalette.border),
           ),
         ),
         child: Row(
@@ -170,12 +181,16 @@ class _ActionCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: StoreTypography.bodyMedium.copyWith(
-                      color: danger ? StorePalette.error : null,
-                    ),
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.bodyMedium,
+                    ).copyWith(color: danger ? StorePalette.error : null),
                   ),
                   const SizedBox(height: 3),
-                  Text(subtitle, style: StoreTypography.caption),
+                  Text(
+                    subtitle,
+                    style: StoreColors.text(context, StoreTypography.caption),
+                  ),
                 ],
               ),
             ),

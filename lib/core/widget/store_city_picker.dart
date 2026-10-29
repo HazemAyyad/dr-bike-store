@@ -1,3 +1,5 @@
+import 'package:get/get.dart';
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../model/city_model.dart';
@@ -69,7 +71,7 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
         .toList(growable: false);
 
     return Dialog(
-      backgroundColor: StorePalette.background,
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: ConstrainedBox(
@@ -82,29 +84,37 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'اختر المدينة',
+                      'اختر المدينة'.tr,
                       style: TextStyle(
-                        color: StorePalette.textPrimary,
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.textPrimary,
+                        ),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'إغلاق',
+                    tooltip: 'إغلاق'.tr,
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
-                    color: StorePalette.textSecondary,
+                    color: StoreColors.resolve(
+                      context,
+                      StorePalette.textSecondary,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               TextField(
                 autofocus: true,
-                style: const TextStyle(color: StorePalette.textPrimary),
-                decoration: const InputDecoration(
-                  hintText: 'ابحث عن مدينة',
+                style: TextStyle(
+                  color: StoreColors.resolve(context, StorePalette.textPrimary),
+                ),
+                decoration: InputDecoration(
+                  hintText: 'ابحث عن مدينة'.tr,
                   prefixIcon: Icon(Icons.search),
                 ),
                 onChanged:
@@ -115,12 +125,17 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
               Flexible(
                 child:
                     results.isEmpty
-                        ? const Padding(
-                          padding: EdgeInsets.all(24),
+                        ? Padding(
+                          padding: const EdgeInsets.all(24),
                           child: Text(
-                            'لا توجد مدن مطابقة',
+                            'لا توجد مدن مطابقة'.tr,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: StorePalette.textSecondary),
+                            style: TextStyle(
+                              color: StoreColors.resolve(
+                                context,
+                                StorePalette.textSecondary,
+                              ),
+                            ),
                           ),
                         )
                         : ListView.builder(
@@ -133,8 +148,11 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
                             return ListTile(
                               title: Text(
                                 city.cityNameAr,
-                                style: const TextStyle(
-                                  color: StorePalette.textPrimary,
+                                style: TextStyle(
+                                  color: StoreColors.resolve(
+                                    context,
+                                    StorePalette.textPrimary,
+                                  ),
                                 ),
                               ),
                               trailing:

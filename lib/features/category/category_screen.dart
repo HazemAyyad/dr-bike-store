@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -56,21 +57,24 @@ class CategoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Directionality(
-    textDirection: TextDirection.rtl,
+    textDirection: Directionality.of(context),
     child: Scaffold(
-      backgroundColor: StorePalette.background,
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
       appBar: AppBar(
-        backgroundColor: StorePalette.surface,
-        foregroundColor: StorePalette.textPrimary,
+        backgroundColor: StoreColors.resolve(context, StorePalette.surface),
+        foregroundColor: StoreColors.resolve(context, StorePalette.textPrimary),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          tooltip: 'الرجوع',
+          tooltip: 'الرجوع'.tr,
           onPressed: Get.back,
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
         ),
-        title: const Text('قائمة المنتجات'),
-        titleTextStyle: StoreTypography.label.copyWith(fontSize: 14),
+        title: Text('قائمة المنتجات'.tr),
+        titleTextStyle: StoreColors.text(
+          context,
+          StoreTypography.label,
+        ).copyWith(fontSize: 14),
         actions: [
           const StoreSearchAction(),
           Obx(
@@ -109,7 +113,7 @@ class CategoryScreen extends StatelessWidget {
     };
     if (state is StoreEmpty<List<Item>> || products.isEmpty) {
       return _refreshableMessage(
-        message: 'لا توجد منتجات في هذا القسم',
+        message: 'لا توجد منتجات في هذا القسم'.tr,
         icon: Icons.inventory_2_outlined,
       );
     }
@@ -146,6 +150,35 @@ class CategoryScreen extends StatelessWidget {
                           (context, index) => _listProduct(products[index]),
                     ),
           ),
+          if (controller.hasMoreCatalog.value ||
+              controller.catalogPageError.value != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(StoreSpacing.md),
+                child: Column(
+                  children: [
+                    if (controller.catalogPageError.value != null)
+                      Text(controller.catalogPageError.value!.tr),
+                    TextButton(
+                      onPressed:
+                          controller.loadingMoreCatalog.value
+                              ? null
+                              : controller.loadMoreCatalog,
+                      child:
+                          controller.loadingMoreCatalog.value
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text('storeLoadMore'.tr),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -250,14 +283,19 @@ class CategoryScreen extends StatelessWidget {
           textAlign: TextAlign.start,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: StoreTypography.title.copyWith(fontSize: 17),
+          style: StoreColors.text(
+            context,
+            StoreTypography.title,
+          ).copyWith(fontSize: 17),
         ),
         const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
               child: _CatalogControl(
-                label: 'تصفية (${controller.filters.value.activeCount})',
+                label: 'تصفية (@count)'.trParams({
+                  'count': '${controller.filters.value.activeCount}',
+                }),
                 icon: Icons.tune_rounded,
                 emphasized: true,
                 onTap: () => showProductFilterSheet(context, controller),
@@ -266,7 +304,7 @@ class CategoryScreen extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: _CatalogControl(
-                label: 'ترتيب',
+                label: 'ترتيب'.tr,
                 icon: Icons.swap_vert_rounded,
                 onTap: () => _showSort(context),
               ),
@@ -275,9 +313,9 @@ class CategoryScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '$count منتج',
-          style: StoreTypography.caption.copyWith(
-            color: StorePalette.textPrimary,
+          'storeOrderItemsCount'.trParams({'count': '$count'}),
+          style: StoreColors.text(context, StoreTypography.caption).copyWith(
+            color: StoreColors.resolve(context, StorePalette.textPrimary),
             fontWeight: StoreTypography.medium,
           ),
         ),
@@ -287,7 +325,7 @@ class CategoryScreen extends StatelessWidget {
 
   String get _title {
     final value = controller.titleMain?.trim();
-    return value == null || value.isEmpty ? 'المنتجات' : value;
+    return value == null || value.isEmpty ? 'المنتجات'.tr : value;
   }
 
   Future<void> _reload() => controller.getProductsByOnlineStoreCategory(
@@ -298,13 +336,13 @@ class CategoryScreen extends StatelessWidget {
   Future<void> _showSort(BuildContext context) async {
     final selected = await showModalBottomSheet<CatalogSort>(
       context: context,
-      backgroundColor: StorePalette.surface,
+      backgroundColor: StoreColors.resolve(context, StorePalette.surface),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder:
           (context) => Directionality(
-            textDirection: TextDirection.rtl,
+            textDirection: Directionality.of(context),
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -340,11 +378,11 @@ class CategoryScreen extends StatelessWidget {
   }
 
   String _sortLabel(CatalogSort sort) => switch (sort) {
-    CatalogSort.recommended => 'الترتيب المقترح',
-    CatalogSort.newest => 'الأحدث أولاً',
-    CatalogSort.priceAsc => 'السعر: من الأقل للأعلى',
-    CatalogSort.priceDesc => 'السعر: من الأعلى للأقل',
-    CatalogSort.name => 'الاسم',
+    CatalogSort.recommended => 'الترتيب المقترح'.tr,
+    CatalogSort.newest => 'الأحدث أولاً'.tr,
+    CatalogSort.priceAsc => 'السعر: من الأقل للأعلى'.tr,
+    CatalogSort.priceDesc => 'السعر: من الأعلى للأقل'.tr,
+    CatalogSort.name => 'الاسم'.tr,
   };
 }
 
@@ -368,16 +406,24 @@ class _CatalogControl extends StatelessWidget {
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
         foregroundColor:
-            emphasized ? StorePalette.purple : StorePalette.textSecondary,
-        backgroundColor: StorePalette.surface,
+            emphasized
+                ? StorePalette.purple
+                : StoreColors.resolve(context, StorePalette.textSecondary),
+        backgroundColor: StoreColors.resolve(context, StorePalette.surface),
         side: BorderSide(
-          color: emphasized ? StorePalette.purple : StorePalette.border,
+          color:
+              emphasized
+                  ? StorePalette.purple
+                  : StoreColors.resolve(context, StorePalette.border),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(StoreRadii.md),
         ),
-        textStyle: StoreTypography.label.copyWith(fontSize: 12),
+        textStyle: StoreColors.text(
+          context,
+          StoreTypography.label,
+        ).copyWith(fontSize: 12),
       ),
       icon: Icon(icon, size: 17),
       label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -402,18 +448,19 @@ class _CatalogMessage extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 48, color: StorePalette.textSecondary),
+          Icon(
+            icon,
+            size: 48,
+            color: StoreColors.resolve(context, StorePalette.textSecondary),
+          ),
           const SizedBox(height: 12),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: StoreTypography.body,
+            style: StoreColors.text(context, StoreTypography.body),
           ),
           const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: onRetry,
-            child: const Text('إعادة المحاولة'),
-          ),
+          OutlinedButton(onPressed: onRetry, child: Text('إعادة المحاولة'.tr)),
         ],
       ),
     ),

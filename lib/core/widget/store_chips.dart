@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -22,24 +23,24 @@ class StoreStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (foreground, background) = switch (tone) {
       StoreStatusTone.neutral => (
-        StorePalette.textSecondary,
-        StorePalette.background,
+        StoreColors.resolve(context, StorePalette.textSecondary),
+        StoreColors.resolve(context, StorePalette.background),
       ),
       StoreStatusTone.info => (
         StorePalette.info,
-        StorePalette.derivedInfoSurface,
+        StoreColors.resolve(context, StorePalette.derivedInfoSurface),
       ),
       StoreStatusTone.success => (
         StorePalette.success,
-        StorePalette.derivedSuccessSurface,
+        StoreColors.resolve(context, StorePalette.derivedSuccessSurface),
       ),
       StoreStatusTone.warning => (
         StorePalette.warning,
-        StorePalette.derivedWarningSurface,
+        StoreColors.resolve(context, StorePalette.derivedWarningSurface),
       ),
       StoreStatusTone.error => (
         StorePalette.error,
-        StorePalette.derivedErrorSurface,
+        StoreColors.resolve(context, StorePalette.derivedErrorSurface),
       ),
     };
 
@@ -66,7 +67,10 @@ class StoreStatusChip extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: StoreTypography.caption.copyWith(
+                style: StoreColors.text(
+                  context,
+                  StoreTypography.caption,
+                ).copyWith(
                   color: foreground,
                   fontWeight: StoreTypography.semiBold,
                 ),
@@ -141,16 +145,22 @@ class StoreRating extends StatelessWidget {
             safeValue,
             style:
                 compact
-                    ? StoreTypography.caption.copyWith(fontSize: 10)
-                    : StoreTypography.caption,
+                    ? StoreColors.text(
+                      context,
+                      StoreTypography.caption,
+                    ).copyWith(fontSize: 10)
+                    : StoreColors.text(context, StoreTypography.caption),
           ),
           if (count != null)
             Text(
               ' ($count)',
               style:
                   compact
-                      ? StoreTypography.caption.copyWith(fontSize: 10)
-                      : StoreTypography.caption,
+                      ? StoreColors.text(
+                        context,
+                        StoreTypography.caption,
+                      ).copyWith(fontSize: 10)
+                      : StoreColors.text(context, StoreTypography.caption),
             ),
         ],
       ),
@@ -181,21 +191,26 @@ class StoreFilterChip extends StatelessWidget {
     selected: selected,
     onSelected: onSelected,
     label: Text(count == null ? label : '$label ($count)'),
-    labelStyle: StoreTypography.label.copyWith(
+    labelStyle: StoreColors.text(context, StoreTypography.label).copyWith(
       color:
           selected && solidSelected
               ? Colors.white
               : selected
-              ? StorePalette.navy
-              : StorePalette.textPrimary,
+              ? StoreColors.resolve(context, StorePalette.navy)
+              : StoreColors.resolve(context, StorePalette.textPrimary),
     ),
-    backgroundColor: StorePalette.surface,
+    backgroundColor: StoreColors.resolve(context, StorePalette.surface),
     selectedColor:
-        solidSelected ? StorePalette.purple : StorePalette.lightPurple,
+        solidSelected
+            ? StorePalette.purple
+            : StoreColors.resolve(context, StorePalette.lightPurple),
     checkmarkColor: StorePalette.purple,
     showCheckmark: !solidSelected,
     side: BorderSide(
-      color: selected ? StorePalette.purple : StorePalette.border,
+      color:
+          selected
+              ? StorePalette.purple
+              : StoreColors.resolve(context, StorePalette.border),
     ),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(StoreRadii.pill),

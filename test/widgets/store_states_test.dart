@@ -89,7 +89,7 @@ void main() {
     );
     expect(find.bySemanticsLabel(RegExp('تعذر التحميل')), findsOneWidget);
     await tester.pumpWidget(host(const StoreSkeletonBox()));
-    expect(find.bySemanticsLabel('جاري التحميل'), findsOneWidget);
+    expect(find.bySemanticsLabel('storeLoading'), findsOneWidget);
     semantics.dispose();
   });
 

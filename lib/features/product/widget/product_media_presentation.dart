@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -8,7 +9,11 @@ import '../../../core/widget/store_media.dart';
 
 String productMediaUrl(String path) {
   final uri = Uri.tryParse(path);
-  if (uri != null && uri.hasScheme) return path;
+  if (uri != null && uri.hasScheme) {
+    return uri.scheme == 'http'
+        ? uri.replace(scheme: 'https').toString()
+        : path;
+  }
   return '${AppConstants.appBaseUrl}${path.startsWith('/') ? '' : '/'}$path';
 }
 
@@ -74,7 +79,10 @@ class ProductMediaThumbnail extends StatelessWidget {
         width: width,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: dark ? const Color(0xFF191A20) : StorePalette.surface,
+          color:
+              dark
+                  ? const Color(0xFF191A20)
+                  : StoreColors.resolve(context, StorePalette.surface),
           borderRadius: BorderRadius.circular(StoreRadii.sm),
           border: Border.all(
             color:
@@ -82,7 +90,7 @@ class ProductMediaThumbnail extends StatelessWidget {
                     ? StorePalette.purple
                     : dark
                     ? Colors.white24
-                    : StorePalette.border,
+                    : StoreColors.resolve(context, StorePalette.border),
             width: selected ? 2 : 1,
           ),
         ),

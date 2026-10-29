@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -22,7 +23,10 @@ class CheckoutAddressStep extends StatelessWidget {
       key: const PageStorageKey<String>('checkout-address-scroll'),
       padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 22),
       children: [
-        Text('عنوان التوصيل', style: StoreTypography.title),
+        Text(
+          'عنوان التوصيل'.tr,
+          style: StoreColors.text(context, StoreTypography.title),
+        ),
         const SizedBox(height: 10),
         _SavedAddressesSection(controller: controller),
         if (controller.checkoutAddresses.isEmpty) ...[
@@ -30,17 +34,20 @@ class CheckoutAddressStep extends StatelessWidget {
           _AccountAddressCard(controller: controller),
         ],
         const SizedBox(height: 18),
-        Text('بيانات التواصل', style: StoreTypography.title),
+        Text(
+          'بيانات التواصل'.tr,
+          style: StoreColors.text(context, StoreTypography.title),
+        ),
         const SizedBox(height: 10),
         _field(
-          label: 'الاسم الكامل',
+          label: 'الاسم الكامل'.tr,
           value: controller.nameController,
           icon: Icons.person_outline_rounded,
           optional: true,
           readOnly: true,
         ),
         _field(
-          label: 'رقم الهاتف',
+          label: 'رقم الهاتف'.tr,
           value: controller.phoneNumberController,
           icon: Icons.phone_outlined,
           optional: true,
@@ -49,7 +56,7 @@ class CheckoutAddressStep extends StatelessWidget {
         ),
         if (controller.phoneNumber2Controller.text.trim().isNotEmpty)
           _field(
-            label: 'رقم هاتف بديل',
+            label: 'رقم هاتف بديل'.tr,
             value: controller.phoneNumber2Controller,
             icon: Icons.phone_in_talk_outlined,
             optional: true,
@@ -57,12 +64,12 @@ class CheckoutAddressStep extends StatelessWidget {
             readOnly: true,
           ),
         Text(
-          'بيانات الاتصال محفوظة في حسابك. يمكن تعديلها من الملف الشخصي.',
-          style: StoreTypography.caption,
+          'بيانات الاتصال محفوظة في حسابك. يمكن تعديلها من الملف الشخصي.'.tr,
+          style: StoreColors.text(context, StoreTypography.caption),
         ),
         const SizedBox(height: 20),
         StoreButton(
-          label: 'متابعة الشحن',
+          label: 'متابعة الشحن'.tr,
           icon: Icons.arrow_forward_rounded,
           iconAtEnd: true,
           onPressed: () {
@@ -95,7 +102,7 @@ class CheckoutAddressStep extends StatelessWidget {
               ? null
               : (text) =>
                   text == null || text.trim().isEmpty
-                      ? 'هذا الحقل مطلوب'
+                      ? 'هذا الحقل مطلوب'.tr
                       : null,
       style: StoreTypography.body,
       decoration: InputDecoration(
@@ -129,7 +136,7 @@ class _AccountAddressCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
+      color: StoreColors.resolve(context, StorePalette.surface),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
       border: Border.all(color: StorePalette.purple, width: 1.3),
       boxShadow: const [StoreElevation.lowShadow],
@@ -146,7 +153,10 @@ class _AccountAddressCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('عنوان الحساب', style: StoreTypography.bodyMedium),
+              child: Text(
+                'عنوان الحساب'.tr,
+                style: StoreColors.text(context, StoreTypography.bodyMedium),
+              ),
             ),
             const Icon(
               Icons.location_on_outlined,
@@ -164,14 +174,14 @@ class _AccountAddressCard extends StatelessWidget {
           validator:
               (text) =>
                   text == null || text.trim().isEmpty
-                      ? 'اكتب عنوان التوصيل'
+                      ? 'اكتب عنوان التوصيل'.tr
                       : null,
-          style: StoreTypography.body,
+          style: StoreColors.text(context, StoreTypography.body),
           decoration: InputDecoration(
-            hintText: 'اكتب تفاصيل عنوان التوصيل',
-            hintStyle: StoreTypography.caption,
+            hintText: 'اكتب تفاصيل عنوان التوصيل'.tr,
+            hintStyle: StoreColors.text(context, StoreTypography.caption),
             filled: true,
-            fillColor: StorePalette.background,
+            fillColor: StoreColors.resolve(context, StorePalette.background),
             contentPadding: const EdgeInsets.all(12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(StoreRadii.md),
@@ -203,9 +213,9 @@ class _SavedAddressesSection extends StatelessWidget {
             Expanded(
               child: Text(
                 controller.checkoutAddresses.isEmpty
-                    ? 'لا توجد عناوين محفوظة'
-                    : 'اختر عنوانًا محفوظًا',
-                style: StoreTypography.bodyMedium,
+                    ? 'لا توجد عناوين محفوظة'.tr
+                    : 'اختر عنوانًا محفوظًا'.tr,
+                style: StoreColors.text(context, StoreTypography.bodyMedium),
               ),
             ),
             TextButton.icon(
@@ -215,7 +225,9 @@ class _SavedAddressesSection extends StatelessWidget {
               },
               icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
               label: Text(
-                controller.checkoutAddresses.isEmpty ? 'إضافة عنوان' : 'إدارة',
+                controller.checkoutAddresses.isEmpty
+                    ? 'إضافة عنوان'.tr
+                    : 'إدارة'.tr,
               ),
             ),
           ],
@@ -225,9 +237,10 @@ class _SavedAddressesSection extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               controller.checkoutAddressesMessage!,
-              style: StoreTypography.caption.copyWith(
-                color: StorePalette.warning,
-              ),
+              style: StoreColors.text(
+                context,
+                StoreTypography.caption,
+              ).copyWith(color: StorePalette.warning),
             ),
           ),
         ...controller.checkoutAddresses.map(
@@ -261,7 +274,7 @@ class _CheckoutAddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     borderRadius: BorderRadius.circular(StoreRadii.md),
     child: InkWell(
       onTap: onTap,
@@ -271,7 +284,10 @@ class _CheckoutAddressCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(StoreRadii.md),
           border: Border.all(
-            color: selected ? StorePalette.purple : StorePalette.border,
+            color:
+                selected
+                    ? StorePalette.purple
+                    : StoreColors.resolve(context, StorePalette.border),
             width: selected ? 1.4 : 1,
           ),
         ),
@@ -283,7 +299,7 @@ class _CheckoutAddressCard extends StatelessWidget {
                   : Icons.radio_button_off_rounded,
               color:
                   onTap == null
-                      ? StorePalette.textDisabled
+                      ? StoreColors.resolve(context, StorePalette.textDisabled)
                       : StorePalette.purple,
             ),
             const SizedBox(width: 9),
@@ -296,11 +312,20 @@ class _CheckoutAddressCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           address.label,
-                          style: StoreTypography.label,
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.label,
+                          ),
                         ),
                       ),
                       if (address.isDefault)
-                        Text('افتراضي', style: StoreTypography.caption),
+                        Text(
+                          'افتراضي'.tr,
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.caption,
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 2),
@@ -308,16 +333,22 @@ class _CheckoutAddressCard extends StatelessWidget {
                     address.streetAddress,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: StoreTypography.body,
+                    style: StoreColors.text(context, StoreTypography.body),
                   ),
                   Text(
                     address.isDeliveryReady
                         ? address.locationLabel
-                        : 'غير مكتمل للشحن — عدّله قبل الاستخدام',
-                    style: StoreTypography.caption.copyWith(
+                        : 'غير مكتمل للشحن — عدّله قبل الاستخدام'.tr,
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.caption,
+                    ).copyWith(
                       color:
                           address.isDeliveryReady
-                              ? StorePalette.textSecondary
+                              ? StoreColors.resolve(
+                                context,
+                                StorePalette.textSecondary,
+                              )
                               : StorePalette.warning,
                     ),
                   ),

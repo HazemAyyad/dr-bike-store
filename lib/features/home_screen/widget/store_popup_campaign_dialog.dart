@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -45,7 +46,7 @@ class _StorePopupCampaignDialog extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 430),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: StorePalette.surface,
+            color: StoreColors.resolve(context, StorePalette.surface),
             borderRadius: BorderRadius.circular(26),
             boxShadow: const [
               BoxShadow(
@@ -126,7 +127,10 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                             const SizedBox(width: 5),
                             Text(
                               'storePopupSelectedForYou'.tr,
-                              style: StoreTypography.caption.copyWith(
+                              style: StoreColors.text(
+                                context,
+                                StoreTypography.caption,
+                              ).copyWith(
                                 color: colors.foreground,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -138,10 +142,10 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                       Text(
                         title,
                         textAlign: TextAlign.center,
-                        style: StoreTypography.title.copyWith(
-                          fontSize: 22,
-                          height: 1.3,
-                        ),
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.title,
+                        ).copyWith(fontSize: 22, height: 1.3),
                       ),
                       if (content.isNotEmpty) ...[
                         const SizedBox(height: 9),
@@ -150,8 +154,14 @@ class _StorePopupCampaignDialog extends StatelessWidget {
                           textAlign: TextAlign.center,
                           maxLines: 4,
                           overflow: TextOverflow.ellipsis,
-                          style: StoreTypography.body.copyWith(
-                            color: StorePalette.textSecondary,
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.body,
+                          ).copyWith(
+                            color: StoreColors.resolve(
+                              context,
+                              StorePalette.textSecondary,
+                            ),
                             height: 1.55,
                           ),
                         ),

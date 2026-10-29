@@ -165,13 +165,16 @@ class _ListItemCarState extends State<ListItemCar> {
                         controller.getUserById();
                       } else {
                         Get.defaultDialog(
-                          titlePadding: EdgeInsets.only(top: 15, bottom: 5),
+                          titlePadding: const EdgeInsets.only(
+                            top: 15,
+                            bottom: 5,
+                          ),
                           title: "You must register/log in.".tr,
                           titleStyle: robotoBold.copyWith(
                             fontSize: Dimensions.fontSizeExtraLarge,
                             color: Theme.of(context).primaryColor,
                           ),
-                          content: DialogLoginAndRegister(),
+                          content: const DialogLoginAndRegister(),
                         );
                       }
                     },

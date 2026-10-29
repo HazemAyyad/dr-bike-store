@@ -1,10 +1,23 @@
 // ignore_for_file: non_constant_identifier_names
 
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/app_constants.dart';
+import 'store_session_vault.dart';
+import 'store_session_boundary.dart';
 
 class AppUsageService {
+  static final StoreSessionVault sessionVault = StoreSessionVault();
+  static final sessionExpired = StreamController<void>.broadcast();
+
+  static Future<void> invalidateSessionIfCurrent(String token) async {
+    if (await sessionVault.invalidateIfCurrent(token)) {
+      StoreSessionBoundary.reset();
+      sessionExpired.add(null);
+    }
+  }
+
   static Future<bool> isFirstTime() async {
     final prefs = await SharedPreferences.getInstance();
     bool firstTime =
@@ -80,20 +93,19 @@ class AppUsageService {
 
   // Save token
   static Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.TOKEN, token);
+    await sessionVault.writeToken(token);
+    StoreSessionBoundary.reset();
   }
 
   // Get token
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(AppConstants.TOKEN);
+    return sessionVault.readToken();
   }
 
   // Delete token
   static Future<void> deleteToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AppConstants.TOKEN);
+    await sessionVault.deleteToken();
+    StoreSessionBoundary.reset();
   }
 
   // Save IsLogin
@@ -169,6 +181,7 @@ class AppUsageService {
   }
 
   static Future<void> delete() async {
+    await deleteToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }

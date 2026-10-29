@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -36,7 +37,10 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       autoRemove: false,
       builder:
           (controller) => Scaffold(
-            backgroundColor: StorePalette.background,
+            backgroundColor: StoreColors.resolve(
+              context,
+              StorePalette.background,
+            ),
             body: PageView(
               physics: const NeverScrollableScrollPhysics(),
               controller: controller.pageController,

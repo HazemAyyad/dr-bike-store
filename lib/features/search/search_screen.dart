@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -230,7 +231,7 @@ class _SearchDiscovery extends StatelessWidget {
               Expanded(
                 child: Text(
                   'storeRecentSearches'.tr,
-                  style: StoreTypography.title,
+                  style: StoreColors.text(context, StoreTypography.title),
                 ),
               ),
               TextButton(
@@ -249,13 +250,22 @@ class _SearchDiscovery extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(query, style: StoreTypography.bodyMedium),
+                      child: Text(
+                        query,
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.bodyMedium,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: StoreSpacing.sm),
-                    const Icon(
+                    Icon(
                       Icons.radio_button_unchecked,
                       size: StoreIconSizes.small,
-                      color: StorePalette.textSecondary,
+                      color: StoreColors.resolve(
+                        context,
+                        StorePalette.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -307,7 +317,7 @@ class _SearchResults extends StatelessWidget {
                 'storeSearchResultsCount'.trParams({
                   'count': '${products.length}',
                 }),
-                style: StoreTypography.title,
+                style: StoreColors.text(context, StoreTypography.title),
               ),
             ),
             StoreProductLayoutToggle(
@@ -379,6 +389,30 @@ class _SearchResults extends StatelessWidget {
                   ),
         ),
       ),
+      if (controller.hasMoreSearch || controller.searchPageError != null)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.md),
+          child: Column(
+            children: [
+              if (controller.searchPageError != null)
+                Text(controller.searchPageError!.tr),
+              TextButton(
+                onPressed:
+                    controller.loadingMoreSearch
+                        ? null
+                        : controller.loadMoreSearch,
+                child:
+                    controller.loadingMoreSearch
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : Text('storeLoadMore'.tr),
+              ),
+            ],
+          ),
+        ),
     ],
   );
 }

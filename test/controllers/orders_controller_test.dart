@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:doctor_bike/controller/order/order_controller.dart';
 import 'package:doctor_bike/core/api_client.dart';
+import 'package:doctor_bike/core/functions/store_session_boundary.dart';
 import 'package:doctor_bike/core/model/orders_model.dart';
 import 'package:doctor_bike/repository/auth/auth_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +22,30 @@ void main() {
   test(
     'parses Done order',
     () => expect(_order('Done').statusKind, StoreOrderStatusKind.completed),
+  );
+
+  test(
+    'logout clears cached orders and rejects an old pending response',
+    () async {
+      final controller = OrderController(
+        repository: repository,
+        connectivityCheck: () async => true,
+      );
+      controller.onInit();
+      addTearDown(controller.onClose);
+      await controller.load();
+      controller.selectOrder(controller.orders.first);
+      repository.pending = true;
+      final request = controller.load();
+      await Future<void>.delayed(Duration.zero);
+      StoreSessionBoundary.reset();
+      expect(controller.orders, isEmpty);
+      expect(controller.selectedOrder, isNull);
+      repository.complete();
+      await request;
+      expect(controller.orders, isEmpty);
+      expect(controller.listStatus, OrderListStatus.initial);
+    },
   );
   test(
     'parses New order',

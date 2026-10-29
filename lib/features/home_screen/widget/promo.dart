@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/store_tokens.dart';
@@ -26,7 +27,7 @@ class PromoCard extends StatelessWidget {
     button: onPressed != null,
     label: title,
     child: Material(
-      color: StorePalette.lightPurple,
+      color: StoreColors.resolve(context, StorePalette.lightPurple),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -38,6 +39,9 @@ class PromoCard extends StatelessWidget {
               child: StoreNetworkMedia(
                 url: imageUrl,
                 semanticLabel: title,
+                fallback: ColoredBox(
+                  color: StoreColors.resolve(context, StorePalette.lightPurple),
+                ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -62,7 +66,10 @@ class PromoCard extends StatelessWidget {
                                   title,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: StoreTypography.headline,
+                                  style: StoreColors.text(
+                                    context,
+                                    StoreTypography.headline,
+                                  ),
                                 ),
                                 if (description?.trim().isNotEmpty ??
                                     false) ...[
@@ -71,7 +78,10 @@ class PromoCard extends StatelessWidget {
                                     description!,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: StoreTypography.caption,
+                                    style: StoreColors.text(
+                                      context,
+                                      StoreTypography.caption,
+                                    ),
                                   ),
                                 ],
                                 if (onPressed != null &&

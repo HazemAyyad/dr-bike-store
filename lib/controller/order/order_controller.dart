@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../core/functions/checkInternet.dart';
+import '../../core/functions/store_session_boundary.dart';
 import '../../core/model/orders_model.dart';
 import '../../repository/auth/auth_repository.dart';
 
@@ -18,7 +19,7 @@ extension OrderListFilterApi on OrderListFilter {
   };
 }
 
-class OrderController extends GetxController {
+class OrderController extends GetxController with StoreSessionAware {
   OrderController({
     required this.repository,
     Future<bool> Function()? connectivityCheck,
@@ -34,21 +35,38 @@ class OrderController extends GetxController {
   List<Order> orders = const [];
   Order? selectedOrder;
   String? message;
+  int _loadRequest = 0;
+
+  @override
+  void clearSessionData() {
+    _loadRequest++;
+    orders = const [];
+    selectedOrder = null;
+    listStatus = OrderListStatus.initial;
+    mutationStatus = OrderMutationStatus.idle;
+    message = null;
+    update();
+  }
 
   Future<void> load({OrderListFilter? filter}) async {
+    final generation = sessionGeneration;
+    final request = ++_loadRequest;
     if (filter != null) selectedFilter = filter;
     listStatus = OrderListStatus.loading;
     update();
-    if (!await connectivityCheck()) {
+    final online = await connectivityCheck();
+    if (!sessionIsCurrent(generation) || request != _loadRequest) return;
+    if (!online) {
       listStatus = OrderListStatus.offline;
       update();
       return;
     }
     try {
       final response = await repository.getAllOrder(selectedFilter.apiStatus);
+      if (!sessionIsCurrent(generation) || request != _loadRequest) return;
       if (response.statusCode != 200 || response.body is! Map) {
         listStatus = OrderListStatus.error;
-        message = 'تعذر تحميل الطلبات.';
+        message = 'تعذر تحميل الطلبات.'.tr;
       } else {
         orders =
             OrderResponse.fromJson(
@@ -58,8 +76,9 @@ class OrderController extends GetxController {
             orders.isEmpty ? OrderListStatus.empty : OrderListStatus.content;
       }
     } catch (_) {
+      if (!sessionIsCurrent(generation) || request != _loadRequest) return;
       listStatus = OrderListStatus.error;
-      message = 'تعذر قراءة سجل الطلبات.';
+      message = 'تعذر قراءة سجل الطلبات.'.tr;
     }
     update();
   }
@@ -89,11 +108,13 @@ class OrderController extends GetxController {
     required bool confirmed,
   }) async {
     if (!confirmed || !canRequestCancellation(order)) return false;
+    final generation = sessionGeneration;
     mutationStatus = OrderMutationStatus.submitting;
     update();
     final original = order;
     try {
       final response = await repository.cancelOrder(orderId: '${order.id}');
+      if (!sessionIsCurrent(generation)) return false;
       if (response.statusCode == 200 && response.body is Map) {
         final body = Map<String, dynamic>.from(response.body as Map);
         final raw = body['data'] is Map ? body['data'] : body;
@@ -111,11 +132,12 @@ class OrderController extends GetxController {
       }
       selectedOrder = original;
       mutationStatus = OrderMutationStatus.failure;
-      message = 'رفض الخادم طلب الإلغاء. بقي الطلب دون تغيير.';
+      message = 'رفض الخادم طلب الإلغاء. بقي الطلب دون تغيير.'.tr;
     } catch (_) {
+      if (!sessionIsCurrent(generation)) return false;
       selectedOrder = original;
       mutationStatus = OrderMutationStatus.failure;
-      message = 'تعذر إرسال طلب الإلغاء. بقي الطلب دون تغيير.';
+      message = 'تعذر إرسال طلب الإلغاء. بقي الطلب دون تغيير.'.tr;
     }
     update();
     return false;

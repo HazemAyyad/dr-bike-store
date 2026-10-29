@@ -9,6 +9,9 @@ import 'core/functions/store_product_link_service.dart';
 import 'core/helper/get_di.dart';
 import 'firebase_options.dart';
 import 'my_app.dart';
+import 'core/functions/store_diagnostics.dart';
+import 'core/functions/store_session_recovery.dart';
+import 'repository/auth/auth_repository.dart';
 
 void main() async {
   // Initialize controller
@@ -16,6 +19,7 @@ void main() async {
   final productLinks = Get.put(StoreProductLinkService(), permanent: true);
   await productLinks.initialize();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await StoreDiagnostics.initialize();
   await NotificationApi.instance.initialize();
   await Get.putAsync(() async => ApiService());
   await Get.putAsync<SharedPreferences>(
@@ -25,8 +29,9 @@ void main() async {
   await GetStorage.init();
   // if (kReleaseMode) ErrorWidget.builder = (_) => const AppErrorWidget();
   await init();
-  runApp(MyApp());
+  runApp(const MyApp());
   WidgetsBinding.instance.addPostFrameCallback((_) {
     NotificationApi.instance.flushPending();
+    StoreSessionRecovery(Get.find<AuthRepository>().revokeSession).start();
   });
 }

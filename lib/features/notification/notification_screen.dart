@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -33,8 +34,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) => Directionality(
     textDirection: ui.TextDirection.rtl,
     child: Scaffold(
-      backgroundColor: StorePalette.background,
-      appBar: AppBar(title: Text('الإشعارات', style: StoreTypography.title)),
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
+      appBar: AppBar(
+        title: Text(
+          'الإشعارات'.tr,
+          style: StoreColors.text(context, StoreTypography.title),
+        ),
+      ),
       body: GetBuilder<NotificationController>(
         builder:
             (controller) => Column(
@@ -72,24 +78,28 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'كل جديد في مكان واحد',
-                                style: StoreTypography.title.copyWith(
-                                  color: Colors.white,
-                                ),
+                                'كل جديد في مكان واحد'.tr,
+                                style: StoreColors.text(
+                                  context,
+                                  StoreTypography.title,
+                                ).copyWith(color: Colors.white),
                               ),
                               Text(
                                 controller.unreadCount == 0
-                                    ? 'لا توجد إشعارات غير مقروءة'
-                                    : '${controller.unreadCount} إشعار غير مقروء',
-                                style: StoreTypography.caption.copyWith(
-                                  color: Colors.white70,
-                                ),
+                                    ? 'لا توجد إشعارات غير مقروءة'.tr
+                                    : '@count إشعار غير مقروء'.trParams({
+                                      'count': '${controller.unreadCount}',
+                                    }),
+                                style: StoreColors.text(
+                                  context,
+                                  StoreTypography.caption,
+                                ).copyWith(color: Colors.white70),
                               ),
                             ],
                           ),
                         ),
                         StoreFilterChip(
-                          label: 'الكل',
+                          label: 'الكل'.tr,
                           selected: true,
                           compact: true,
                           onSelected: (_) {},
@@ -154,7 +164,7 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     borderRadius: BorderRadius.circular(StoreRadii.lg),
     child: InkWell(
       onTap: marking ? null : onTap,
@@ -166,7 +176,7 @@ class _NotificationCard extends StatelessWidget {
           border: Border.all(
             color:
                 item.isRead
-                    ? StorePalette.border
+                    ? StoreColors.resolve(context, StorePalette.border)
                     : StorePalette.purple.withValues(alpha: .45),
           ),
         ),
@@ -192,7 +202,10 @@ class _NotificationCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.title,
-                          style: StoreTypography.bodyMedium.copyWith(
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.bodyMedium,
+                          ).copyWith(
                             fontWeight:
                                 item.isRead
                                     ? StoreTypography.medium
@@ -212,12 +225,21 @@ class _NotificationCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: StoreSpacing.xs),
-                  Text(item.content, style: StoreTypography.body),
+                  Text(
+                    item.content,
+                    style: StoreColors.text(context, StoreTypography.body),
+                  ),
                   if (item.createdAt case final date?)
                     Text(
                       DateFormat('yyyy/MM/dd HH:mm').format(date),
-                      style: StoreTypography.caption.copyWith(
-                        color: StorePalette.textSecondary,
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.caption,
+                      ).copyWith(
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.textSecondary,
+                        ),
                       ),
                     ),
                 ],
@@ -229,11 +251,14 @@ class _NotificationCard extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else if (item.destination != null)
-              const Padding(
-                padding: EdgeInsets.only(top: 10),
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
                 child: Icon(
                   Icons.chevron_left_rounded,
-                  color: StorePalette.textSecondary,
+                  color: StoreColors.resolve(
+                    context,
+                    StorePalette.textSecondary,
+                  ),
                 ),
               ),
           ],

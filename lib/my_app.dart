@@ -2,6 +2,7 @@
 
 import 'package:doctor_bike/core/functions/theme_services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:overlay_kit/overlay_kit.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -27,6 +28,8 @@ class MyApp extends StatelessWidget {
             splitScreenMode: true,
             builder: (_, child) {
               return GetMaterialApp(
+                supportedLocales: const [Locale('ar'), Locale('en'), Locale('he')],
+                localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
                 title: AppConstants.appName,
                 theme: light(),
                 darkTheme: dark(),

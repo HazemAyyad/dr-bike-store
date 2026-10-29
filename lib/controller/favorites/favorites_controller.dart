@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../core/functions/store_session_boundary.dart';
 
 import '../../core/model/get_all_item_model.dart';
 import '../../repository/favorites/favorites_repository.dart';
@@ -13,7 +14,7 @@ enum FavoriteActionOutcome {
   failed,
 }
 
-class FavoritesController extends GetxController {
+class FavoritesController extends GetxController with StoreSessionAware {
   FavoritesController({
     required this.repository,
     required this.isAuthenticated,
@@ -26,15 +27,25 @@ class FavoritesController extends GetxController {
   final items = <Item>[].obs;
   final errorMessage = RxnString();
 
+  @override
+  void clearSessionData() {
+    listingIds.clear();
+    items.clear();
+    errorMessage.value = null;
+    status.value = FavoritesStatus.initial;
+  }
+
   bool contains(int? listingId) =>
       listingId != null && listingIds.contains(listingId);
 
   Future<void> load() async {
+    final generation = sessionGeneration;
     if (!isAuthenticated()) return;
     status.value = FavoritesStatus.loading;
     errorMessage.value = null;
     try {
       final snapshot = await repository.load();
+      if (!sessionIsCurrent(generation)) return;
       listingIds
         ..clear()
         ..addAll(snapshot.listingIds);
@@ -42,6 +53,7 @@ class FavoritesController extends GetxController {
       status.value =
           items.isEmpty ? FavoritesStatus.empty : FavoritesStatus.content;
     } catch (error) {
+      if (!sessionIsCurrent(generation)) return;
       errorMessage.value = error.toString();
       status.value = FavoritesStatus.error;
     }
@@ -51,12 +63,16 @@ class FavoritesController extends GetxController {
     required int? listingId,
     int? productId,
   }) async {
+    final generation = sessionGeneration;
     if (!isAuthenticated()) return FavoriteActionOutcome.loginRequired;
     if (listingId == null || listingId <= 0) {
       return FavoriteActionOutcome.invalidIdentity;
     }
     try {
       final result = await repository.toggle(listingId);
+      if (!sessionIsCurrent(generation)) {
+        return FavoriteActionOutcome.loginRequired;
+      }
       if (result.isFavorite) {
         listingIds.add(result.listingId);
       } else {
@@ -70,6 +86,9 @@ class FavoritesController extends GetxController {
           ? FavoriteActionOutcome.added
           : FavoriteActionOutcome.removed;
     } catch (error) {
+      if (!sessionIsCurrent(generation)) {
+        return FavoriteActionOutcome.loginRequired;
+      }
       errorMessage.value = error.toString();
       return FavoriteActionOutcome.failed;
     }

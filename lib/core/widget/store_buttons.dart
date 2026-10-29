@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -41,7 +42,10 @@ class StoreButton extends StatelessWidget {
     };
     final background = switch (variant) {
       StoreButtonVariant.primary => StorePalette.purple,
-      StoreButtonVariant.secondary => StorePalette.surface,
+      StoreButtonVariant.secondary => StoreColors.resolve(
+        context,
+        StorePalette.surface,
+      ),
       StoreButtonVariant.text => Colors.transparent,
       StoreButtonVariant.destructive => StorePalette.error,
     };
@@ -105,10 +109,16 @@ class StoreButton extends StatelessWidget {
         style: TextButton.styleFrom(
           foregroundColor: foreground,
           backgroundColor: background,
-          disabledForegroundColor: StorePalette.textDisabled,
-          disabledBackgroundColor: StorePalette.border,
+          disabledForegroundColor: StoreColors.resolve(
+            context,
+            StorePalette.textDisabled,
+          ),
+          disabledBackgroundColor: StoreColors.resolve(
+            context,
+            StorePalette.border,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: StoreSpacing.md),
-          textStyle: StoreTypography.label,
+          textStyle: StoreColors.text(context, StoreTypography.label),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(StoreRadii.md),
             side: BorderSide(
@@ -169,9 +179,16 @@ class StoreIconButton extends StatelessWidget {
             style:
                 tonal
                     ? IconButton.styleFrom(
-                      backgroundColor: StorePalette.background,
+                      backgroundColor: StoreColors.resolve(
+                        context,
+                        StorePalette.background,
+                      ),
                       foregroundColor:
-                          foregroundColor ?? StorePalette.textPrimary,
+                          foregroundColor ??
+                          StoreColors.resolve(
+                            context,
+                            StorePalette.textPrimary,
+                          ),
                     )
                     : null,
             icon: Icon(icon, color: foregroundColor),
@@ -192,7 +209,10 @@ class StoreIconButton extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   count == 99 && badgeCount! > 99 ? '99+' : '$count',
-                  style: StoreTypography.caption.copyWith(
+                  style: StoreColors.text(
+                    context,
+                    StoreTypography.caption,
+                  ).copyWith(
                     color: Colors.white,
                     fontSize: 9,
                     fontWeight: StoreTypography.bold,

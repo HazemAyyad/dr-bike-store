@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../controller/LocalizationController.dart';
 import '../../core/api_client.dart';
 import '../../core/functions/app_usage_service.dart';
+import '../categories/store_catalog_source.dart';
 
 abstract interface class HomeDataSource {
   Future<Response> getMainCategories();
@@ -26,17 +27,42 @@ abstract interface class StorePushDataSource {
 }
 
 class HomeRepository extends GetxService
-    implements HomeDataSource, StoreHomeDataSource, StorePushDataSource {
+    implements
+        HomeDataSource,
+        StoreHomeDataSource,
+        StorePushDataSource,
+        StoreCatalogSource {
   final LocalizationController localizationController = Get.put(
     LocalizationController(sharedPreferences: Get.find()),
   );
   final ApiClient apiClient;
   // String token =
-  //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJhMjk2YWE0Ni1jNmIxLTRkNzEtYjk4YS1iZjMwYjQzYzk4ODkiLCJlbWFpbCI6IndhbGVlZDFAZ21haWwuY29tIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3NDkxNDI0MTYsImV4cCI6MTc4MDY3ODQxNiwiaWF0IjoxNzQ5MTQyNDE2LCJpc3MiOiJTZWN1cmVBcGkiLCJhdWQiOiJTZWN1cmVBcGlVc2VyIn0.FRbzifVW8Ra7iFd_oFxF9uJ7yey0HXJc1bth2amMXbc";
 
   HomeRepository({required this.apiClient})
     : _sessionId = _randomIdentity('session');
-  String tok = AppUsageService.getToken().toString();
+  @override
+  Future<Response> catalogPage({
+    String? query,
+    int? categoryId,
+    int page = 1,
+    Map<String, String> filters = const {},
+  }) async {
+    final response = await apiClient.getData(
+      '/OnlineStore/Catalog',
+      query: {
+        if (query != null) 'q': query,
+        if (categoryId != null) 'category_id': '$categoryId',
+        'page': '$page',
+        'per_page': '24',
+        ...filters,
+      },
+    );
+    if (response.statusCode == 404 && page == 1 && query != null) {
+      return search(query, localizationController.locale.languageCode);
+    }
+    return response;
+  }
+
   static const _visitorKey = 'online_store_popup_visitor_id';
   final String _sessionId;
 

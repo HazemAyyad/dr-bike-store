@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -64,7 +65,7 @@ class _ViewImageAndVideoState extends State<ViewImageAndVideo> {
                   fit: StackFit.expand,
                   children: [
                     ColoredBox(
-                      color: StorePalette.surface,
+                      color: StoreColors.resolve(context, StorePalette.surface),
                       child: PageView.builder(
                         key: const Key('product-media-pages'),
                         controller: _pageController,
@@ -296,10 +297,15 @@ class _MediaTypeShortcut extends StatelessWidget {
       onPressed: onPressed,
       style: IconButton.styleFrom(
         backgroundColor:
-            selected ? StorePalette.lightPurple : StorePalette.background,
+            selected
+                ? StoreColors.resolve(context, StorePalette.lightPurple)
+                : StoreColors.resolve(context, StorePalette.background),
         foregroundColor: selected ? StorePalette.purple : StorePalette.navy,
         side: BorderSide(
-          color: selected ? StorePalette.purple : StorePalette.border,
+          color:
+              selected
+                  ? StorePalette.purple
+                  : StoreColors.resolve(context, StorePalette.border),
         ),
       ),
       icon: Icon(_icon),

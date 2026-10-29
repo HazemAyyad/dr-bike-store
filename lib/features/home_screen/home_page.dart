@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -342,7 +343,10 @@ class _ConfiguredHeroSection extends StatelessWidget {
                         color:
                             controller.currentPage.value == index
                                 ? StorePalette.purple
-                                : StorePalette.surface.withValues(alpha: 0.8),
+                                : StoreColors.resolve(
+                                  context,
+                                  StorePalette.surface,
+                                ).withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(StoreRadii.round),
                       ),
                     ),
@@ -438,19 +442,28 @@ class _MaintenanceSection extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: StoreTypography.title.copyWith(fontSize: 16),
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.title,
+                        ).copyWith(fontSize: 16),
                       ),
                       Text(
                         'storeMaintenancePromoBody'.tr,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: StoreTypography.caption,
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.caption,
+                        ),
                       ),
                       const SizedBox(height: StoreSpacing.xs),
                       FilledButton.tonalIcon(
                         onPressed: onPressed,
                         style: FilledButton.styleFrom(
-                          backgroundColor: StorePalette.surface,
+                          backgroundColor: StoreColors.resolve(
+                            context,
+                            StorePalette.surface,
+                          ),
                           foregroundColor: StorePalette.purple,
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(
@@ -774,7 +787,10 @@ class _OfferSection extends StatelessWidget {
                                     '${item.discount.toStringAsFixed(item.discount % 1 == 0 ? 0 : 1)}% ${'storeDiscount'.tr}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: StoreTypography.title.copyWith(
+                                    style: StoreColors.text(
+                                      context,
+                                      StoreTypography.title,
+                                    ).copyWith(
                                       color: Colors.white,
                                       fontSize: 16,
                                     ),
@@ -786,7 +802,10 @@ class _OfferSection extends StatelessWidget {
                                   ),
                                   maxLines: item.discount > 0 ? 1 : 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: StoreTypography.caption.copyWith(
+                                  style: StoreColors.text(
+                                    context,
+                                    StoreTypography.caption,
+                                  ).copyWith(
                                     color: Colors.white,
                                     fontWeight: StoreTypography.medium,
                                   ),
@@ -794,9 +813,10 @@ class _OfferSection extends StatelessWidget {
                                 if (item.discount <= 0)
                                   Text(
                                     '${controller.displayPriceFor(item)} ₪',
-                                    style: StoreTypography.label.copyWith(
-                                      color: Colors.white,
-                                    ),
+                                    style: StoreColors.text(
+                                      context,
+                                      StoreTypography.label,
+                                    ).copyWith(color: Colors.white),
                                   ),
                               ],
                             ),
@@ -826,7 +846,10 @@ class _HomeRefreshPanel extends StatelessWidget {
       key: const ValueKey('home-refresh-panel'),
       height: 88,
       decoration: BoxDecoration(
-        color: StorePalette.lightPurple.withValues(alpha: 0.45),
+        color: StoreColors.resolve(
+          context,
+          StorePalette.lightPurple,
+        ).withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(StoreRadii.lg),
       ),
       child: Column(
@@ -836,8 +859,8 @@ class _HomeRefreshPanel extends StatelessWidget {
           const SizedBox(height: StoreSpacing.xs),
           Text(
             'storeRefreshingHome'.tr,
-            style: StoreTypography.caption.copyWith(
-              color: StorePalette.textSecondary,
+            style: StoreColors.text(context, StoreTypography.caption).copyWith(
+              color: StoreColors.resolve(context, StorePalette.textSecondary),
             ),
           ),
         ],
@@ -872,15 +895,25 @@ class _SectionState<T> extends StatelessWidget {
           height: 92,
           padding: const EdgeInsets.all(StoreSpacing.md),
           decoration: BoxDecoration(
-            color: StorePalette.surface,
-            border: Border.all(color: StorePalette.border),
+            color: StoreColors.resolve(context, StorePalette.surface),
+            border: Border.all(
+              color: StoreColors.resolve(context, StorePalette.border),
+            ),
             borderRadius: BorderRadius.circular(StoreRadii.lg),
           ),
           child: Row(
             children: [
-              Icon(icon, color: StorePalette.textSecondary),
+              Icon(
+                icon,
+                color: StoreColors.resolve(context, StorePalette.textSecondary),
+              ),
               const SizedBox(width: StoreSpacing.sm),
-              Expanded(child: Text(message, style: StoreTypography.caption)),
+              Expanded(
+                child: Text(
+                  message,
+                  style: StoreColors.text(context, StoreTypography.caption),
+                ),
+              ),
             ],
           ),
         ),
@@ -903,7 +936,7 @@ class _SectionHeader extends StatelessWidget {
           title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: StoreTypography.title,
+          style: StoreColors.text(context, StoreTypography.title),
         ),
       ),
       if (onViewAll != null)
@@ -913,7 +946,7 @@ class _SectionHeader extends StatelessWidget {
           label: Text('storeViewAll'.tr),
           style: TextButton.styleFrom(
             visualDensity: VisualDensity.compact,
-            textStyle: StoreTypography.caption,
+            textStyle: StoreColors.text(context, StoreTypography.caption),
           ),
         ),
     ],
@@ -979,10 +1012,10 @@ class _HomeCategorySkeleton extends StatelessWidget {
   const _HomeCategorySkeleton();
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => const Column(
     children: [
-      const StoreSkeletonBox(height: 54, borderRadius: StoreRadii.md),
-      const SizedBox(height: StoreSpacing.xxs),
+      StoreSkeletonBox(height: 54, borderRadius: StoreRadii.md),
+      SizedBox(height: StoreSpacing.xxs),
       Center(child: StoreSkeletonBox(width: 42, height: 9)),
     ],
   );
@@ -996,8 +1029,10 @@ class _HomeProductSkeleton extends StatelessWidget {
     height: StoreCalibration.homeProductCardHeight,
     child: DecoratedBox(
       decoration: BoxDecoration(
-        color: StorePalette.surface,
-        border: Border.all(color: StorePalette.border),
+        color: StoreColors.resolve(context, StorePalette.surface),
+        border: Border.all(
+          color: StoreColors.resolve(context, StorePalette.border),
+        ),
         borderRadius: BorderRadius.circular(StoreRadii.lg),
       ),
       child: const Padding(

@@ -1,3 +1,5 @@
+import 'package:get/get.dart';
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/model/orders_model.dart';
@@ -23,17 +25,20 @@ class OrderTrackingTimeline extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: StorePalette.background,
+        color: StoreColors.resolve(context, StorePalette.background),
         borderRadius: BorderRadius.circular(StoreRadii.md),
       ),
       child: Row(
         children: [
-          const Icon(Icons.route_outlined, color: StorePalette.textSecondary),
+          Icon(
+            Icons.route_outlined,
+            color: StoreColors.resolve(context, StorePalette.textSecondary),
+          ),
           const SizedBox(width: 9),
           Expanded(
             child: Text(
-              'لا توجد بيانات تتبع مسجلة لهذا الطلب.',
-              style: StoreTypography.body,
+              'لا توجد بيانات تتبع مسجلة لهذا الطلب.'.tr,
+              style: StoreColors.text(context, StoreTypography.body),
             ),
           ),
         ],
@@ -122,7 +127,10 @@ class _TimelineEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = state != OrderTimelineState.pending;
-    final color = active ? StorePalette.purple : StorePalette.textDisabled;
+    final color =
+        active
+            ? StorePalette.purple
+            : StoreColors.resolve(context, StorePalette.textDisabled);
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -139,7 +147,10 @@ class _TimelineEntry extends StatelessWidget {
                     color:
                         state == OrderTimelineState.current
                             ? StorePalette.purple
-                            : StorePalette.surface,
+                            : StoreColors.resolve(
+                              context,
+                              StorePalette.surface,
+                            ),
                     shape: BoxShape.circle,
                     border: Border.all(color: color, width: 1.5),
                   ),
@@ -160,7 +171,13 @@ class _TimelineEntry extends StatelessWidget {
                   Expanded(
                     child: Container(
                       width: 2,
-                      color: active ? StorePalette.purple : StorePalette.border,
+                      color:
+                          active
+                              ? StorePalette.purple
+                              : StoreColors.resolve(
+                                context,
+                                StorePalette.border,
+                              ),
                     ),
                   ),
               ],
@@ -174,18 +191,33 @@ class _TimelineEntry extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    label.isEmpty ? 'حالة غير معروفة' : label,
-                    style: StoreTypography.bodyMedium.copyWith(
+                    label.isEmpty ? 'حالة غير معروفة'.tr : label,
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.bodyMedium,
+                    ).copyWith(
                       color:
                           state == OrderTimelineState.pending
-                              ? StorePalette.textSecondary
-                              : StorePalette.textPrimary,
+                              ? StoreColors.resolve(
+                                context,
+                                StorePalette.textSecondary,
+                              )
+                              : StoreColors.resolve(
+                                context,
+                                StorePalette.textPrimary,
+                              ),
                     ),
                   ),
                   if (timestamp.isNotEmpty)
-                    Text(timestamp, style: StoreTypography.caption),
+                    Text(
+                      timestamp,
+                      style: StoreColors.text(context, StoreTypography.caption),
+                    ),
                   if (note.isNotEmpty)
-                    Text(note, style: StoreTypography.caption),
+                    Text(
+                      note,
+                      style: StoreColors.text(context, StoreTypography.caption),
+                    ),
                 ],
               ),
             ),
@@ -197,20 +229,20 @@ class _TimelineEntry extends StatelessWidget {
 }
 
 String _shiplyLabel(int id, String fallback) => switch (id) {
-  1 => 'تم إنشاء الشحنة',
-  2 => 'تم إرسالها لشركة الشحن',
-  3 => 'في الطريق',
-  4 => 'محاولة تسليم',
-  5 => 'معلقة',
-  6 => 'تم التسليم',
-  7 => 'مرتجعة',
-  _ => fallback.isEmpty ? 'حالة الشحنة' : fallback,
+  1 => 'تم إنشاء الشحنة'.tr,
+  2 => 'تم إرسالها لشركة الشحن'.tr,
+  3 => 'في الطريق'.tr,
+  4 => 'محاولة تسليم'.tr,
+  5 => 'معلقة'.tr,
+  6 => 'تم التسليم'.tr,
+  7 => 'مرتجعة'.tr,
+  _ => fallback.isEmpty ? 'حالة الشحنة'.tr : fallback,
 };
 
 String _orderStatusLabel(String raw) => switch (raw) {
-  'New' => 'تم استلام الطلب',
-  'Done' => 'اكتمل الطلب',
-  'Canceled' => 'ألغي الطلب',
+  'New' => 'تم استلام الطلب'.tr,
+  'Done' => 'اكتمل الطلب'.tr,
+  'Canceled' => 'ألغي الطلب'.tr,
   _ => raw,
 };
 

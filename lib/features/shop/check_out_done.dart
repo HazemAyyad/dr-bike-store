@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -63,14 +64,17 @@ class _CheckOutDoneState extends State<CheckOutDone>
               ? controller.checkoutState.orderNumber!.trim()
               : orderId;
       if (orderId == null || orderId.trim().isEmpty) {
-        return const Scaffold(
-          body: Center(child: Text('تعذر عرض تأكيد دون رقم طلب معتمد.')),
+        return Scaffold(
+          body: Center(child: Text('تعذر عرض تأكيد دون رقم طلب معتمد.'.tr)),
         );
       }
       return Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: Scaffold(
-          backgroundColor: StorePalette.background,
+          backgroundColor: StoreColors.resolve(
+            context,
+            StorePalette.background,
+          ),
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -85,9 +89,17 @@ class _CheckOutDoneState extends State<CheckOutDone>
                     child: Container(
                       padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
                       decoration: BoxDecoration(
-                        color: StorePalette.surface,
+                        color: StoreColors.resolve(
+                          context,
+                          StorePalette.surface,
+                        ),
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: StorePalette.border),
+                        border: Border.all(
+                          color: StoreColors.resolve(
+                            context,
+                            StorePalette.border,
+                          ),
+                        ),
                         boxShadow: const [StoreElevation.mediumShadow],
                       ),
                       child: Column(
@@ -99,7 +111,10 @@ class _CheckOutDoneState extends State<CheckOutDone>
                               width: 82,
                               height: 82,
                               decoration: BoxDecoration(
-                                color: StorePalette.derivedSuccessSurface,
+                                color: StoreColors.resolve(
+                                  context,
+                                  StorePalette.derivedSuccessSurface,
+                                ),
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: StorePalette.success,
@@ -115,18 +130,31 @@ class _CheckOutDoneState extends State<CheckOutDone>
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'تم إنشاء طلبك',
-                            style: StoreTypography.headline.copyWith(
-                              color: StorePalette.navy,
+                            'تم إنشاء طلبك'.tr,
+                            style: StoreColors.text(
+                              context,
+                              StoreTypography.headline,
+                            ).copyWith(
+                              color: StoreColors.resolve(
+                                context,
+                                StorePalette.navy,
+                              ),
                               fontSize: 22,
                             ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            'وصل الطلب بنجاح، وسنظهر لك كل تحديث في شاشة طلباتي.',
-                            style: StoreTypography.body.copyWith(
-                              color: StorePalette.textSecondary,
+                            'وصل الطلب بنجاح، وسنظهر لك كل تحديث في شاشة طلباتي.'
+                                .tr,
+                            style: StoreColors.text(
+                              context,
+                              StoreTypography.body,
+                            ).copyWith(
+                              color: StoreColors.resolve(
+                                context,
+                                StorePalette.textSecondary,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -138,7 +166,10 @@ class _CheckOutDoneState extends State<CheckOutDone>
                               vertical: 12,
                             ),
                             decoration: BoxDecoration(
-                              color: StorePalette.background,
+                              color: StoreColors.resolve(
+                                context,
+                                StorePalette.background,
+                              ),
                               borderRadius: BorderRadius.circular(
                                 StoreRadii.lg,
                               ),
@@ -156,8 +187,11 @@ class _CheckOutDoneState extends State<CheckOutDone>
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'رقم الطلب',
-                                        style: StoreTypography.caption,
+                                        'رقم الطلب'.tr,
+                                        style: StoreColors.text(
+                                          context,
+                                          StoreTypography.caption,
+                                        ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
@@ -166,8 +200,14 @@ class _CheckOutDoneState extends State<CheckOutDone>
                                           'checkout-success-order-number',
                                         ),
                                         textDirection: TextDirection.ltr,
-                                        style: StoreTypography.title.copyWith(
-                                          color: StorePalette.navy,
+                                        style: StoreColors.text(
+                                          context,
+                                          StoreTypography.title,
+                                        ).copyWith(
+                                          color: StoreColors.resolve(
+                                            context,
+                                            StorePalette.navy,
+                                          ),
                                           fontSize: 18,
                                         ),
                                       ),
@@ -184,7 +224,7 @@ class _CheckOutDoneState extends State<CheckOutDone>
                           ),
                           const SizedBox(height: 16),
                           StoreButton(
-                            label: 'متابعة الطلب',
+                            label: 'متابعة الطلب'.tr,
                             icon: Icons.local_shipping_outlined,
                             onPressed:
                                 () => openCheckoutSuccessDestination(
@@ -193,7 +233,7 @@ class _CheckOutDoneState extends State<CheckOutDone>
                           ),
                           const SizedBox(height: 8),
                           StoreButton(
-                            label: 'العودة إلى المتجر',
+                            label: 'العودة إلى المتجر'.tr,
                             icon: Icons.storefront_outlined,
                             variant: StoreButtonVariant.secondary,
                             onPressed:

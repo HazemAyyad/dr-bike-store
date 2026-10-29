@@ -97,6 +97,16 @@ abstract interface class StoreAuthGateway {
 }
 
 class AuthRepository extends GetxService implements StoreAuthGateway {
+  Future<bool> revokeSession(String token, String? fcmToken) async {
+    final response = await apiClient.postData(
+      '/Auth/Logout',
+      headers: {'Authorization': 'Bearer $token'},
+      timeout: 10,
+      body: {if (fcmToken?.isNotEmpty == true) 'fcm_token': fcmToken},
+    );
+    return response.statusCode == 204 || response.statusCode == 401;
+  }
+
   final ApiClient apiClient;
   AuthRepository({required this.apiClient, StoreClientMetadata? clientMetadata})
     : clientMetadata = clientMetadata ?? StoreClientMetadata();

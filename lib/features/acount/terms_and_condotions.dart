@@ -10,7 +10,7 @@ class TermsConditionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl, // Arabic text direction
+      textDirection: Directionality.of(context), // Arabic text direction
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(

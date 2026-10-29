@@ -6,13 +6,14 @@ import 'package:get/get.dart';
 import '../../core/classes/store_view_state.dart';
 import '../../core/functions/app_usage_service.dart';
 import '../../core/functions/checkInternet.dart';
+import '../../core/functions/store_session_boundary.dart';
 import '../../core/model/notification_model.dart';
 import '../../repository/home/home_repository.dart';
 
 typedef NotificationConnectivity = Future<bool> Function();
 typedef NotificationIdentityLoader = Future<String?> Function();
 
-class NotificationController extends GetxController {
+class NotificationController extends GetxController with StoreSessionAware {
   NotificationController({
     required this.repository,
     NotificationConnectivity? connectivityCheck,
@@ -37,6 +38,14 @@ class NotificationController extends GetxController {
   final markingReadIds = <int>{};
   List<NotificationItem> notifications = const [];
 
+  @override
+  void clearSessionData() {
+    notifications = const [];
+    markingReadIds.clear();
+    inboxState = const StoreInitial();
+    update();
+  }
+
   int get unreadCount => notifications.where((item) => !item.isRead).length;
   List<NotificationCategory> get availableCategories {
     final supported =
@@ -48,14 +57,18 @@ class NotificationController extends GetxController {
   }
 
   Future<void> load({bool refresh = false}) async {
+    final generation = sessionGeneration;
     final userId = await _userIdLoader();
+    if (!sessionIsCurrent(generation)) return;
     if (userId == null || userId.trim().isEmpty) {
       notifications = const [];
       inboxState = const StoreError(message: 'storeLoginRequired');
       update();
       return;
     }
-    if (!await _connectivityCheck()) {
+    final online = await _connectivityCheck();
+    if (!sessionIsCurrent(generation)) return;
+    if (!online) {
       inboxState = StoreOffline(
         message: 'storeOfflineMessage',
         previousData: notifications.isEmpty ? null : notifications,
@@ -69,6 +82,7 @@ class NotificationController extends GetxController {
     update();
     try {
       final response = await repository.getNotification();
+      if (!sessionIsCurrent(generation)) return;
       if (response.statusCode != 200 || response.body is! Map) {
         throw const FormatException('notification response');
       }
@@ -82,6 +96,7 @@ class NotificationController extends GetxController {
               ? const StoreEmpty(message: 'storeNoNotifications')
               : StoreContent(parsed);
     } catch (_) {
+      if (!sessionIsCurrent(generation)) return;
       inboxState = StoreError(
         message: 'storeGenericError',
         previousData: notifications.isEmpty ? null : notifications,
@@ -91,11 +106,13 @@ class NotificationController extends GetxController {
   }
 
   Future<bool> markRead(NotificationItem item) async {
+    final generation = sessionGeneration;
     if (item.isRead) return true;
     if (!markingReadIds.add(item.id)) return false;
     update();
     try {
       final response = await repository.postNotificationIsRead(item.id);
+      if (!sessionIsCurrent(generation)) return false;
       if (response.statusCode != 200 || !_isAcceptedMutation(response.body)) {
         return false;
       }
@@ -111,8 +128,10 @@ class NotificationController extends GetxController {
     } catch (_) {
       return false;
     } finally {
-      markingReadIds.remove(item.id);
-      update();
+      if (sessionIsCurrent(generation)) {
+        markingReadIds.remove(item.id);
+        update();
+      }
     }
   }
 

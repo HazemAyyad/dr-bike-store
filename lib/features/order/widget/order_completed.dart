@@ -42,7 +42,7 @@ class _OrderCompletedState extends State<OrderCompleted> {
           horizontal: 10.w,
         ),
         decoration: BoxDecoration(
-          color: Color(0xffeeeeee),
+          color: const Color(0xffeeeeee),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -99,7 +99,7 @@ class _OrderCompletedState extends State<OrderCompleted> {
                                         ),
                                         Padding(
                                           padding:
-                                              EdgeInsetsDirectional.symmetric(
+                                              const EdgeInsetsDirectional.symmetric(
                                                 horizontal: 10,
                                               ),
                                           child: Column(
@@ -136,7 +136,7 @@ class _OrderCompletedState extends State<OrderCompleted> {
                                                       ),
                                                     ),
                                                   )
-                                                  : SizedBox(),
+                                                  : const SizedBox(),
                                               detail.isOrderSize
                                                   ? Text(
                                                     "${"Size".tr}: ${detail.itemSize!.size}",
@@ -149,7 +149,7 @@ class _OrderCompletedState extends State<OrderCompleted> {
                                                       ),
                                                     ),
                                                   )
-                                                  : SizedBox(),
+                                                  : const SizedBox(),
                                               Text(
                                                 "${"Quantity".tr}:${detail.quantity}",
                                                 style: robotoMedium.copyWith(

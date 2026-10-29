@@ -1,5 +1,7 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../theme/store_tokens.dart';
 import '../theme/store_typography.dart';
@@ -48,7 +50,10 @@ class StoreMediaBadge extends StatelessWidget {
         const SizedBox(width: StoreSpacing.xxs),
         Text(
           type.label,
-          style: StoreTypography.caption.copyWith(color: Colors.white),
+          style: StoreColors.text(
+            context,
+            StoreTypography.caption,
+          ).copyWith(color: Colors.white),
         ),
       ],
     ),
@@ -72,7 +77,7 @@ class StoreMediaPlaceholder extends StatelessWidget {
     image: true,
     label: message ?? 'storeMediaUnavailable'.tr,
     child: ColoredBox(
-      color: StorePalette.background,
+      color: StoreColors.resolve(context, StorePalette.background),
       child: ExcludeSemantics(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -83,7 +88,10 @@ class StoreMediaPlaceholder extends StatelessWidget {
                 child: Icon(
                   icon,
                   size: StoreIconSizes.medium,
-                  color: StorePalette.textSecondary,
+                  color: StoreColors.resolve(
+                    context,
+                    StorePalette.textSecondary,
+                  ),
                 ),
               );
             }
@@ -96,7 +104,10 @@ class StoreMediaPlaceholder extends StatelessWidget {
                     Icon(
                       icon,
                       size: StoreIconSizes.large,
-                      color: StorePalette.textSecondary,
+                      color: StoreColors.resolve(
+                        context,
+                        StorePalette.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: StoreSpacing.xs),
                     Text(
@@ -104,7 +115,7 @@ class StoreMediaPlaceholder extends StatelessWidget {
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: StoreTypography.caption,
+                      style: StoreColors.text(context, StoreTypography.caption),
                     ),
                     if (onRetry != null)
                       TextButton(
@@ -128,6 +139,7 @@ class StoreNetworkMedia extends StatelessWidget {
     required this.semanticLabel,
     this.fit = BoxFit.cover,
     this.type = StoreMediaType.image,
+    this.fallback,
     this.onRetry,
     super.key,
   });
@@ -136,12 +148,13 @@ class StoreNetworkMedia extends StatelessWidget {
   final String semanticLabel;
   final BoxFit fit;
   final StoreMediaType type;
+  final Widget? fallback;
   final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
     if (url == null || url!.trim().isEmpty) {
-      return StoreMediaPlaceholder(onRetry: onRetry);
+      return fallback ?? StoreMediaPlaceholder(onRetry: onRetry);
     }
     final resolvedUrl = _resolveStoreMediaUrl(url!);
     return Semantics(
@@ -150,17 +163,19 @@ class StoreNetworkMedia extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
-            resolvedUrl,
+          CachedNetworkImage(
+            imageUrl: resolvedUrl,
             fit: fit,
-            excludeFromSemantics: true,
-            frameBuilder: (context, child, frame, synchronous) {
-              if (synchronous || frame != null) return child;
-              return const SizedBox.expand(
-                child: StoreSkeletonBox(borderRadius: 0),
-              );
-            },
-            errorBuilder: (_, _, _) => StoreMediaPlaceholder(onRetry: onRetry),
+            memCacheWidth: 1000,
+            placeholder:
+                (_, _) =>
+                    fallback ??
+                    const SizedBox.expand(
+                      child: StoreSkeletonBox(borderRadius: 0, animate: false),
+                    ),
+            errorWidget:
+                (_, _, _) =>
+                    fallback ?? StoreMediaPlaceholder(onRetry: onRetry),
           ),
           if (type != StoreMediaType.image)
             PositionedDirectional(
@@ -178,7 +193,9 @@ String _resolveStoreMediaUrl(String value) {
   var path = value.trim().replaceAll('\\', '/');
   final uri = Uri.tryParse(path);
   if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
-    return path;
+    return uri.scheme == 'http'
+        ? uri.replace(scheme: 'https').toString()
+        : path;
   }
   while (path.toLowerCase().startsWith('public/')) {
     path = path.substring('public/'.length);

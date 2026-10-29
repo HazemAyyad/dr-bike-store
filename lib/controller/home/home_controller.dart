@@ -2,6 +2,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../core/functions/store_session_boundary.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,6 +13,8 @@ import '../../core/functions/checkInternet.dart';
 import '../../core/helper/search_history_store.dart';
 import '../../core/model/ads_response.dart';
 import '../../core/model/get_all_item_model.dart';
+import '../../core/model/store_catalog_page.dart';
+import '../../repository/categories/store_catalog_source.dart';
 import '../../core/model/main_categores_model.dart';
 import '../../core/model/notification_model.dart';
 import '../../core/model/online_store_home_model.dart';
@@ -32,7 +35,7 @@ abstract class HomeController extends GetxController {
   Future<void> getSearch(String name);
 }
 
-class HomeControllerImp extends HomeController {
+class HomeControllerImp extends HomeController with StoreSessionAware {
   HomeControllerImp({
     required this.homeRepository,
     SearchHistoryStore? searchHistoryStore,
@@ -109,6 +112,50 @@ class HomeControllerImp extends HomeController {
   bool _initialized = false;
   Timer? _searchDebounce;
   int _searchRequest = 0;
+  int _searchPage = 1;
+  bool hasMoreSearch = false;
+  bool loadingMoreSearch = false;
+  String? searchPageError;
+
+  Future<void> loadMoreSearch() async {
+    final source = homeRepository;
+    if (source is! StoreCatalogSource || !hasMoreSearch || loadingMoreSearch) {
+      return;
+    }
+    final request = _searchRequest;
+    loadingMoreSearch = true;
+    searchPageError = null;
+    update();
+    try {
+      final response = await (source as StoreCatalogSource).catalogPage(
+        query: search.text.trim(),
+        page: _searchPage + 1,
+      );
+      if (request != _searchRequest) return;
+      if (response.statusCode != 200 ||
+          response.body is! Map<String, dynamic>) {
+        throw const FormatException();
+      }
+      final page = StoreCatalogPage.fromJson(response.body);
+      if (page.page != _searchPage + 1) throw const FormatException();
+      final combined =
+          {
+            for (final item in itemListSearch) item.productId: item,
+            for (final item in page.items) item.productId: item,
+          }.values.toList();
+      itemListSearch.assignAll(combined);
+      _searchPage = page.page;
+      hasMoreSearch = page.hasMore;
+      searchState.value = StoreContent(combined);
+    } catch (_) {
+      if (request == _searchRequest) searchPageError = 'storeLoadMoreFailed';
+    } finally {
+      if (request == _searchRequest) {
+        loadingMoreSearch = false;
+        update();
+      }
+    }
+  }
 
   bool get isAuthenticated => token != null && token!.trim().isNotEmpty;
   int? get notificationBadgeCount =>
@@ -137,8 +184,12 @@ class HomeControllerImp extends HomeController {
       itemList.where((item) => item.isNewItem).toList(growable: false);
 
   Future<void> initializeShell() async {
-    token = await tokenLoader();
-    displayName.value = (await userNameLoader())?.trim() ?? '';
+    final generation = sessionGeneration;
+    final loadedToken = await tokenLoader();
+    final loadedName = (await userNameLoader())?.trim() ?? '';
+    if (!sessionIsCurrent(generation)) return;
+    token = loadedToken;
+    displayName.value = loadedName;
     recentSearches.assignAll(await searchHistoryStore.load());
     await _startShellAtHome();
     _initialized = true;
@@ -149,10 +200,12 @@ class HomeControllerImp extends HomeController {
   }
 
   Future<void> refreshAuthenticatedProfile() async {
+    final generation = sessionGeneration;
     final repository = authRepository;
     if (!isAuthenticated || repository == null) return;
     try {
       final response = await repository.getUser();
+      if (!sessionIsCurrent(generation)) return;
       if (response.statusCode != 200 || response.body is! Map) return;
       final profile = UserModel.fromJson(
         Map<String, dynamic>.from(response.body as Map),
@@ -179,8 +232,14 @@ class HomeControllerImp extends HomeController {
     token = null;
     displayName.value = '';
     profileImageUrl.value = null;
+    notifications = null;
+    notificationIsNotRead.clear();
+    isNotificationNotRead.value = false;
     update();
   }
+
+  @override
+  void clearSessionData() => clearAuthenticatedProfile();
 
   Future<void> _startShellAtHome() async {
     selectedDestination.value = StoreDestination.home;
@@ -482,6 +541,10 @@ class HomeControllerImp extends HomeController {
       );
     }
     final request = ++_searchRequest;
+    _searchPage = 1;
+    hasMoreSearch = false;
+    loadingMoreSearch = false;
+    searchPageError = null;
     if (normalized.isEmpty) {
       itemListSearch.clear();
       searchState.value = const StoreInitial();
@@ -507,10 +570,16 @@ class HomeControllerImp extends HomeController {
     );
     update();
     try {
-      final response = await homeRepository.search(
-        normalized,
-        localizationController.locale.languageCode,
-      );
+      final source = homeRepository;
+      final response =
+          source is StoreCatalogSource
+              ? await (source as StoreCatalogSource).catalogPage(
+                query: normalized,
+              )
+              : await homeRepository.search(
+                normalized,
+                localizationController.locale.languageCode,
+              );
       if (response.statusCode != 200) {
         throw const FormatException('search-response-status');
       }
@@ -518,6 +587,11 @@ class HomeControllerImp extends HomeController {
         response.body,
       ).map(Item.fromJson).where((item) => item.isShow).toList(growable: false);
       if (request != _searchRequest) return;
+      final page = StoreCatalogPage.fromJson(
+        Map<String, dynamic>.from(response.body as Map),
+      );
+      _searchPage = page.page;
+      hasMoreSearch = page.hasMore;
       itemListSearch.assignAll(products);
       searchState.value =
           products.isEmpty
@@ -554,9 +628,12 @@ class HomeControllerImp extends HomeController {
 
   @override
   Future<void> getNotifications() async {
+    final generation = sessionGeneration;
     if (!isAuthenticated || !await connectivityCheck()) return;
+    if (!sessionIsCurrent(generation)) return;
     try {
       final response = await homeRepository.getNotification();
+      if (!sessionIsCurrent(generation)) return;
       if (response.statusCode != 200) return;
       notifications = NotificationResponse.fromJson(response.body).obs;
       notificationIsNotRead.assignAll(
@@ -573,9 +650,11 @@ class HomeControllerImp extends HomeController {
 
   @override
   Future<void> postNotificationsIsRead() async {
+    final generation = sessionGeneration;
     if (!isAuthenticated || notificationIsNotRead.isEmpty) return;
     final confirmed = <int>[];
-    for (final id in notificationIsNotRead) {
+    for (final id in notificationIsNotRead.toList()) {
+      if (!sessionIsCurrent(generation)) return;
       try {
         final response = await homeRepository.postNotificationIsRead(id);
         if (response.statusCode == 200) confirmed.add(id);
@@ -583,6 +662,7 @@ class HomeControllerImp extends HomeController {
         // Keep unconfirmed notifications unread.
       }
     }
+    if (!sessionIsCurrent(generation)) return;
     notificationIsNotRead.removeWhere(confirmed.contains);
     isNotificationNotRead.value = notificationIsNotRead.isNotEmpty;
     update();

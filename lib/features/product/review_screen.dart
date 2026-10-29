@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -35,8 +36,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Widget build(BuildContext context) => Directionality(
     textDirection: ui.TextDirection.rtl,
     child: Scaffold(
-      backgroundColor: StorePalette.background,
-      appBar: AppBar(title: Text('التقييمات', style: StoreTypography.title)),
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
+      appBar: AppBar(
+        title: Text(
+          'التقييمات'.tr,
+          style: StoreColors.text(context, StoreTypography.title),
+        ),
+      ),
       body: GetBuilder<ReviewController>(
         builder:
             (controller) => ListView(
@@ -47,19 +53,22 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   onRetry: controller.loadPublic,
                 ),
                 const SizedBox(height: StoreSpacing.lg),
-                Text('تقييمي', style: StoreTypography.title),
+                Text(
+                  'تقييمي'.tr,
+                  style: StoreColors.text(context, StoreTypography.title),
+                ),
                 const SizedBox(height: StoreSpacing.sm),
                 if (controller.isGuest)
                   StoreMessageState(
                     kind: StoreMessageKind.empty,
-                    message: 'سجّل الدخول لإرسال تقييمك.',
-                    actionLabel: 'تسجيل الدخول',
+                    message: 'سجّل الدخول لإرسال تقييمك.'.tr,
+                    actionLabel: 'تسجيل الدخول'.tr,
                     onAction: () => Get.toNamed(RouteHelper.signIn),
                   )
                 else if (!controller.canSubmit)
-                  const StoreMessageState(
+                  StoreMessageState(
                     kind: StoreMessageKind.error,
-                    message: 'إرسال التقييم يتطلب حساب عميل نشط.',
+                    message: 'إرسال التقييم يتطلب حساب عميل نشط.'.tr,
                   )
                 else ...[
                   if (controller.ownReview case final review?)
@@ -82,16 +91,18 @@ class _OwnReview extends StatelessWidget {
     padding: const EdgeInsets.all(StoreSpacing.md),
     margin: const EdgeInsets.only(bottom: StoreSpacing.md),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
-      border: Border.all(color: StorePalette.border),
+      color: StoreColors.resolve(context, StorePalette.surface),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
     ),
     child: Text(switch (review.status) {
-      ReviewStatus.pending => 'تم إرسال تقييمك للمراجعة',
-      ReviewStatus.published => 'تقييمك منشور',
-      ReviewStatus.rejected => 'لم يتم قبول تقييمك',
-      ReviewStatus.unknown => 'حالة التقييم غير معروفة',
-    }, style: StoreTypography.bodyMedium),
+      ReviewStatus.pending => 'تم إرسال تقييمك للمراجعة'.tr,
+      ReviewStatus.published => 'تقييمك منشور'.tr,
+      ReviewStatus.rejected => 'لم يتم قبول تقييمك'.tr,
+      ReviewStatus.unknown => 'حالة التقييم غير معروفة'.tr,
+    }, style: StoreColors.text(context, StoreTypography.bodyMedium)),
   );
 }
 
@@ -111,7 +122,7 @@ class _Composer extends StatelessWidget {
               index < controller.rating ? Icons.star : Icons.star_border,
               color: StorePalette.warning,
             ),
-            tooltip: '${index + 1} من 5',
+            tooltip: '@rating من 5'.trParams({'rating': '${index + 1}'}),
           ),
         ),
       ),
@@ -119,14 +130,14 @@ class _Composer extends StatelessWidget {
         controller: controller.commentController,
         maxLength: 5000,
         maxLines: 5,
-        decoration: const InputDecoration(labelText: 'تعليق اختياري'),
+        decoration: InputDecoration(labelText: 'تعليق اختياري'.tr),
       ),
       if (controller.message != null)
         Padding(
           padding: const EdgeInsets.only(bottom: StoreSpacing.sm),
           child: Text(
             controller.message!,
-            style: StoreTypography.body.copyWith(
+            style: StoreColors.text(context, StoreTypography.body).copyWith(
               color:
                   controller.mutationState == ReviewMutationState.failure
                       ? StorePalette.error
@@ -135,7 +146,7 @@ class _Composer extends StatelessWidget {
           ),
         ),
       StoreButton(
-        label: controller.canEdit ? 'تحديث التقييم' : 'إرسال التقييم',
+        label: controller.canEdit ? 'تحديث التقييم'.tr : 'إرسال التقييم'.tr,
         onPressed:
             controller.mutationState == ReviewMutationState.submitting
                 ? null

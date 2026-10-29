@@ -43,7 +43,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl, // Arabic text direction
+      textDirection: Directionality.of(context), // Arabic text direction
       child: GetBuilder<AccountControllerImp>(
         builder: (accountControllerImp) {
           return Scaffold(
@@ -118,14 +118,16 @@ class _ContactUsPageState extends State<ContactUsPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Expanded(
+                                const Expanded(
                                   child: Divider(
                                     thickness: 1,
                                     color: Color(0xffeeeeee),
                                   ),
                                 ),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
                                   child: Text(
                                     "or".tr,
                                     style: TextStyle(
@@ -134,7 +136,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                     ),
                                   ),
                                 ),
-                                Expanded(
+                                const Expanded(
                                   child: Divider(
                                     thickness: 1,
                                     color: Color(0xffeeeeee),

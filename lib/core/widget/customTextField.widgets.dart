@@ -17,7 +17,7 @@ class CustomTextFieldChat extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
-        color: Color(0xFFEEEEEE),
+        color: const Color(0xFFEEEEEE),
         borderRadius: BorderRadius.circular(15),
       ),
       height: 40.h,
@@ -25,21 +25,27 @@ class CustomTextFieldChat extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Column(
-            children: [
-              Row(
                 children: [
-                  TextField(
-                    controller: controller,
-                    onChanged: (data) {},
-                    decoration: InputDecoration(
-                      hintText: "Add an opinion".tr,
-                      border: InputBorder.none,
-                    ),
-                  ).box.width(context.screenWidth / 1.7).height(40.h).make(),
+                  Row(
+                    children: [
+                      TextField(
+                            controller: controller,
+                            onChanged: (data) {},
+                            decoration: InputDecoration(
+                              hintText: "Add an opinion".tr,
+                              border: InputBorder.none,
+                            ),
+                          ).box
+                          .width(context.screenWidth / 1.7)
+                          .height(40.h)
+                          .make(),
+                    ],
+                  ),
                 ],
-              ),
-            ],
-          ).box.padding(EdgeInsets.symmetric(horizontal: 10)).rounded.make(),
+              ).box
+              .padding(const EdgeInsets.symmetric(horizontal: 10))
+              .rounded
+              .make(),
           // 5.widthBox,
           InkWell(
             onTap: onPress,

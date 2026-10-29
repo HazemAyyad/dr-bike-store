@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -69,8 +70,14 @@ class StoreAuthScaffold extends StatelessWidget {
                                     Text(
                                       'storeBrandName'.tr,
                                       textDirection: TextDirection.ltr,
-                                      style: StoreTypography.title.copyWith(
-                                        color: StorePalette.navy,
+                                      style: StoreColors.text(
+                                        context,
+                                        StoreTypography.title,
+                                      ).copyWith(
+                                        color: StoreColors.resolve(
+                                          context,
+                                          StorePalette.navy,
+                                        ),
                                         fontSize: compact ? 17 : 20,
                                         height: 1.15,
                                       ),
@@ -82,8 +89,14 @@ class StoreAuthScaffold extends StatelessWidget {
                               Text(
                                 title,
                                 textAlign: TextAlign.center,
-                                style: StoreTypography.headline.copyWith(
-                                  color: StorePalette.navy,
+                                style: StoreColors.text(
+                                  context,
+                                  StoreTypography.headline,
+                                ).copyWith(
+                                  color: StoreColors.resolve(
+                                    context,
+                                    StorePalette.navy,
+                                  ),
                                   fontSize: compact ? 24 : 28,
                                   height: 1.3,
                                 ),
@@ -93,8 +106,14 @@ class StoreAuthScaffold extends StatelessWidget {
                                 Text(
                                   subtitle!,
                                   textAlign: TextAlign.center,
-                                  style: StoreTypography.body.copyWith(
-                                    color: StorePalette.textSecondary,
+                                  style: StoreColors.text(
+                                    context,
+                                    StoreTypography.body,
+                                  ).copyWith(
+                                    color: StoreColors.resolve(
+                                      context,
+                                      StorePalette.textSecondary,
+                                    ),
                                     fontSize: compact ? 14 : 16,
                                   ),
                                 ),
@@ -122,6 +141,7 @@ class StoreAuthScaffold extends StatelessWidget {
                       tooltip: 'storeBack'.tr,
                       icon: Icon(
                         storeBackIcon(context),
+                        textDirection: TextDirection.ltr,
                         color: StorePalette.navy,
                         size: 30,
                       ),
@@ -167,7 +187,10 @@ class StoreAuthPrimaryButton extends StatelessWidget {
                       begin: AlignmentDirectional.centerStart,
                       end: AlignmentDirectional.centerEnd,
                     ),
-            color: callback == null ? StorePalette.border : null,
+            color:
+                callback == null
+                    ? StoreColors.resolve(context, StorePalette.border)
+                    : null,
             borderRadius: BorderRadius.circular(StoreRadii.lg),
             boxShadow:
                 callback == null
@@ -184,11 +207,17 @@ class StoreAuthPrimaryButton extends StatelessWidget {
             onPressed: callback,
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
-              disabledForegroundColor: StorePalette.textDisabled,
+              disabledForegroundColor: StoreColors.resolve(
+                context,
+                StorePalette.textDisabled,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(StoreRadii.lg),
               ),
-              textStyle: StoreTypography.title.copyWith(
+              textStyle: StoreColors.text(
+                context,
+                StoreTypography.title,
+              ).copyWith(
                 color: Colors.white,
                 fontWeight: StoreTypography.semiBold,
               ),
@@ -241,8 +270,8 @@ class AuthStatusBanner extends StatelessWidget {
     final color = isSuccess ? StorePalette.success : StorePalette.error;
     final surface =
         isSuccess
-            ? StorePalette.derivedSuccessSurface
-            : StorePalette.derivedErrorSurface;
+            ? StoreColors.resolve(context, StorePalette.derivedSuccessSurface)
+            : StoreColors.resolve(context, StorePalette.derivedErrorSurface);
     return Semantics(
       liveRegion: true,
       label: messageKey!.tr,
@@ -265,7 +294,10 @@ class AuthStatusBanner extends StatelessWidget {
             Expanded(
               child: Text(
                 messageKey!.tr,
-                style: StoreTypography.caption.copyWith(color: color),
+                style: StoreColors.text(
+                  context,
+                  StoreTypography.caption,
+                ).copyWith(color: color),
               ),
             ),
           ],

@@ -52,7 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (controller.profileStatus == AccountViewStatus.error) {
       return StoreMessageState(
         kind: StoreMessageKind.error,
-        message: controller.message ?? 'تعذر تحميل الحساب',
+        message: controller.message ?? 'تعذر تحميل الحساب'.tr,
         actionLabel: 'storeRetry'.tr,
         onAction: () => controller.getUserById(navigate: false),
       );
@@ -76,30 +76,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           _tile(
             Icons.location_on_outlined,
-            'العناوين',
+            'العناوين'.tr,
             () => Get.toNamed(RouteHelper.addresses),
           ),
           _tile(
             Icons.payments_outlined,
-            'طرق الدفع',
+            'طرق الدفع'.tr,
             () => Get.toNamed(RouteHelper.paymentMethods),
           ),
         ],
-        _tile(Icons.language, 'اللغة', () => Get.toNamed(RouteHelper.lang)),
+        _tile(Icons.language, 'اللغة'.tr, () => Get.toNamed(RouteHelper.lang)),
         _tile(
           Icons.settings_outlined,
-          'الإعدادات',
+          'الإعدادات'.tr,
           () => Get.toNamed(RouteHelper.settings),
         ),
         _tile(
           Icons.help_outline,
-          'المساعدة والدعم',
+          'المساعدة والدعم'.tr,
           () => Get.toNamed(RouteHelper.helpSupport),
         ),
         if (!guest)
           _tile(
             Icons.manage_accounts_outlined,
-            'إجراءات الحساب',
+            'إجراءات الحساب'.tr,
             () => Get.toNamed(RouteHelper.accountActions),
           ),
       ],
@@ -128,7 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: StoreSpacing.xs),
                   Text(
-                    'تصفح كضيف',
+                    'تصفح كضيف'.tr,
                     style: StoreTypography.title.copyWith(
                       color: StorePalette.navy,
                       fontWeight: StoreTypography.bold,
@@ -160,7 +160,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     child: ListTile(
       leading: Icon(icon, color: StorePalette.purple),
       title: Text(title),
-      trailing: Icon(storeForwardIcon(context)),
+      trailing: Icon(
+        storeForwardIcon(context),
+        textDirection: TextDirection.ltr,
+      ),
       onTap: onTap,
     ),
   );

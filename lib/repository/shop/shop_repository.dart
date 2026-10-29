@@ -6,7 +6,6 @@ import '../../core/functions/app_usage_service.dart';
 class ShopRepository extends GetxService {
   final ApiClient apiClient;
   ShopRepository({required this.apiClient});
-  String tok = AppUsageService.getToken().toString();
 
   Future<Response> createOrder({required body}) async {
     String? token = await AppUsageService.getToken();

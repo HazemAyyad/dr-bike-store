@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -56,7 +57,7 @@ class StoreUnavailableScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final offline = kind == StoreUnavailableKind.offline;
     return Scaffold(
-      backgroundColor: StorePalette.background,
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

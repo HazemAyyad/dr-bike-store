@@ -35,7 +35,7 @@ class _OrderOngoingState extends State<OrderOngoing> {
           horizontal: 10.w,
         ),
         decoration: BoxDecoration(
-          color: Color(0xffeeeeee),
+          color: const Color(0xffeeeeee),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(

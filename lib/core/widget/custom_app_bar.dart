@@ -47,7 +47,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 icon:
                     leadingIcon != null
                         ? Image.asset(leadingIcon!, height: 22, width: 22)
-                        : Icon(storeBackIcon(context)),
+                        : Icon(
+                          storeBackIcon(context),
+                          textDirection: TextDirection.ltr,
+                        ),
                 color: Theme.of(context).textTheme.bodyLarge!.color,
                 onPressed:
                     () =>

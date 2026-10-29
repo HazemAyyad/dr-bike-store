@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
@@ -20,15 +21,21 @@ class OrderDetailsScreen extends StatelessWidget {
       final order =
           controller.selectedOrder ?? (argument is Order ? argument : null);
       if (order == null) {
-        return const Scaffold(body: Center(child: Text('الطلب غير متاح.')));
+        return Scaffold(body: Center(child: Text('الطلب غير متاح.'.tr)));
       }
       final trackingKey = GlobalKey();
       return Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: Scaffold(
-          backgroundColor: StorePalette.background,
+          backgroundColor: StoreColors.resolve(
+            context,
+            StorePalette.background,
+          ),
           appBar: AppBar(
-            title: Text('تفاصيل الطلب', style: StoreTypography.title),
+            title: Text(
+              'تفاصيل الطلب'.tr,
+              style: StoreColors.text(context, StoreTypography.title),
+            ),
             centerTitle: true,
             elevation: 0,
           ),
@@ -44,8 +51,8 @@ class OrderDetailsScreen extends StatelessWidget {
                 children: [
                   if (order.details.isEmpty)
                     Text(
-                      'تفاصيل المنتجات غير متاحة.',
-                      style: StoreTypography.body,
+                      'تفاصيل المنتجات غير متاحة.'.tr,
+                      style: StoreColors.text(context, StoreTypography.body),
                     )
                   else
                     ...order.details.indexed.map(
@@ -53,9 +60,12 @@ class OrderDetailsScreen extends StatelessWidget {
                         children: [
                           _OrderLine(line: entry.$2),
                           if (entry.$1 != order.details.length - 1)
-                            const Divider(
+                            Divider(
                               height: 18,
-                              color: StorePalette.border,
+                              color: StoreColors.resolve(
+                                context,
+                                StorePalette.border,
+                              ),
                             ),
                         ],
                       ),
@@ -64,12 +74,12 @@ class OrderDetailsScreen extends StatelessWidget {
               ),
               _section(
                 icon: Icons.payments_outlined,
-                title: 'ملخص الدفع',
+                title: 'ملخص الدفع'.tr,
                 children: [_PaymentSummary(order: order)],
               ),
               _section(
                 icon: Icons.location_on_outlined,
-                title: 'عنوان التوصيل',
+                title: 'عنوان التوصيل'.tr,
                 children: [
                   _InfoRow(
                     icon: Icons.person_outline_rounded,
@@ -92,7 +102,7 @@ class OrderDetailsScreen extends StatelessWidget {
               if (order.latestHandover case final handover?)
                 _section(
                   icon: Icons.local_shipping_outlined,
-                  title: 'بيانات الشحنة',
+                  title: 'بيانات الشحنة'.tr,
                   children: [
                     if (handover.deliveryCompanyName.isNotEmpty)
                       _labelValueRow(
@@ -119,7 +129,7 @@ class OrderDetailsScreen extends StatelessWidget {
                 _section(
                   key: trackingKey,
                   icon: Icons.route_outlined,
-                  title: 'تتبع الشحنة',
+                  title: 'تتبع الشحنة'.tr,
                   children: [OrderTrackingTimeline(order: order)],
                 ),
               if (controller.mutationStatus == OrderMutationStatus.failure)
@@ -127,14 +137,18 @@ class OrderDetailsScreen extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: StorePalette.derivedErrorSurface,
+                    color: StoreColors.resolve(
+                      context,
+                      StorePalette.derivedErrorSurface,
+                    ),
                     borderRadius: BorderRadius.circular(StoreRadii.md),
                   ),
                   child: Text(
-                    controller.message ?? 'تعذر الإلغاء.',
-                    style: StoreTypography.body.copyWith(
-                      color: StorePalette.error,
-                    ),
+                    controller.message ?? 'تعذر الإلغاء.'.tr,
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.body,
+                    ).copyWith(color: StorePalette.error),
                   ),
                 ),
               OrderActions(
@@ -222,7 +236,9 @@ class _OrderHeader extends StatelessWidget {
           end: AlignmentDirectional.bottomEnd,
         ),
         borderRadius: BorderRadius.circular(StoreRadii.lg),
-        border: Border.all(color: StorePalette.border),
+        border: Border.all(
+          color: StoreColors.resolve(context, StorePalette.border),
+        ),
         boxShadow: const [StoreElevation.lowShadow],
       ),
       child: Column(
@@ -235,16 +251,17 @@ class _OrderHeader extends StatelessWidget {
                   children: [
                     Text(
                       '#${order.orderNumber}',
-                      style: StoreTypography.title.copyWith(
-                        color: Colors.white,
-                        fontSize: 18,
-                      ),
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.title,
+                      ).copyWith(color: Colors.white, fontSize: 18),
                     ),
                     Text(
                       _displayDate(order.dateAdd),
-                      style: StoreTypography.caption.copyWith(
-                        color: Colors.white70,
-                      ),
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.caption,
+                      ).copyWith(color: Colors.white70),
                     ),
                   ],
                 ),
@@ -260,7 +277,10 @@ class _OrderHeader extends StatelessWidget {
                 ),
                 child: Text(
                   status.label,
-                  style: StoreTypography.caption.copyWith(
+                  style: StoreColors.text(
+                    context,
+                    StoreTypography.caption,
+                  ).copyWith(
                     color: status.foreground,
                     fontWeight: StoreTypography.semiBold,
                   ),
@@ -281,9 +301,10 @@ class _OrderHeader extends StatelessWidget {
                 Expanded(
                   child: Text(
                     _shiplyStatusLabel(order.shiplyTracking!),
-                    style: StoreTypography.bodyMedium.copyWith(
-                      color: Colors.white,
-                    ),
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.bodyMedium,
+                    ).copyWith(color: Colors.white),
                   ),
                 ),
               ],
@@ -292,10 +313,10 @@ class _OrderHeader extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _HeaderMetric(label: 'المنتجات', value: '${order.itemCount}'),
+              _HeaderMetric(label: 'المنتجات'.tr, value: '${order.itemCount}'),
               const SizedBox(width: 8),
               _HeaderMetric(
-                label: 'الإجمالي',
+                label: 'الإجمالي'.tr,
                 value: '${_price(order.grandTotal)} ₪',
               ),
             ],
@@ -325,12 +346,18 @@ class _HeaderMetric extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: StoreTypography.caption.copyWith(color: Colors.white70),
+            label.tr,
+            style: StoreColors.text(
+              context,
+              StoreTypography.caption,
+            ).copyWith(color: Colors.white70),
           ),
           Text(
             value,
-            style: StoreTypography.label.copyWith(color: Colors.white),
+            style: StoreColors.text(
+              context,
+              StoreTypography.label,
+            ).copyWith(color: Colors.white),
           ),
         ],
       ),
@@ -351,7 +378,7 @@ class _OrderLine extends StatelessWidget {
         width: 62,
         height: 62,
         decoration: BoxDecoration(
-          color: StorePalette.background,
+          color: StoreColors.resolve(context, StorePalette.background),
           borderRadius: BorderRadius.circular(StoreRadii.md),
         ),
         clipBehavior: Clip.antiAlias,
@@ -375,7 +402,7 @@ class _OrderLine extends StatelessWidget {
                   : line.item.nameAr,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: StoreTypography.bodyMedium,
+              style: StoreColors.text(context, StoreTypography.bodyMedium),
             ),
             if (line.itemSize != null || line.itemSizeColor != null)
               Text(
@@ -383,13 +410,19 @@ class _OrderLine extends StatelessWidget {
                   line.itemSize?.size,
                   line.itemSizeColor?.colorAr,
                 ].whereType<String>().where((v) => v.isNotEmpty).join(' • '),
-                style: StoreTypography.caption,
+                style: StoreColors.text(context, StoreTypography.caption),
               ),
-            Text('الكمية: ${line.quantity}', style: StoreTypography.caption),
+            Text(
+              'الكمية: ${line.quantity}',
+              style: StoreColors.text(context, StoreTypography.caption),
+            ),
             if (line.item.model.trim().isNotEmpty)
               Text(
                 'رمز المنتج: ${line.item.model}',
-                style: StoreTypography.caption.copyWith(fontSize: 10.5),
+                style: StoreColors.text(
+                  context,
+                  StoreTypography.caption,
+                ).copyWith(fontSize: 10.5),
               ),
           ],
         ),
@@ -400,11 +433,17 @@ class _OrderLine extends StatelessWidget {
         children: [
           Text(
             '${_price(line.totalPriceWithDiscound)} ₪',
-            style: StoreTypography.label.copyWith(color: StorePalette.navy),
+            style: StoreColors.text(
+              context,
+              StoreTypography.label,
+            ).copyWith(color: StoreColors.resolve(context, StorePalette.navy)),
           ),
           Text(
             '${_price(line.itemPrice)} ₪ للوحدة',
-            style: StoreTypography.caption.copyWith(fontSize: 10),
+            style: StoreColors.text(
+              context,
+              StoreTypography.caption,
+            ).copyWith(fontSize: 10),
           ),
         ],
       ),
@@ -430,7 +469,10 @@ class _PaymentSummary extends StatelessWidget {
       if (order.discoundCode?.isNotEmpty == true)
         _textValueRow('كود الخصم', order.discoundCode!),
       _valueRow('الشحن', order.priceDelivery),
-      const Divider(height: 22, color: StorePalette.border),
+      Divider(
+        height: 22,
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
       _valueRow('المجموع الكلي', order.grandTotal, strong: true),
     ],
   );
@@ -441,53 +483,84 @@ Widget _valueRow(
   double value, {
   Color? color,
   bool strong = false,
-}) => Padding(
-  padding: const EdgeInsets.only(bottom: 7),
-  child: Row(
-    children: [
-      Expanded(
-        child: Text(
-          label,
-          style: strong ? StoreTypography.bodyMedium : StoreTypography.body,
-        ),
-      ),
-      Text(
-        '${value < 0 ? '-' : ''}${_price(value.abs())} ₪',
-        style: (strong ? StoreTypography.title : StoreTypography.label)
-            .copyWith(
-              color: color ?? (strong ? StorePalette.navy : null),
-              fontSize: strong ? 17 : null,
+}) => Builder(
+  builder:
+      (context) => Padding(
+        padding: const EdgeInsets.only(bottom: 7),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label.tr,
+                style:
+                    strong
+                        ? StoreColors.text(context, StoreTypography.bodyMedium)
+                        : StoreColors.text(context, StoreTypography.body),
+              ),
             ),
-      ),
-    ],
-  ),
-);
-
-Widget _textValueRow(String label, String value) => Padding(
-  padding: const EdgeInsets.only(bottom: 7),
-  child: Row(
-    children: [
-      Expanded(child: Text(label, style: StoreTypography.body)),
-      Text(value, style: StoreTypography.label),
-    ],
-  ),
-);
-
-Widget _labelValueRow(String label, String value) => Padding(
-  padding: const EdgeInsets.only(bottom: 7),
-  child: Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(child: Text(label, style: StoreTypography.caption)),
-      Expanded(
-        child: Text(
-          value,
-          textAlign: TextAlign.end,
-          style: StoreTypography.bodyMedium,
+            Text(
+              '${value < 0 ? '-' : ''}${_price(value.abs())} ₪',
+              style: (strong
+                      ? StoreColors.text(context, StoreTypography.title)
+                      : StoreColors.text(context, StoreTypography.label))
+                  .copyWith(
+                    color:
+                        color ??
+                        (strong
+                            ? StoreColors.resolve(context, StorePalette.navy)
+                            : null),
+                    fontSize: strong ? 17 : null,
+                  ),
+            ),
+          ],
         ),
       ),
-    ],
-  ),
+);
+
+Widget _textValueRow(String label, String value) => Builder(
+  builder:
+      (context) => Padding(
+        padding: const EdgeInsets.only(bottom: 7),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label.tr,
+                style: StoreColors.text(context, StoreTypography.body),
+              ),
+            ),
+            Text(
+              value,
+              style: StoreColors.text(context, StoreTypography.label),
+            ),
+          ],
+        ),
+      ),
+);
+
+Widget _labelValueRow(String label, String value) => Builder(
+  builder:
+      (context) => Padding(
+        padding: const EdgeInsets.only(bottom: 7),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                label.tr,
+                style: StoreColors.text(context, StoreTypography.caption),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                style: StoreColors.text(context, StoreTypography.bodyMedium),
+              ),
+            ),
+          ],
+        ),
+      ),
 );
 
 class _InfoRow extends StatelessWidget {
@@ -504,7 +577,12 @@ class _InfoRow extends StatelessWidget {
       children: [
         Icon(icon, size: 19, color: StorePalette.purple),
         const SizedBox(width: 8),
-        Expanded(child: Text(value, style: StoreTypography.body)),
+        Expanded(
+          child: Text(
+            value,
+            style: StoreColors.text(context, StoreTypography.body),
+          ),
+        ),
       ],
     ),
   );
@@ -514,22 +592,22 @@ class _InfoRow extends StatelessWidget {
   Order order,
 ) => switch (order.statusKind) {
   StoreOrderStatusKind.current => (
-    label: 'قيد التجهيز',
+    label: 'قيد التجهيز'.tr,
     foreground: StorePalette.purple,
     background: StorePalette.lightPurple,
   ),
   StoreOrderStatusKind.completed => (
-    label: 'مكتمل',
+    label: 'مكتمل'.tr,
     foreground: StorePalette.success,
     background: StorePalette.derivedSuccessSurface,
   ),
   StoreOrderStatusKind.canceled => (
-    label: 'ملغى',
+    label: 'ملغى'.tr,
     foreground: StorePalette.error,
     background: StorePalette.derivedErrorSurface,
   ),
   StoreOrderStatusKind.unknown => (
-    label: order.rawStatus.isEmpty ? 'غير معروف' : order.rawStatus,
+    label: order.rawStatus.isEmpty ? 'غير معروف'.tr : order.rawStatus,
     foreground: StorePalette.textSecondary,
     background: StorePalette.background,
   ),
@@ -546,15 +624,15 @@ String _displayDate(String raw) {
 
 String _shiplyStatusLabel(OrderShiplyTracking tracking) => switch (tracking
     .currentStatusId) {
-  1 => 'تم إنشاء الشحنة',
-  2 => 'تم إرسالها لشركة الشحن',
-  3 => 'في الطريق',
-  4 => 'محاولة تسليم',
-  5 => 'معلقة',
-  6 => 'تم التسليم',
-  7 => 'مرتجعة',
+  1 => 'تم إنشاء الشحنة'.tr,
+  2 => 'تم إرسالها لشركة الشحن'.tr,
+  3 => 'في الطريق'.tr,
+  4 => 'محاولة تسليم'.tr,
+  5 => 'معلقة'.tr,
+  6 => 'تم التسليم'.tr,
+  7 => 'مرتجعة'.tr,
   _ =>
     tracking.currentStatusLabel.isEmpty
-        ? 'حالة الشحنة'
+        ? 'حالة الشحنة'.tr
         : tracking.currentStatusLabel,
 };

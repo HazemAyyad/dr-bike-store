@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -33,8 +34,8 @@ class _StoreSupportHomeScreenState extends State<StoreSupportHomeScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: StorePalette.background,
-    appBar: widget.embedded ? null : AppBar(title: const Text('محادثاتي')),
+    backgroundColor: StoreColors.resolve(context, StorePalette.background),
+    appBar: widget.embedded ? null : AppBar(title: Text('محادثاتي'.tr)),
     floatingActionButton: FloatingActionButton.extended(
       key: const Key('new-general-support'),
       backgroundColor: StorePalette.purple,
@@ -44,7 +45,7 @@ class _StoreSupportHomeScreenState extends State<StoreSupportHomeScreen> {
         if (created == true) await controller.loadInbox();
       },
       icon: const Icon(Icons.add_comment_outlined),
-      label: const Text('محادثة جديدة'),
+      label: Text('محادثة جديدة'.tr),
     ),
     body: GetBuilder<StoreSupportController>(
       builder: (state) {
@@ -55,14 +56,15 @@ class _StoreSupportHomeScreenState extends State<StoreSupportHomeScreen> {
           return StoreMessageState(
             kind: StoreMessageKind.error,
             message: state.error!,
-            actionLabel: 'إعادة المحاولة',
+            actionLabel: 'إعادة المحاولة'.tr,
             onAction: state.loadInbox,
           );
         }
         if (state.conversations.isEmpty) {
-          return const StoreMessageState(
+          return StoreMessageState(
             kind: StoreMessageKind.empty,
-            message: 'لا توجد محادثات بعد\nابدأ محادثة وسيرد عليك فريق الدعم.',
+            message:
+                'لا توجد محادثات بعد\nابدأ محادثة وسيرد عليك فريق الدعم.'.tr,
           );
         }
         return RefreshIndicator(
@@ -96,7 +98,7 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: StorePalette.surface,
+    color: StoreColors.resolve(context, StorePalette.surface),
     borderRadius: BorderRadius.circular(16),
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -126,7 +128,10 @@ class _ConversationTile extends StatelessWidget {
                           conversation.subject,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: StoreTypography.title.copyWith(fontSize: 15),
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.title,
+                          ).copyWith(fontSize: 15),
                         ),
                       ),
                       if (conversation.lastMessageAt != null)
@@ -134,19 +139,28 @@ class _ConversationTile extends StatelessWidget {
                           DateFormat(
                             'dd/MM · HH:mm',
                           ).format(conversation.lastMessageAt!.toLocal()),
-                          style: StoreTypography.caption.copyWith(fontSize: 10),
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.caption,
+                          ).copyWith(fontSize: 10),
                         ),
                     ],
                   ),
                   const SizedBox(height: 5),
                   Text(
                     conversation.lastMessage.isEmpty
-                        ? 'ابدأ المحادثة'
+                        ? 'ابدأ المحادثة'.tr
                         : conversation.lastMessage,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: StoreTypography.body.copyWith(
-                      color: StorePalette.textSecondary,
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.body,
+                    ).copyWith(
+                      color: StoreColors.resolve(
+                        context,
+                        StorePalette.textSecondary,
+                      ),
                       fontSize: 13,
                     ),
                   ),

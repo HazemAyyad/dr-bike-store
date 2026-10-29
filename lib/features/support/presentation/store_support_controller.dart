@@ -2,17 +2,19 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/functions/store_session_boundary.dart';
 
 import '../data/store_support_models.dart';
 import '../data/store_support_realtime_service.dart';
 import '../data/store_support_repository.dart';
 
-class StoreSupportController extends GetxController {
+class StoreSupportController extends GetxController with StoreSessionAware {
   StoreSupportController({required this.repository});
 
   final StoreSupportRepository repository;
   final _uuid = const Uuid();
-  late final StoreSupportRealtimeService realtime;
+  late StoreSupportRealtimeService realtime;
+  int _conversationRequest = 0;
 
   List<StoreSupportConversation> conversations = const [];
   StoreSupportConversation? activeConversation;
@@ -41,24 +43,72 @@ class StoreSupportController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _initializeRealtime();
+  }
+
+  void _initializeRealtime() {
+    final generation = sessionGeneration;
     realtime = StoreSupportRealtimeService(
-      onPayload: _onRealtimePayload,
-      onStateChanged: _onConnectionStateChanged,
-      onReconnect: refreshActive,
+      onPayload: (payload) {
+        if (sessionIsCurrent(generation)) _onRealtimePayload(payload);
+      },
+      onStateChanged: (state) {
+        if (sessionIsCurrent(generation)) _onConnectionStateChanged(state);
+      },
+      onReconnect: () async {
+        if (sessionIsCurrent(generation)) await refreshActive();
+      },
     );
   }
 
+  @override
+  void clearSessionData() {
+    _conversationRequest++;
+    for (final timer in [
+      _fallbackTimer,
+      _presenceTimer,
+      _connectionNoticeTimer,
+      _supportPresenceExpiryTimer,
+      _typingIdleTimer,
+      _remoteTypingTimer,
+    ]) {
+      timer?.cancel();
+    }
+    unawaited(realtime.dispose());
+    conversations = const [];
+    activeConversation = null;
+    messages = const [];
+    loadingInbox = false;
+    loadingConversation = false;
+    creating = false;
+    error = null;
+    supportIsTyping = false;
+    _typingSent = false;
+    _lastTypingSignal = null;
+    connectionState = StoreSupportConnectionState.disconnected;
+    showingAutomaticRefreshNotice = false;
+    fallbackRefreshFailed = false;
+    _initializeRealtime();
+    update();
+  }
+
   Future<void> loadInbox() async {
+    final generation = sessionGeneration;
     loadingInbox = true;
     error = null;
     update();
     try {
-      conversations = await repository.conversations();
+      final result = await repository.conversations();
+      if (!sessionIsCurrent(generation)) return;
+      conversations = result;
     } catch (exception) {
-      error = exception.toString();
+      if (!sessionIsCurrent(generation)) return;
+      error = 'storeSupportReadError'.tr;
     } finally {
-      loadingInbox = false;
-      update();
+      if (sessionIsCurrent(generation)) {
+        loadingInbox = false;
+        update();
+      }
     }
   }
 
@@ -67,6 +117,7 @@ class StoreSupportController extends GetxController {
     int? listingId,
     String? imagePath,
   }) async {
+    final generation = sessionGeneration;
     creating = true;
     error = null;
     update();
@@ -78,36 +129,57 @@ class StoreSupportController extends GetxController {
         listingId: listingId,
         imagePath: imagePath,
       );
+      if (!sessionIsCurrent(generation)) return null;
       await loadInbox();
+      if (!sessionIsCurrent(generation)) return null;
       return result.conversation;
     } catch (exception) {
-      error = exception.toString();
+      if (!sessionIsCurrent(generation)) return null;
+      error = 'storeSupportCreateError'.tr;
       return null;
     } finally {
-      creating = false;
-      update();
+      if (sessionIsCurrent(generation)) {
+        creating = false;
+        update();
+      }
     }
   }
 
   Future<void> openConversation(int id) async {
+    final generation = sessionGeneration;
+    final request = ++_conversationRequest;
     _clearRemoteTyping();
     loadingConversation = true;
     error = null;
     update();
     try {
       final result = await repository.detail(id);
+      if (!sessionIsCurrent(generation) || request != _conversationRequest) {
+        return;
+      }
       activeConversation = result.conversation;
       _scheduleSupportPresenceExpiry();
       messages = result.messages;
       await repository.markRead(id);
+      if (!sessionIsCurrent(generation) || request != _conversationRequest) {
+        return;
+      }
       await realtime.watchConversation(id);
+      if (!sessionIsCurrent(generation) || request != _conversationRequest) {
+        return;
+      }
       _startPresenceHeartbeat(id);
       _configureFallback();
     } catch (exception) {
-      error = exception.toString();
+      if (!sessionIsCurrent(generation) || request != _conversationRequest) {
+        return;
+      }
+      error = 'storeSupportReadError'.tr;
     } finally {
-      loadingConversation = false;
-      update();
+      if (sessionIsCurrent(generation) && request == _conversationRequest) {
+        loadingConversation = false;
+        update();
+      }
     }
   }
 
@@ -116,11 +188,15 @@ class StoreSupportController extends GetxController {
   }
 
   Future<bool> _refreshActive() async {
+    final generation = sessionGeneration;
     final id = activeConversation?.id;
     if (id == null) return false;
     try {
       final after = messages.where((row) => row.id > 0).lastOrNull?.id;
       final result = await repository.detail(id, afterId: after);
+      if (!sessionIsCurrent(generation) || activeConversation?.id != id) {
+        return false;
+      }
       activeConversation = result.conversation;
       _scheduleSupportPresenceExpiry();
       _merge(result.messages);
@@ -148,6 +224,7 @@ class StoreSupportController extends GetxController {
   }
 
   Future<void> send(String text, {String? imagePath, String? retryId}) async {
+    final generation = sessionGeneration;
     final conversation = activeConversation;
     if (conversation == null || conversation.isClosed) return;
     final body = text.trim();
@@ -177,12 +254,20 @@ class StoreSupportController extends GetxController {
         clientMessageId: clientId,
         imagePath: imagePath,
       );
+      if (!sessionIsCurrent(generation) ||
+          activeConversation?.id != conversation.id) {
+        return;
+      }
       messages = [
         ...messages.where((row) => row.clientMessageId != clientId),
         sent,
       ]..sort(_messageOrder);
       update();
     } catch (_) {
+      if (!sessionIsCurrent(generation) ||
+          activeConversation?.id != conversation.id) {
+        return;
+      }
       messages =
           messages
               .map(

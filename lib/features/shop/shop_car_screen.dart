@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -16,34 +17,54 @@ class ShopCarScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Directionality(
-    textDirection: TextDirection.rtl,
+    textDirection: Directionality.of(context),
     child: GetBuilder<ShopController>(
       builder:
           (controller) => Scaffold(
-            backgroundColor: StorePalette.background,
+            backgroundColor: StoreColors.resolve(
+              context,
+              StorePalette.background,
+            ),
             appBar: AppBar(
-              backgroundColor: StorePalette.surface,
-              foregroundColor: StorePalette.textPrimary,
+              backgroundColor: StoreColors.resolve(
+                context,
+                StorePalette.surface,
+              ),
+              foregroundColor: StoreColors.resolve(
+                context,
+                StorePalette.textPrimary,
+              ),
               elevation: 0,
               centerTitle: true,
               leading: IconButton(
-                tooltip: 'الرجوع',
+                tooltip: 'الرجوع'.tr,
                 onPressed: Get.back,
-                icon: Icon(storeBackIcon(context), size: 19),
+                icon: Icon(
+                  storeBackIcon(context),
+                  textDirection: TextDirection.ltr,
+                  size: 19,
+                ),
               ),
-              title: Text('سلة المشتريات (${controller.cartQuantity})'),
-              titleTextStyle: StoreTypography.title.copyWith(fontSize: 17),
+              title: Text(
+                'سلة المشتريات (@count)'.trParams({
+                  'count': '${controller.cartQuantity}',
+                }),
+              ),
+              titleTextStyle: StoreColors.text(
+                context,
+                StoreTypography.title,
+              ).copyWith(fontSize: 17),
               actions: [
                 const StoreSearchAction(),
                 if (controller.cartLines.isNotEmpty)
                   PopupMenuButton<String>(
-                    tooltip: 'خيارات السلة',
+                    tooltip: 'خيارات السلة'.tr,
                     onSelected: (_) => _confirmClear(context, controller),
                     itemBuilder:
-                        (_) => const [
+                        (_) => [
                           PopupMenuItem(
                             value: 'clear',
-                            child: Text('مسح السلة'),
+                            child: Text('مسح السلة'.tr),
                           ),
                         ],
                   ),
@@ -103,12 +124,15 @@ class ShopCarScreen extends StatelessWidget {
                           12,
                           12,
                         ),
-                        decoration: const BoxDecoration(
-                          color: StorePalette.surface,
-                          boxShadow: [StoreElevation.lowShadow],
+                        decoration: BoxDecoration(
+                          color: StoreColors.resolve(
+                            context,
+                            StorePalette.surface,
+                          ),
+                          boxShadow: const [StoreElevation.lowShadow],
                         ),
                         child: StoreButton(
-                          label: 'إتمام الطلب',
+                          label: 'إتمام الطلب'.tr,
                           height: 46,
                           isLoading: controller.isLoading,
                           onPressed:
@@ -130,16 +154,16 @@ class ShopCarScreen extends StatelessWidget {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('مسح السلة؟'),
-            content: const Text('سيتم حذف جميع المنتجات المحتفظ بها من السلة.'),
+            title: Text('مسح السلة؟'.tr),
+            content: Text('سيتم حذف جميع المنتجات المحتفظ بها من السلة.'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('إلغاء'),
+                child: Text('إلغاء'.tr),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('مسح'),
+                child: Text('مسح'.tr),
               ),
             ],
           ),
@@ -156,14 +180,19 @@ class _CouponSection extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: StorePalette.surface,
-      border: Border.all(color: StorePalette.border),
+      color: StoreColors.resolve(context, StorePalette.surface),
+      border: Border.all(
+        color: StoreColors.resolve(context, StorePalette.border),
+      ),
       borderRadius: BorderRadius.circular(StoreRadii.lg),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('كوبون خصم', style: StoreTypography.label),
+        Text(
+          'كوبون خصم'.tr,
+          style: StoreColors.text(context, StoreTypography.label),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -175,12 +204,18 @@ class _CouponSection extends StatelessWidget {
                   onChanged: controller.retainCouponIntent,
                   textInputAction: TextInputAction.done,
                   onSubmitted: controller.retainCouponIntent,
-                  style: StoreTypography.body,
+                  style: StoreColors.text(context, StoreTypography.body),
                   decoration: InputDecoration(
-                    hintText: 'أدخل رمز الخصم',
-                    hintStyle: StoreTypography.caption,
+                    hintText: 'أدخل رمز الخصم'.tr,
+                    hintStyle: StoreColors.text(
+                      context,
+                      StoreTypography.caption,
+                    ),
                     filled: true,
-                    fillColor: StorePalette.background,
+                    fillColor: StoreColors.resolve(
+                      context,
+                      StorePalette.background,
+                    ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
@@ -199,16 +234,21 @@ class _CouponSection extends StatelessWidget {
               child: FilledButton(
                 onPressed: controller.isLoading ? null : controller.checkCode,
                 style: FilledButton.styleFrom(
-                  backgroundColor: StorePalette.lightPurple,
+                  backgroundColor: StoreColors.resolve(
+                    context,
+                    StorePalette.lightPurple,
+                  ),
                   foregroundColor: StorePalette.purple,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(StoreRadii.sm),
                   ),
-                  textStyle: StoreTypography.label,
+                  textStyle: StoreColors.text(context, StoreTypography.label),
                 ),
-                child: Text(controller.activeCode == true ? 'مفعّل' : 'تطبيق'),
+                child: Text(
+                  controller.activeCode == true ? 'مفعّل'.tr : 'تطبيق'.tr,
+                ),
               ),
             ),
           ],
@@ -217,10 +257,15 @@ class _CouponSection extends StatelessWidget {
             controller.couponModel != null) ...[
           const SizedBox(height: 6),
           Text(
-            'تم تطبيق خصم ${controller.couponModel!.discountAmount.toStringAsFixed(2)} ₪، وسيعيد الخادم التحقق عند إنشاء الطلب.',
-            style: StoreTypography.caption.copyWith(
-              color: StorePalette.success,
-            ),
+            'خصم @amount ₪. سيتم تأكيد الإجمالي عند إتمام الطلب.'.trParams({
+              'amount': controller.couponModel!.discountAmount.toStringAsFixed(
+                2,
+              ),
+            }),
+            style: StoreColors.text(
+              context,
+              StoreTypography.caption,
+            ).copyWith(color: StorePalette.success),
           ),
         ],
       ],

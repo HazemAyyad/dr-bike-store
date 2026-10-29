@@ -120,7 +120,7 @@ class _BuildThreeItemState extends State<BuildThreeItem> {
                             ),
                           ],
                         )
-                        : SizedBox(),
+                        : const SizedBox(),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -140,7 +140,7 @@ class _BuildThreeItemState extends State<BuildThreeItem> {
                             ),
                           ),
                         ),
-                        SizedBox(height: 5),
+                        const SizedBox(height: 5),
                         Container(
                           height: 27.h,
                           width: 90.w,

@@ -17,6 +17,7 @@ ThemeData light({Color color = StorePalette.purple}) {
 
   return ThemeData(
     fontFamily: StoreTypography.fontFamily,
+    fontFamilyFallback: StoreTypography.fontFamilyFallback,
     textTheme: StoreTypography.textTheme,
     primaryColor: color,
     hoverColor: StorePalette.lightPurple,
@@ -77,6 +78,7 @@ ThemeData dark({Color color = StorePalette.purple}) {
 
   return ThemeData(
     fontFamily: StoreTypography.fontFamily,
+    fontFamilyFallback: StoreTypography.fontFamilyFallback,
     textTheme: darkTextTheme,
     primaryColor: color,
     hoverColor: StorePalette.lightPurple,

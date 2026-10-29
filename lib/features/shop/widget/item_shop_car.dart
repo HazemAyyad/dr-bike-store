@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -23,8 +24,10 @@ class ItemShopCar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: StorePalette.surface,
-        border: Border.all(color: StorePalette.border),
+        color: StoreColors.resolve(context, StorePalette.surface),
+        border: Border.all(
+          color: StoreColors.resolve(context, StorePalette.border),
+        ),
         borderRadius: BorderRadius.circular(StoreRadii.lg),
       ),
       child: Row(
@@ -55,15 +58,16 @@ class ItemShopCar extends StatelessWidget {
                         name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: StoreTypography.bodyMedium.copyWith(
-                          height: 1.35,
-                        ),
+                        style: StoreColors.text(
+                          context,
+                          StoreTypography.bodyMedium,
+                        ).copyWith(height: 1.35),
                       ),
                     ),
                     SizedBox.square(
                       dimension: 34,
                       child: IconButton(
-                        tooltip: 'حذف',
+                        tooltip: 'حذف'.tr,
                         padding: EdgeInsets.zero,
                         color: StorePalette.error,
                         onPressed: () => _confirmRemove(context, controller),
@@ -80,23 +84,29 @@ class ItemShopCar extends StatelessWidget {
                     _optionLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: StoreTypography.caption,
+                    style: StoreColors.text(context, StoreTypography.caption),
                   ),
                 Text(
-                  'رمز المنتج: ${line.itemSnapshot.model.trim().isEmpty ? line.productId : line.itemSnapshot.model}',
+                  'رمز المنتج: @code'.trParams({
+                    'code':
+                        '${line.itemSnapshot.model.trim().isEmpty ? line.productId : line.itemSnapshot.model}',
+                  }),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: StoreTypography.caption.copyWith(fontSize: 10.5),
+                  style: StoreColors.text(
+                    context,
+                    StoreTypography.caption,
+                  ).copyWith(fontSize: 10.5),
                 ),
                 if (line.requiresRevalidation)
                   Text(
-                    'يتم التحقق من التوفر قبل الطلب',
+                    'يتم التحقق من التوفر قبل الطلب'.tr,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: StoreTypography.caption.copyWith(
-                      color: StorePalette.warning,
-                      fontSize: 10,
-                    ),
+                    style: StoreColors.text(
+                      context,
+                      StoreTypography.caption,
+                    ).copyWith(color: StorePalette.warning, fontSize: 10),
                   ),
                 const SizedBox(height: 5),
                 Row(
@@ -105,8 +115,11 @@ class ItemShopCar extends StatelessWidget {
                       '${_price(line.total)} ₪',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: StoreTypography.label.copyWith(
-                        color: StorePalette.navy,
+                      style: StoreColors.text(
+                        context,
+                        StoreTypography.label,
+                      ).copyWith(
+                        color: StoreColors.resolve(context, StorePalette.navy),
                         fontSize: 14,
                       ),
                     ),
@@ -117,7 +130,10 @@ class ItemShopCar extends StatelessWidget {
                           '${_price(line.subtotal)} ₪',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: StoreTypography.caption.copyWith(
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.caption,
+                          ).copyWith(
                             fontSize: 10,
                             decoration: TextDecoration.lineThrough,
                           ),
@@ -135,10 +151,10 @@ class ItemShopCar extends StatelessWidget {
                         ),
                         child: Text(
                           '${_price(line.discountPercent)}%',
-                          style: StoreTypography.caption.copyWith(
-                            color: Colors.white,
-                            fontSize: 9,
-                          ),
+                          style: StoreColors.text(
+                            context,
+                            StoreTypography.caption,
+                          ).copyWith(color: Colors.white, fontSize: 9),
                         ),
                       ),
                     ],
@@ -173,7 +189,8 @@ class ItemShopCar extends StatelessWidget {
   }
 
   String get _optionLabel => [
-    if (line.sizeLabel?.trim().isNotEmpty == true) 'الخيار: ${line.sizeLabel}',
+    if (line.sizeLabel?.trim().isNotEmpty == true)
+      'الخيار: @option'.trParams({'option': line.sizeLabel!}),
     if (line.colorLabel?.trim().isNotEmpty == true) line.colorLabel!,
   ].join(' • ');
 
@@ -191,16 +208,16 @@ class ItemShopCar extends StatelessWidget {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('حذف المنتج؟'),
-            content: const Text('سيتم حذف هذا الخيار فقط من السلة.'),
+            title: Text('حذف المنتج؟'.tr),
+            content: Text('سيتم حذف هذا الخيار فقط من السلة.'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('إلغاء'),
+                child: Text('إلغاء'.tr),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('حذف'),
+                child: Text('حذف'.tr),
               ),
             ],
           ),
@@ -228,7 +245,7 @@ class _QuantityStepper extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: 32,
     decoration: BoxDecoration(
-      color: StorePalette.background,
+      color: StoreColors.resolve(context, StorePalette.background),
       borderRadius: BorderRadius.circular(StoreRadii.sm),
     ),
     child: Row(
@@ -238,21 +255,21 @@ class _QuantityStepper extends StatelessWidget {
           icon: Icons.remove_rounded,
           enabled: canDecrement,
           onPressed: onDecrement,
-          label: 'إنقاص الكمية',
+          label: 'إنقاص الكمية'.tr,
         ),
         SizedBox(
           width: 28,
           child: Text(
             '$quantity',
             textAlign: TextAlign.center,
-            style: StoreTypography.label,
+            style: StoreColors.text(context, StoreTypography.label),
           ),
         ),
         _stepButton(
           icon: Icons.add_rounded,
           enabled: canIncrement,
           onPressed: onIncrement,
-          label: 'زيادة الكمية',
+          label: 'زيادة الكمية'.tr,
         ),
       ],
     ),

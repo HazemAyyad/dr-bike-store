@@ -1,3 +1,4 @@
+import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -28,13 +29,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     final controller = Get.find<FavoritesController>();
     return Scaffold(
-      backgroundColor: StorePalette.background,
+      backgroundColor: StoreColors.resolve(context, StorePalette.background),
       appBar: AppBar(
-        backgroundColor: StorePalette.surface,
-        foregroundColor: StorePalette.textPrimary,
+        backgroundColor: StoreColors.resolve(context, StorePalette.surface),
+        foregroundColor: StoreColors.resolve(context, StorePalette.textPrimary),
         elevation: 0,
         centerTitle: true,
-        title: const Text('المنتجات المفضلة'),
+        title: Text('المنتجات المفضلة'.tr),
         actions: [
           const StoreSearchAction(),
           StoreProductLayoutToggle(
@@ -58,20 +59,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: StoreMessageState(
                 kind: StoreMessageKind.error,
                 icon: Icons.error_outline,
-                title: 'تعذر تحميل المفضلة',
-                message: 'تحقق من الاتصال ثم أعد المحاولة.',
-                actionLabel: 'إعادة المحاولة',
+                title: 'تعذر تحميل المفضلة'.tr,
+                message: 'تحقق من الاتصال ثم أعد المحاولة.'.tr,
+                actionLabel: 'إعادة المحاولة'.tr,
                 onAction: controller.load,
               ),
             );
           case FavoritesStatus.empty:
             return _refreshableState(
               controller: controller,
-              child: const StoreMessageState(
+              child: StoreMessageState(
                 kind: StoreMessageKind.empty,
                 icon: Icons.favorite_border,
-                title: 'المفضلة فارغة',
-                message: 'اضغط على رمز القلب لحفظ المنتجات هنا.',
+                title: 'المفضلة فارغة'.tr,
+                message: 'اضغط على رمز القلب لحفظ المنتجات هنا.'.tr,
               ),
             );
           case FavoritesStatus.content:
