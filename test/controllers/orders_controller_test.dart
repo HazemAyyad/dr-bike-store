@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:doctor_bike/controller/order/order_controller.dart';
 import 'package:doctor_bike/core/api_client.dart';
 import 'package:doctor_bike/core/functions/store_session_boundary.dart';
+import 'package:doctor_bike/core/functions/store_order_status_label.dart';
 import 'package:doctor_bike/core/model/orders_model.dart';
 import 'package:doctor_bike/repository/auth/auth_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,6 +60,69 @@ void main() {
     final order = _order('Custom');
     expect(order.rawStatus, 'Custom');
     expect(order.statusKind, StoreOrderStatusKind.unknown);
+  });
+  test(
+    'all in-progress administration statuses remain current with distinct labels',
+    () {
+      const labels = {
+        'unconfirmed': 'بانتظار التأكيد',
+        'confirmed': 'تم تأكيد الطلب',
+        'ready': 'جاهز للتوصيل',
+        'postponed': 'مؤجل',
+        'with_delivery': 'مع شركة التوصيل',
+        'review': 'قيد المراجعة',
+        'stuck': 'معلق',
+        'returned': 'مرتجعة',
+        'partial_delivered': 'تم التسليم جزئيًا',
+        'partial_return': 'مرتجع جزئي',
+        'alternative_return': 'مرتجع استبدال',
+      };
+      for (final entry in labels.entries) {
+        final order = Order.fromJson(
+          _json('New')..['salesOrderStatus'] = entry.key,
+        );
+        expect(order.status, 'New');
+        expect(order.rawStatus, entry.key);
+        expect(order.statusKind, StoreOrderStatusKind.current);
+        expect(storeOrderStatusLabel(order.rawStatus), entry.value);
+      }
+    },
+  );
+  test('delivered and archived orders remain completed', () {
+    for (final status in ['delivered', 'archived']) {
+      final order = Order.fromJson(
+        _json('Done')..['salesOrderStatus'] = status,
+      );
+      expect(order.statusKind, StoreOrderStatusKind.completed);
+    }
+  });
+  test('actual cancellation status belongs to canceled tab', () {
+    final order = Order.fromJson(
+      _json('Canceled')..['salesOrderStatus'] = 'canceled',
+    );
+    expect(order.statusKind, StoreOrderStatusKind.canceled);
+  });
+  test('status history prefers actual administration transitions', () {
+    final order = Order.fromJson(
+      _json('New')
+        ..['statusLogs'] = [
+          {
+            'fromStatus': 'New',
+            'toStatus': 'New',
+            'fromSalesOrderStatus': 'confirmed',
+            'toSalesOrderStatus': 'ready',
+            'createdAt': '2026-01-02',
+          },
+        ],
+    );
+    expect(order.statusLogs.single.fromStatus, 'confirmed');
+    expect(order.statusLogs.single.toStatus, 'ready');
+  });
+  test('orders with the carrier cannot request cancellation', () {
+    final order = Order.fromJson(
+      _json('New')..['salesOrderStatus'] = 'with_delivery',
+    );
+    expect(_controller(repository).canRequestCancellation(order), isFalse);
   });
   test(
     'historical line unit price retained',

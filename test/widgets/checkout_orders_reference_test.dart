@@ -67,6 +67,37 @@ void main() {
 
   tearDown(Get.reset);
 
+  for (final status
+      in {
+        'confirmed': 'تم تأكيد الطلب',
+        'with_delivery': 'مع شركة التوصيل',
+      }.entries) {
+    testWidgets(
+      'current order shows actual ${status.key} status in list and details',
+      (tester) async {
+        final order = _order(salesOrderStatus: status.key);
+        Get.put(
+          OrderController(
+              repository: _OrdersRepository(apiClient: apiClient),
+              connectivityCheck: () async => true,
+            )
+            ..orders = [order]
+            ..selectedOrder = order
+            ..listStatus = OrderListStatus.content,
+        );
+
+        await _pumpAt(tester, const Size(390, 844), const OrderScreen());
+        expect(find.text('#DB-2026-00123'), findsOneWidget);
+        expect(find.text(status.value), findsOneWidget);
+        expect(find.text('قيد التجهيز'), findsNothing);
+
+        await _pumpAt(tester, const Size(390, 844), const OrderDetailsScreen());
+        expect(find.text(status.value), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   for (final language in ['ar', 'en', 'he']) {
     for (final night in [false, true]) {
       for (final stage in [
@@ -408,7 +439,7 @@ Citys _city() => Citys(
 ShiplyVillage _village() =>
     ShiplyVillage(id: 20, name: 'الماصيون', isClosed: false);
 
-Order _order() => Order.fromJson({
+Order _order({String? salesOrderStatus}) => Order.fromJson({
   'id': 123,
   'serialNumber': 'DB-2026-00123',
   'orderNumber': 'DB-2026-00123',
@@ -419,6 +450,7 @@ Order _order() => Order.fromJson({
   'cityId': 10,
   'address': 'رام الله، شارع الإرسال',
   'status': 'New',
+  'salesOrderStatus': salesOrderStatus,
   'isWholesale': false,
   'priceDelivery': 20,
   'totalPriceWithDiscound': 75,

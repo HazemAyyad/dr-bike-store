@@ -15,13 +15,24 @@ class OrderResponse {
 
 enum StoreOrderStatusKind { current, completed, canceled, unknown }
 
-StoreOrderStatusKind storeOrderStatusKind(String rawStatus) =>
-    switch (rawStatus) {
-      'New' => StoreOrderStatusKind.current,
-      'Done' => StoreOrderStatusKind.completed,
-      'Canceled' => StoreOrderStatusKind.canceled,
-      _ => StoreOrderStatusKind.unknown,
-    };
+StoreOrderStatusKind storeOrderStatusKind(String rawStatus) => switch (rawStatus
+    .toLowerCase()) {
+  'new' ||
+  'unconfirmed' ||
+  'confirmed' ||
+  'ready' ||
+  'postponed' ||
+  'with_delivery' ||
+  'review' ||
+  'stuck' ||
+  'returned' ||
+  'partial_delivered' ||
+  'partial_return' ||
+  'alternative_return' => StoreOrderStatusKind.current,
+  'done' || 'delivered' || 'archived' => StoreOrderStatusKind.completed,
+  'canceled' => StoreOrderStatusKind.canceled,
+  _ => StoreOrderStatusKind.unknown,
+};
 
 int _asInt(dynamic value, [int fallback = 0]) {
   if (value is int) return value;
@@ -68,8 +79,9 @@ class Order {
   final int cityId;
   final String address;
   final String status;
-  String get rawStatus => status;
-  StoreOrderStatusKind get statusKind => storeOrderStatusKind(status);
+  final String salesOrderStatus;
+  String get rawStatus => salesOrderStatus.isEmpty ? status : salesOrderStatus;
+  StoreOrderStatusKind get statusKind => storeOrderStatusKind(rawStatus);
   final bool isWholesale;
   final double priceDelivery;
   final double totalPriceWithDiscound;
@@ -112,6 +124,7 @@ class Order {
     required this.cityId,
     required this.address,
     required this.status,
+    this.salesOrderStatus = '',
     required this.isWholesale,
     required this.priceDelivery,
     required this.totalPriceWithDiscound,
@@ -151,6 +164,7 @@ class Order {
       cityId: _asInt(json['cityId']),
       address: _asString(json['address']),
       status: _asString(json['status']),
+      salesOrderStatus: _asString(json['salesOrderStatus']),
       isWholesale: _asBool(json['isWholesale']),
       priceDelivery: _asDouble(json['priceDelivery']),
       totalPriceWithDiscound: _asDouble(json['totalPriceWithDiscound']),
@@ -250,8 +264,8 @@ class OrderStatusLog {
 
   factory OrderStatusLog.fromJson(Map<String, dynamic> json) {
     return OrderStatusLog(
-      fromStatus: _asString(json['fromStatus']),
-      toStatus: _asString(json['toStatus']),
+      fromStatus: _asString(json['fromSalesOrderStatus'] ?? json['fromStatus']),
+      toStatus: _asString(json['toSalesOrderStatus'] ?? json['toStatus']),
       note: _asString(json['note']),
       userName: _asString(json['userName']),
       createdAt: _asString(json['createdAt']),

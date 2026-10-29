@@ -91,7 +91,8 @@ class OrderController extends GetxController with StoreSessionAware {
   }
 
   bool canRequestCancellation(Order order) =>
-      order.statusKind == StoreOrderStatusKind.current;
+      order.statusKind == StoreOrderStatusKind.current &&
+      order.rawStatus != 'with_delivery';
 
   bool canTrack(Order order) => order.hasTracking;
 

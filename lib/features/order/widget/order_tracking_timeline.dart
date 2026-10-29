@@ -3,6 +3,7 @@ import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/model/orders_model.dart';
+import '../../../core/functions/store_order_status_label.dart';
 import '../../../core/theme/store_tokens.dart';
 import '../../../core/theme/store_typography.dart';
 
@@ -243,7 +244,7 @@ String _orderStatusLabel(String raw) => switch (raw) {
   'New' => 'تم استلام الطلب'.tr,
   'Done' => 'اكتمل الطلب'.tr,
   'Canceled' => 'ألغي الطلب'.tr,
-  _ => raw,
+  _ => storeOrderStatusLabel(raw),
 };
 
 extension _LastWhereOrNull<T> on Iterable<T> {

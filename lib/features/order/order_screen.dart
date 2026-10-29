@@ -1,5 +1,6 @@
 import 'package:doctor_bike/core/theme/store_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:doctor_bike/core/functions/store_order_status_label.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 
@@ -404,12 +405,12 @@ class _OrderStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final presentation = switch (order.statusKind) {
       StoreOrderStatusKind.current => (
-        label: 'قيد التجهيز'.tr,
+        label: storeOrderStatusLabel(order.rawStatus),
         foreground: StorePalette.purple,
         background: StoreColors.resolve(context, StorePalette.lightPurple),
       ),
       StoreOrderStatusKind.completed => (
-        label: 'مكتمل'.tr,
+        label: storeOrderStatusLabel(order.rawStatus),
         foreground: StorePalette.success,
         background: StoreColors.resolve(
           context,
@@ -417,7 +418,7 @@ class _OrderStatusBadge extends StatelessWidget {
         ),
       ),
       StoreOrderStatusKind.canceled => (
-        label: 'ملغى'.tr,
+        label: storeOrderStatusLabel(order.rawStatus),
         foreground: StorePalette.error,
         background: StoreColors.resolve(
           context,
@@ -425,7 +426,7 @@ class _OrderStatusBadge extends StatelessWidget {
         ),
       ),
       StoreOrderStatusKind.unknown => (
-        label: order.rawStatus.isEmpty ? 'غير معروف'.tr : order.rawStatus,
+        label: storeOrderStatusLabel(order.rawStatus),
         foreground: StoreColors.resolve(context, StorePalette.textSecondary),
         background: StoreColors.resolve(context, StorePalette.background),
       ),
