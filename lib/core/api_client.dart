@@ -11,6 +11,8 @@ import 'package:uuid/uuid.dart';
 
 import '../controller/LocalizationController.dart';
 import 'functions/app_usage_service.dart';
+import 'functions/store_diagnostics.dart';
+import 'functions/store_request_diagnostics.dart';
 import 'constants/app_constants.dart';
 import 'model/error_response.dart';
 
@@ -20,7 +22,12 @@ class ApiClient {
   static final String noInternetMessage = 'connection_to_api_server_failed'.tr;
   final int timeoutInSeconds = 40;
 
-  ApiClient({required this.sharedPreferences});
+  ApiClient({
+    required this.sharedPreferences,
+    StoreRequestDiagnostics? requestDiagnostics,
+  }) : _requestDiagnostics = requestDiagnostics ?? StoreDiagnostics.requests;
+
+  final StoreRequestDiagnostics _requestDiagnostics;
 
   Future<Response> getData(
     String uri, {
@@ -28,15 +35,27 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final url = AppConstants.appBaseUrl + uri;
+    StoreRequestTrace? trace;
+    http.Response? transportResponse;
     try {
-      _logRequest('GET', url);
+      final requestHeaders = await _jsonHeaders(headers);
+      trace = _requestDiagnostics.start(
+        method: 'GET',
+        uri: uri,
+        requestId: requestHeaders['X-Request-ID']!,
+      );
+      _logRequest('GET', url, headers: requestHeaders);
       final requestUri = Uri.parse(url).replace(queryParameters: query);
       http.Response response = await http
-          .get(requestUri, headers: await _jsonHeaders(headers))
+          .get(requestUri, headers: requestHeaders)
           .timeout(Duration(seconds: timeoutInSeconds));
+      transportResponse = response;
       _logRawResponse(response);
-      return handleResponse(response, uri);
+      final parsed = handleResponse(response, uri);
+      _finishTrace(trace, response, parsed);
+      return parsed;
     } catch (e) {
+      _failTrace(trace, e, transportResponse);
       _logError('GET', url, e);
       return Response(statusCode: 1, statusText: noInternetMessage);
     }
@@ -50,14 +69,24 @@ class ApiClient {
   }) async {
     final url = AppConstants.appBaseUrl + uri;
     final requestHeaders = await _jsonHeaders(headers);
+    final trace = _requestDiagnostics.start(
+      method: 'POST',
+      uri: uri,
+      requestId: requestHeaders['X-Request-ID']!,
+    );
+    http.Response? transportResponse;
     try {
       _logRequest('POST', url, headers: requestHeaders, body: body);
       http.Response response = await http
           .post(Uri.parse(url), headers: requestHeaders, body: jsonEncode(body))
           .timeout(Duration(seconds: timeout ?? timeoutInSeconds));
+      transportResponse = response;
       _logRawResponse(response);
-      return handleResponse(response, uri);
+      final parsed = handleResponse(response, uri);
+      _finishTrace(trace, response, parsed);
+      return parsed;
     } catch (e) {
+      _failTrace(trace, e, transportResponse);
       _logError('POST', url, e);
       return Response(statusCode: 1, statusText: noInternetMessage);
     }
@@ -284,7 +313,19 @@ class ApiClient {
     final normalizedHeaders = Map<String, String>.from(headers ?? {});
     normalizedHeaders.putIfAbsent('Content-Type', () => 'application/json');
     normalizedHeaders.putIfAbsent('Accept', () => 'application/json');
-    normalizedHeaders.putIfAbsent('X-Request-ID', () => const Uuid().v4());
+    String? suppliedRequestId;
+    for (final entry in normalizedHeaders.entries) {
+      if (entry.key.toLowerCase() == 'x-request-id') {
+        suppliedRequestId = entry.value;
+      }
+    }
+    normalizedHeaders.removeWhere(
+      (key, _) => key.toLowerCase() == 'x-request-id',
+    );
+    normalizedHeaders['X-Request-ID'] =
+        StoreRequestDiagnostics.isRequestId(suppliedRequestId)
+            ? suppliedRequestId!
+            : const Uuid().v4();
     if (!normalizedHeaders.keys.any(
       (key) => key.toLowerCase() == 'authorization',
     )) {
@@ -308,6 +349,56 @@ class ApiClient {
     final result = await _jsonHeaders(headers);
     result.removeWhere((key, _) => key.toLowerCase() == 'content-type');
     return result;
+  }
+
+  void _finishTrace(
+    StoreRequestTrace? trace,
+    http.Response response,
+    Response parsed,
+  ) {
+    if (trace == null) return;
+    final body = parsed.body;
+    final outcome =
+        response.statusCode < 200 || response.statusCode >= 300
+            ? StoreRequestOutcome.httpError
+            : body is! Map && response.statusCode != 204
+            ? StoreRequestOutcome.invalidResponse
+            : body is Map &&
+                (body['isFailure'] == true ||
+                    body['isSuccess'] == false ||
+                    body['status'] == 'error')
+            ? StoreRequestOutcome.applicationError
+            : StoreRequestOutcome.success;
+    trace.finish(
+      outcome: outcome,
+      statusCode: response.statusCode,
+      responseRequestId: response.headers['x-request-id'],
+    );
+  }
+
+  void _failTrace(
+    StoreRequestTrace? trace,
+    Object error,
+    http.Response? response,
+  ) {
+    if (trace == null) return;
+    if (response != null) {
+      trace.finish(
+        outcome:
+            response.statusCode < 200 || response.statusCode >= 300
+                ? StoreRequestOutcome.httpError
+                : StoreRequestOutcome.invalidResponse,
+        statusCode: response.statusCode,
+        responseRequestId: response.headers['x-request-id'],
+      );
+      return;
+    }
+    trace.finish(
+      outcome:
+          error is TimeoutException
+              ? StoreRequestOutcome.timeout
+              : StoreRequestOutcome.networkError,
+    );
   }
 
   Map<String, String> _redactHeaders(Map<String, String> headers) {

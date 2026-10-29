@@ -40,6 +40,26 @@ Sessions migrate from preferences to verified secure storage before removing the
 
 Crashlytics collects sanitized error type and stack in Android/iOS release builds. Collection is disabled in debug/test and on unsupported platforms. Do not add personal data, tokens, request bodies or user identifiers. Confirm a test crash reaches the intended Firebase project on a release device before treating remote monitoring as verified.
 
+Catalog (including the legacy category fallback), delivery quotes and checkout
+also record a `store_request` Crashlytics breadcrumb after each HTTP attempt.
+The allowed fields are a fixed operation name, UUID request ID, elapsed
+milliseconds, HTTP status when available and a fixed outcome name. URLs, search
+terms, addresses, product/order/account IDs, payloads and exception messages are
+excluded. The valid server `X-Request-ID` is preferred so the breadcrumb can be
+matched to the server's `store_api_request` log; an invalid response ID falls
+back to the generated request UUID. Network failures and timeouts have no HTTP
+status. These request UUIDs are separate from checkout's replay identity.
+
+HTTP/envelope outcomes distinguish success, HTTP errors, explicit application
+rejections, malformed responses, network errors and timeouts. A successful
+request measurement does not replace checkout's authoritative order/stock/price
+validation. Measurement uses a separate trace for every attempt, including
+overlapping requests. A failed or unfinished monitoring upload does not change
+or delay the API result. Breadcrumb collection follows the same initialized
+release-device policy as Crashlytics; it is not a standalone analytics export.
+Use server request logs for aggregate latency/failure monitoring, and validate
+real breadcrumb delivery as part of the deferred release-device crash check.
+
 ## Rollout and rollback
 
 Release compatible Laravel endpoints before distributing the APK. The first catalog page falls back to the legacy route when the added endpoint returns 404. Record server revision, APK hashes, build number, certificate and test evidence. Keep the previous APK and server revision, start with a pilot group, and observe authentication, shipping, checkout/replay, API duration and sanitized crash reports for 48 hours.
